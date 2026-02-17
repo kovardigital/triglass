@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liftoff - Z-Space Test</title>
+  <style>
+    /* Reset & Base */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* 3D Container - This is the viewport with perspective */
+    .liftoff-viewport {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      perspective: 1000px;
+      perspective-origin: 50% 50%;
+      overflow: hidden;
+    }
+
+    /* 3D World - This container moves in Z on scroll */
+    .liftoff-world {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      transform-style: preserve-3d;
+      transform: translate(-50%, -50%) translateZ(0px);
+    }
+
+    /* Sections positioned in 3D space */
+    .liftoff-section {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 80vw;
+      max-width: 800px;
+      text-align: center;
+      transform-style: flat;
+      transition: opacity 0.1s ease-out;
+      backface-visibility: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .liftoff-section h1 {
+      font-size: clamp(32px, 8vw, 80px);
+      font-weight: 700;
+      margin: 0 0 20px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .liftoff-section p {
+      font-size: clamp(16px, 2vw, 22px);
+      line-height: 1.6;
+      color: rgba(255,255,255,0.7);
+      margin: 0;
+    }
+
+    /* Scroll spacer - creates scroll height */
+    .liftoff-scroll-spacer {
+      height: 500vh;
+      pointer-events: none;
+    }
+
+    /* Debug info */
+    .liftoff-debug {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.8);
+      color: #0f0;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 10px 15px;
+      border-radius: 4px;
+      z-index: 9999;
+    }
+
+    .version-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: #fff;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      z-index: 9999;
+    }
+
+    /* Starfield */
+    .starfield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .starfield canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Asteroids */
+    .asteroids {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .asteroid {
+      position: absolute;
+      opacity: 0.6;
+      will-change: transform;
+    }
+
+    .asteroid svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="version-badge">CSS Version</div>
+  <script>
+    (function() {
+      'use strict';
+
+      console.log('%c[LIFTOFF] Starting...', 'color: #6b7cff; font-weight: bold');
+
+      // Configuration
+      const SECTION_DEPTH = 1000;
+      const TOTAL_SECTIONS = 5;
+      const STAR_COUNT = 600;
+
+      // ========== STARFIELD ==========
+      class Starfield {
+        constructor(container) {
+          this.container = container;
+          this.canvas = document.createElement('canvas');
+          this.ctx = this.canvas.getContext('2d');
+          this.stars = [];
+          this.scrollProgress = 0;
+          this.container.appendChild(this.canvas);
+          this.resize();
+          this.createStars();
+          this.animate();
+          window.addEventListener('resize', () => this.resize());
+        }
+
+        resize() {
+          this.width = window.innerWidth;
+          this.height = window.innerHeight;
+          this.canvas.width = this.width;
+          this.canvas.height = this.height;
+          this.centerX = this.width / 2;
+          this.centerY = this.height / 2;
+        }
+
+        createStars() {
+          this.stars = [];
+          for (let i = 0; i < STAR_COUNT; i++) {
+            const star = {
+              x: Math.random() * this.width,
+              y: Math.random() * this.height,
+              size: 0.5 + Math.random() * 1.5, // 0.5-2px, small and sharp
+              brightness: 0.3 + Math.random() * 0.7, // base brightness
+              twinkleOffset: Math.random() * Math.PI * 2,
+              twinkleSpeed: 0.003 + Math.random() * 0.006, // faster twinkle
+              twinkleAmount: 0.3 + Math.random() * 0.7, // how much it twinkles
+              layer: Math.floor(Math.random() * 3),
+            };
+            star.baseX = star.x;
+            star.baseY = star.y;
+            this.stars.push(star);
+          }
+        }
+
+        setScrollProgress(progress) {
+          this.scrollProgress = progress;
+        }
+
+        animate() {
+          this.ctx.clearRect(0, 0, this.width, this.height);
+          const time = Date.now();
+
+          // Zoom factor based on scroll (stars expand outward from center)
+          const zoomFactor = 1 + this.scrollProgress * 0.3;
+
+          this.stars.forEach(star => {
+            // Twinkle effect - varies between dim and bright
+            const twinkle = Math.sin(time * star.twinkleSpeed + star.twinkleOffset);
+            const twinkleValue = 0.5 + twinkle * 0.5; // 0 to 1
+            const opacity = star.brightness * (1 - star.twinkleAmount + star.twinkleAmount * twinkleValue);
+
+            // Layer-based zoom (deeper layers zoom faster)
+            const layerZoom = zoomFactor * (1 + star.layer * 0.15);
+
+            // Calculate position with zoom from center
+            const dx = star.baseX - this.centerX;
+            const dy = star.baseY - this.centerY;
+            const x = this.centerX + dx * layerZoom;
+            const y = this.centerY + dy * layerZoom;
+
+            // Size - keep small and sharp
+            const size = star.size;
+
+            // Draw star - sharp, no blur
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            this.ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(size), Math.ceil(size));
+          });
+
+          requestAnimationFrame(() => this.animate());
+        }
+      }
+
+      // Create starfield container and instance
+      const starfieldContainer = document.createElement('div');
+      starfieldContainer.className = 'starfield';
+      document.body.appendChild(starfieldContainer);
+      const starfield = new Starfield(starfieldContainer);
+      console.log('[LIFTOFF] Starfield created with', STAR_COUNT, 'stars');
+
+      // ========== ASTEROIDS ==========
+      const asteroidsContainer = document.createElement('div');
+      asteroidsContainer.className = 'asteroids';
+      document.body.appendChild(asteroidsContainer);
+
+      // Asteroid configurations - position, size, depth (0-1, higher = more parallax)
+      const asteroidConfigs = [
+        { x: -5, y: 10, size: 200, depth: 0.3, rotation: 0 },
+        { x: 85, y: 15, size: 150, depth: 0.5, rotation: 45 },
+        { x: -8, y: 45, size: 120, depth: 0.7, rotation: 90 },
+        { x: 90, y: 55, size: 250, depth: 0.2, rotation: 180 },
+        { x: 5, y: 75, size: 100, depth: 0.6, rotation: 270 },
+        { x: 80, y: 80, size: 180, depth: 0.4, rotation: 135 },
+      ];
+
+      const asteroids = [];
+      asteroidConfigs.forEach((config, i) => {
+        const asteroid = document.createElement('div');
+        asteroid.className = 'asteroid';
+        asteroid.style.left = `${config.x}%`;
+        asteroid.style.top = `${config.y}%`;
+        asteroid.style.width = `${config.size}px`;
+        asteroid.style.height = `${config.size}px`;
+        asteroid.innerHTML = `
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 5 C70 8, 90 25, 95 50 C92 75, 75 92, 50 95 C25 92, 8 75, 5 50 C8 25, 25 8, 50 5 Z"
+                  fill="#1a1a2e" stroke="#2a2a4a" stroke-width="1"/>
+            <ellipse cx="35" cy="40" rx="12" ry="8" fill="#0f0f1a" opacity="0.5"/>
+            <ellipse cx="65" cy="60" rx="10" ry="6" fill="#0f0f1a" opacity="0.4"/>
+            <circle cx="50" cy="75" r="5" fill="#0f0f1a" opacity="0.3"/>
+          </svg>
+        `;
+        asteroid.dataset.depth = config.depth;
+        asteroid.dataset.baseX = config.x;
+        asteroid.dataset.baseY = config.y;
+        asteroid.dataset.rotation = config.rotation;
+        asteroidsContainer.appendChild(asteroid);
+        asteroids.push(asteroid);
+      });
+      console.log('[LIFTOFF] Asteroids created:', asteroids.length);
+
+      // Mouse tracking for 3D tilt
+      let mouseX = 0, mouseY = 0;
+      let targetMouseX = 0, targetMouseY = 0;
+      document.addEventListener('mousemove', (e) => {
+        targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;  // -1 to 1
+        targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
+      });
+
+      // Scroll progress for effects
+      let scrollProgress = 0;
+
+      // Scene animation loop with steering parallax effect (fantik-style)
+      function animateScene() {
+        // Smooth mouse movement - lower value = smoother/slower follow
+        mouseX += (targetMouseX - mouseX) * 0.06;
+        mouseY += (targetMouseY - mouseY) * 0.06;
+
+        // The key insight from fantik: rotation around Z based on X mouse position
+        // Creates a "steering through space" feel
+        const steerAngle = mouseX * 8; // degrees - subtle but noticeable
+
+        // All layers use transform-origin: center, so rotation pivots around screen center
+
+        // Starfield - furthest layer: minimal movement, very subtle rotation
+        const starfieldOffsetX = -mouseX * 25;
+        const starfieldOffsetY = -mouseY * 20;
+        starfieldContainer.style.transform = `translate(${starfieldOffsetX}px, ${starfieldOffsetY}px) rotate(${steerAngle * 0.15}deg)`;
+
+        // Asteroids container - middle depth
+        const asteroidsOffsetX = -mouseX * 60;
+        const asteroidsOffsetY = -mouseY * 50;
+        asteroidsContainer.style.transform = `translate(${asteroidsOffsetX}px, ${asteroidsOffsetY}px) rotate(${steerAngle * 0.4}deg)`;
+
+        // Individual asteroids: depth-based parallax + slow continuous spin
+        asteroids.forEach(asteroid => {
+          const depth = parseFloat(asteroid.dataset.depth);
+          const baseRotation = parseFloat(asteroid.dataset.rotation);
+          // Deeper asteroids move more (closer = more parallax)
+          const asteroidOffsetX = -mouseX * depth * 120;
+          const asteroidOffsetY = -mouseY * depth * 100;
+          const scale = 1 + scrollProgress * depth * 0.4;
+          // Slow continuous rotation
+          const rotation = baseRotation + Date.now() * 0.001 * depth;
+          asteroid.style.transform = `translate(${asteroidOffsetX}px, ${asteroidOffsetY}px) scale(${scale}) rotate(${rotation}deg)`;
+        });
+
+        // Text viewport - foreground layer: most responsive
+        if (window.liftoffViewport) {
+          const viewportOffsetX = -mouseX * 40;
+          const viewportOffsetY = -mouseY * 35;
+          window.liftoffViewport.style.transform = `translate(${viewportOffsetX}px, ${viewportOffsetY}px) rotate(${steerAngle * 0.7}deg)`;
+        }
+
+        requestAnimationFrame(animateScene);
+      }
+      animateScene();
+
+      // Create viewport with perspective
+      const viewport = document.createElement('div');
+      viewport.className = 'liftoff-viewport';
+      window.liftoffViewport = viewport; // Store reference for parallax
+
+      // Create world that moves in Z
+      const world = document.createElement('div');
+      world.className = 'liftoff-world';
+      viewport.appendChild(world);
+
+      // Create sections
+      const sectionData = [
+        { title: 'LIFTOFF', subtitle: 'A journey beyond the stars' },
+        { title: 'THE MISSION', subtitle: 'Humanity\'s greatest adventure' },
+        { title: 'THE CREW', subtitle: 'Five astronauts. One chance.' },
+        { title: 'THE STAKES', subtitle: 'Everything we know hangs in the balance' },
+        { title: 'COMING SOON', subtitle: '2026' }
+      ];
+
+      const sections = [];
+      sectionData.forEach((data, index) => {
+        const section = document.createElement('div');
+        section.className = 'liftoff-section';
+        section.innerHTML = `<h1>${data.title}</h1><p>${data.subtitle}</p>`;
+
+        // Each section further back in Z (negative = further)
+        const zPos = -index * SECTION_DEPTH;
+        section.style.transform = `translate(-50%, -50%) translateZ(${zPos}px)`;
+        section.dataset.zPos = zPos;
+        world.appendChild(section);
+        sections.push(section);
+
+        console.log(`Section ${index}: Z=${zPos}`);
+      });
+
+      // Scroll spacer
+      const spacer = document.createElement('div');
+      spacer.className = 'liftoff-scroll-spacer';
+
+      // Debug display
+      const debug = document.createElement('div');
+      debug.className = 'liftoff-debug';
+
+      // Add to page
+      document.body.appendChild(viewport);
+      document.body.appendChild(spacer);
+      document.body.appendChild(debug);
+
+      // Total travel distance
+      const totalDepth = (TOTAL_SECTIONS - 1) * SECTION_DEPTH;
+
+      // Scroll handler
+      function onScroll() {
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollTop = window.scrollY;
+        const progress = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
+
+        // Move world forward in Z based on scroll
+        const worldZ = progress * totalDepth;
+        world.style.transform = `translate(-50%, -50%) translateZ(${worldZ}px)`;
+
+        // Update starfield zoom
+        starfield.setScrollProgress(progress);
+
+        // Update asteroid scroll progress
+        scrollProgress = progress;
+
+        // Update opacity for each section based on effective Z position
+        sections.forEach((section) => {
+          const sectionZ = parseFloat(section.dataset.zPos);
+          // Effective Z = where section appears relative to camera (at Z=0)
+          const effectiveZ = sectionZ + worldZ;
+
+          // Fade zones:
+          // Far away (effectiveZ < -800): faded out
+          // Approaching (-800 to -100): fading in
+          // In view (-100 to 300): fully visible
+          // Very close (300+): dims but stays visible
+
+          let opacity = 0;
+
+          if (effectiveZ < -800) {
+            // Too far away - invisible
+            opacity = 0;
+          } else if (effectiveZ < -100) {
+            // Fading in as it approaches
+            opacity = (effectiveZ + 800) / 700; // 0 at -800, 1 at -100
+          } else if (effectiveZ <= 300) {
+            // In the sweet spot - fully visible
+            opacity = 1;
+          } else {
+            // Very close - dim but don't disappear (min 0.3)
+            opacity = Math.max(0.3, 1 - (effectiveZ - 300) / 500);
+          }
+
+          section.style.opacity = Math.max(0, Math.min(1, opacity));
+        });
+
+        debug.innerHTML = `Scroll: ${Math.round(progress * 100)}% | World Z: ${Math.round(worldZ)}px`;
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      console.log('%c[LIFTOFF] Ready! Scroll to see Z-space effect.', 'color: #10b981');
+    })();
+  </script>
+</body>
+</html>
