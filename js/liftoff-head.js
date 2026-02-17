@@ -190,7 +190,7 @@ body {
   object-fit: contain;
 }
 
-/* Sections */
+/* Sections - with perspective for Z-axis animations */
 .liftoff-section {
   position: relative;
   min-height: 100vh;
@@ -198,6 +198,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: var(--section-padding) var(--container-padding);
+  perspective: 1000px;
   z-index: 10;
 }
 
@@ -323,12 +324,12 @@ body {
   border-top: none;
 }
 
-/* Animation classes */
+/* Animation classes - Z-axis movement for 3D depth */
 .fade-in { opacity: 0; }
-.zoom-in { opacity: 0; transform: scale(0.85); }
-.scale-in { opacity: 0; transform: scale(0.7); }
-.fade-left { opacity: 0; transform: translateX(-60px) scale(0.95); }
-.fade-right { opacity: 0; transform: translateX(60px) scale(0.95); }
+.zoom-in { opacity: 0; transform: translateZ(-300px); transform-style: preserve-3d; }
+.scale-in { opacity: 0; transform: translateZ(-500px); transform-style: preserve-3d; }
+.fade-left { opacity: 0; transform: translateX(-100px) translateZ(-150px); transform-style: preserve-3d; }
+.fade-right { opacity: 0; transform: translateX(100px) translateZ(-150px); transform-style: preserve-3d; }
 
 /* Nav */
 .liftoff-nav {

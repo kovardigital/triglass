@@ -477,13 +477,13 @@
       });
     });
 
-    // Animation classes - zoom-in gives the "flying towards you" effect
+    // Animation classes - Z-axis movement (flying towards you in 3D)
     const animations = {
-      '.zoom-in': { from: { opacity: 0, scale: 0.85 }, to: { opacity: 1, scale: 1 } },
+      '.zoom-in': { from: { opacity: 0, z: -300 }, to: { opacity: 1, z: 0 } },
       '.fade-in': { from: { opacity: 0 }, to: { opacity: 1 } },
-      '.scale-in': { from: { opacity: 0, scale: 0.7 }, to: { opacity: 1, scale: 1 } },
-      '.fade-left': { from: { opacity: 0, x: -60, scale: 0.95 }, to: { opacity: 1, x: 0, scale: 1 } },
-      '.fade-right': { from: { opacity: 0, x: 60, scale: 0.95 }, to: { opacity: 1, x: 0, scale: 1 } },
+      '.scale-in': { from: { opacity: 0, z: -500 }, to: { opacity: 1, z: 0 } },
+      '.fade-left': { from: { opacity: 0, x: -100, z: -150 }, to: { opacity: 1, x: 0, z: 0 } },
+      '.fade-right': { from: { opacity: 0, x: 100, z: -150 }, to: { opacity: 1, x: 0, z: 0 } },
     };
 
     Object.entries(animations).forEach(([selector, { from, to }]) => {
