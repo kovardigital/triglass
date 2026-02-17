@@ -114,23 +114,23 @@
       <!-- Hero Section -->
       <section class="liftoff-section">
         <div class="liftoff-section__inner">
-          <div class="section-label fade-up">The Film</div>
-          <h1 class="liftoff-heading liftoff-heading--xl fade-up">LIFTOFF</h1>
-          <p class="liftoff-text fade-up" style="margin-bottom: 40px;">
+          <div class="section-label zoom-in">The Film</div>
+          <h1 class="liftoff-heading liftoff-heading--xl zoom-in">LIFTOFF</h1>
+          <p class="liftoff-text zoom-in" style="margin-bottom: 40px;">
             A story of dreams, determination, and the infinite possibilities beyond our world.
           </p>
-          <a href="#about" class="liftoff-btn liftoff-btn--primary fade-up">Explore the Journey</a>
+          <a href="#about" class="liftoff-btn liftoff-btn--primary zoom-in">Explore the Journey</a>
         </div>
       </section>
 
       <!-- About Section -->
       <section class="liftoff-section" id="about">
         <div class="liftoff-section__inner">
-          <div class="section-label fade-up">About</div>
-          <h2 class="liftoff-heading liftoff-heading--lg fade-up">
+          <div class="section-label zoom-in">About</div>
+          <h2 class="liftoff-heading liftoff-heading--lg zoom-in">
             A young boy's journey to the stars
           </h2>
-          <p class="liftoff-text fade-up">
+          <p class="liftoff-text zoom-in">
             When 12-year-old Marcus discovers an abandoned spacecraft in his grandfather's barn,
             he embarks on an adventure that will take him beyond everything he's ever known.
             Liftoff is a heartwarming tale about believing in the impossible.
@@ -141,11 +141,11 @@
       <!-- Story Section -->
       <section class="liftoff-section">
         <div class="liftoff-section__inner">
-          <div class="section-label fade-up">The Story</div>
-          <h2 class="liftoff-heading liftoff-heading--lg fade-up">
+          <div class="section-label zoom-in">The Story</div>
+          <h2 class="liftoff-heading liftoff-heading--lg zoom-in">
             Beyond the atmosphere,<br>beyond imagination
           </h2>
-          <p class="liftoff-text fade-up">
+          <p class="liftoff-text zoom-in">
             Set in rural Montana, Liftoff follows Marcus as he repairs the mysterious craft
             with help from his skeptical sister and an eccentric former NASA engineer.
             Together, they discover that the ship holds secrets that could change humanity forever.
@@ -156,16 +156,16 @@
       <!-- Investment Section -->
       <section class="liftoff-section">
         <div class="liftoff-section__inner">
-          <div class="section-label fade-up">Invest</div>
-          <h2 class="liftoff-heading liftoff-heading--lg fade-up">
+          <div class="section-label zoom-in">Invest</div>
+          <h2 class="liftoff-heading liftoff-heading--lg zoom-in">
             Join the mission
           </h2>
-          <p class="liftoff-text fade-up" style="margin-bottom: 40px;">
+          <p class="liftoff-text zoom-in" style="margin-bottom: 40px;">
             We're seeking visionary investors to bring this story to life.
             With an experienced team and a compelling narrative, Liftoff is poised
             to inspire audiences worldwide.
           </p>
-          <div class="fade-up">
+          <div class="zoom-in">
             <a href="#contact" class="liftoff-btn liftoff-btn--outline" style="margin-right: 16px;">View Pitch Deck</a>
             <a href="#contact" class="liftoff-btn liftoff-btn--primary">Contact Us</a>
           </div>
@@ -175,11 +175,11 @@
       <!-- Contact Section -->
       <section class="liftoff-section" id="contact">
         <div class="liftoff-section__inner">
-          <div class="section-label fade-up">Contact</div>
-          <h2 class="liftoff-heading liftoff-heading--md fade-up">
+          <div class="section-label zoom-in">Contact</div>
+          <h2 class="liftoff-heading liftoff-heading--md zoom-in">
             Ready to launch?
           </h2>
-          <p class="liftoff-text liftoff-text--muted fade-up">
+          <p class="liftoff-text liftoff-text--muted zoom-in">
             hello@triglass.com
           </p>
         </div>
@@ -400,13 +400,13 @@
       });
     });
 
-    // Animation classes
+    // Animation classes - zoom-in gives the "flying towards you" effect
     const animations = {
-      '.fade-up': { from: { opacity: 0, y: 60 }, to: { opacity: 1, y: 0 } },
+      '.zoom-in': { from: { opacity: 0, scale: 0.85 }, to: { opacity: 1, scale: 1 } },
       '.fade-in': { from: { opacity: 0 }, to: { opacity: 1 } },
-      '.scale-in': { from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } },
-      '.fade-left': { from: { opacity: 0, x: -60 }, to: { opacity: 1, x: 0 } },
-      '.fade-right': { from: { opacity: 0, x: 60 }, to: { opacity: 1, x: 0 } },
+      '.scale-in': { from: { opacity: 0, scale: 0.7 }, to: { opacity: 1, scale: 1 } },
+      '.fade-left': { from: { opacity: 0, x: -60, scale: 0.95 }, to: { opacity: 1, x: 0, scale: 1 } },
+      '.fade-right': { from: { opacity: 0, x: 60, scale: 0.95 }, to: { opacity: 1, x: 0, scale: 1 } },
     };
 
     Object.entries(animations).forEach(([selector, { from, to }]) => {

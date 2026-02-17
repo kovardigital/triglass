@@ -294,11 +294,10 @@ body {
 
 /* Animation classes */
 .fade-in { opacity: 0; }
-.fade-up { opacity: 0; transform: translateY(60px); }
-.fade-down { opacity: 0; transform: translateY(-60px); }
-.fade-left { opacity: 0; transform: translateX(-60px); }
-.fade-right { opacity: 0; transform: translateX(60px); }
-.scale-in { opacity: 0; transform: scale(0.8); }
+.zoom-in { opacity: 0; transform: scale(0.85); }
+.scale-in { opacity: 0; transform: scale(0.7); }
+.fade-left { opacity: 0; transform: translateX(-60px) scale(0.95); }
+.fade-right { opacity: 0; transform: translateX(60px) scale(0.95); }
 
 /* Nav */
 .liftoff-nav {
