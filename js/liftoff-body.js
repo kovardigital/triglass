@@ -478,27 +478,95 @@
     });
 
     // Animation classes - Z-axis movement (flying towards you in 3D)
-    const animations = {
-      '.zoom-in': { from: { opacity: 0, z: -300 }, to: { opacity: 1, z: 0 } },
-      '.fade-in': { from: { opacity: 0 }, to: { opacity: 1 } },
-      '.scale-in': { from: { opacity: 0, z: -500 }, to: { opacity: 1, z: 0 } },
-      '.fade-left': { from: { opacity: 0, x: -100, z: -150 }, to: { opacity: 1, x: 0, z: 0 } },
-      '.fade-right': { from: { opacity: 0, x: 100, z: -150 }, to: { opacity: 1, x: 0, z: 0 } },
-    };
+    // Using transformPerspective on each element for proper 3D
+    gsap.utils.toArray('.zoom-in').forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0, z: -400, transformPerspective: 1000 },
+        {
+          opacity: 1,
+          z: 0,
+          duration: 1.2,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 90%',
+            end: 'top 50%',
+            scrub: 1,
+          },
+        }
+      );
+    });
 
-    Object.entries(animations).forEach(([selector, { from, to }]) => {
-      gsap.utils.toArray(selector).forEach((el) => {
-        gsap.fromTo(el, from, {
-          ...to,
+    gsap.utils.toArray('.scale-in').forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0, z: -600, transformPerspective: 1000 },
+        {
+          opacity: 1,
+          z: 0,
+          duration: 1.2,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 90%',
+            end: 'top 50%',
+            scrub: 1,
+          },
+        }
+      );
+    });
+
+    gsap.utils.toArray('.fade-left').forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0, x: -100, z: -200, transformPerspective: 1000 },
+        {
+          opacity: 1,
+          x: 0,
+          z: 0,
+          duration: 1.2,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 90%',
+            end: 'top 50%',
+            scrub: 1,
+          },
+        }
+      );
+    });
+
+    gsap.utils.toArray('.fade-right').forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0, x: 100, z: -200, transformPerspective: 1000 },
+        {
+          opacity: 1,
+          x: 0,
+          z: 0,
+          duration: 1.2,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 90%',
+            end: 'top 50%',
+            scrub: 1,
+          },
+        }
+      );
+    });
+
+    gsap.utils.toArray('.fade-in').forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0 },
+        {
+          opacity: 1,
           duration: 1,
-          ease: 'power3.out',
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: el,
             start: 'top 85%',
             toggleActions: 'play none none reverse',
           },
-        });
-      });
+        }
+      );
     });
 
     console.log('Liftoff: Scroll animations initialized');
