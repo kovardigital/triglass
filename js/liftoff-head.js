@@ -324,12 +324,14 @@ body {
   border-top: none;
 }
 
-/* Animation classes - Z-axis movement for 3D depth */
-.fade-in { opacity: 0; }
-.zoom-in { opacity: 0; transform: translateZ(-300px); transform-style: preserve-3d; }
-.scale-in { opacity: 0; transform: translateZ(-500px); transform-style: preserve-3d; }
-.fade-left { opacity: 0; transform: translateX(-100px) translateZ(-150px); transform-style: preserve-3d; }
-.fade-right { opacity: 0; transform: translateX(100px) translateZ(-150px); transform-style: preserve-3d; }
+/* Animation classes - GSAP handles transforms, CSS only sets opacity */
+.fade-in,
+.zoom-in,
+.scale-in,
+.fade-left,
+.fade-right {
+  opacity: 0;
+}
 
 /* Nav */
 .liftoff-nav {
