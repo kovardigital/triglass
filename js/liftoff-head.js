@@ -63,62 +63,50 @@ body {
   height: 100%;
 }
 
-/* Asteroids */
-.asteroids-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
-}
 
-.asteroid {
-  position: absolute;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.asteroid img,
-.asteroid svg {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* Scroll Rocket */
+/* Scroll Rocket - 70% height, rocket moves up */
 .scroll-rocket {
   position: fixed;
   right: 40px;
-  top: 0;
-  height: 100vh;
-  width: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 70vh;
+  width: 120px;
   z-index: 100;
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 60px 0;
+  align-items: flex-end;
+  padding: 0;
 }
 
 .scroll-rocket__track {
   position: relative;
   width: 2px;
   height: 100%;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 10%,
-    rgba(255, 255, 255, 0.1) 90%,
-    transparent 100%
-  );
+  background: rgba(255, 255, 255, 0.1);
+  margin-right: 19px;
 }
 
-.scroll-rocket__track::before,
-.scroll-rocket__track::after {
-  content: '';
+.scroll-rocket__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.scroll-rocket__markers {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+}
+
+.scroll-rocket__marker {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -126,28 +114,44 @@ body {
   height: 6px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.2s ease;
 }
 
-.scroll-rocket__track::before { top: 0; }
-.scroll-rocket__track::after { bottom: 0; }
+.scroll-rocket__marker:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateX(-50%) scale(1.5);
+}
 
-.scroll-rocket__progress {
+.scroll-rocket__marker::before {
+  content: attr(data-label);
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 0%;
-  background: linear-gradient(to bottom, var(--color-accent) 0%, rgba(107, 124, 255, 0.5) 100%);
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.scroll-rocket__marker:hover::before {
+  color: rgba(255, 255, 255, 0.8);
+  right: 16px;
 }
 
 .scroll-rocket__icon {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 50%;
-  transform: translateX(-50%) translateY(-50%);
+  margin-left: -31px;
+  transform: translateX(-50%);
   width: 24px;
   height: 24px;
-  filter: drop-shadow(0 0 8px var(--color-accent-glow));
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+  transition: top 0.1s ease-out;
 }
 
 .scroll-rocket__icon svg {
@@ -157,6 +161,33 @@ body {
 
 @media (max-width: 768px) {
   .scroll-rocket { display: none; }
+}
+
+/* Asteroids - 3D transforms */
+.asteroids-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  perspective: 1000px;
+}
+
+.asteroid {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+.asteroid img,
+.asteroid svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* Sections */

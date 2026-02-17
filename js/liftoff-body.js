@@ -88,12 +88,19 @@
     `;
     document.body.insertBefore(asteroidsContainer, document.body.firstChild.nextSibling);
 
-    // Scroll Rocket
+    // Scroll Rocket with section markers
     const scrollRocket = document.createElement('div');
     scrollRocket.className = 'scroll-rocket';
     scrollRocket.innerHTML = `
       <div class="scroll-rocket__track">
         <div class="scroll-rocket__progress"></div>
+        <div class="scroll-rocket__markers">
+          <div class="scroll-rocket__marker" data-section="hero" data-label="Home" style="top: 0%"></div>
+          <div class="scroll-rocket__marker" data-section="about" data-label="About Us" style="top: 20%"></div>
+          <div class="scroll-rocket__marker" data-section="story" data-label="The Story" style="top: 40%"></div>
+          <div class="scroll-rocket__marker" data-section="invest" data-label="Invest" style="top: 60%"></div>
+          <div class="scroll-rocket__marker" data-section="contact" data-label="Contact" style="top: 80%"></div>
+        </div>
       </div>
       <div class="scroll-rocket__icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
@@ -324,38 +331,108 @@
   }
 
   // ==========================================================================
-  // Mouse Parallax
+  // Asteroid Animation (drift, rotation, mouse repel)
   // ==========================================================================
 
-  let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+  let mouseX = 0, mouseY = 0;
+  const asteroidStates = new Map();
 
-  function initMouseParallax() {
+  function initAsteroidAnimation() {
     const asteroids = document.querySelectorAll('.asteroid');
     if (!asteroids.length) return;
 
-    document.addEventListener('mousemove', (e) => {
-      targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-      targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    // Initialize state for each asteroid
+    asteroids.forEach((asteroid, i) => {
+      const rect = asteroid.getBoundingClientRect();
+      asteroidStates.set(asteroid, {
+        // Drift - slow continuous movement
+        driftX: 0,
+        driftY: 0,
+        driftSpeedX: (Math.random() - 0.5) * 0.3,
+        driftSpeedY: (Math.random() - 0.5) * 0.2,
+        // Rotation
+        rotateX: Math.random() * 360,
+        rotateY: Math.random() * 360,
+        rotateZ: Math.random() * 360,
+        rotateSpeedX: (Math.random() - 0.5) * 0.2,
+        rotateSpeedY: (Math.random() - 0.5) * 0.15,
+        rotateSpeedZ: (Math.random() - 0.5) * 0.1,
+        // Repel
+        repelX: 0,
+        repelY: 0,
+        // Center position for collision
+        centerX: rect.left + rect.width / 2,
+        centerY: rect.top + rect.height / 2,
+        radius: Math.max(rect.width, rect.height) / 2,
+      });
     });
 
-    function updateParallax() {
-      mouseX = lerp(mouseX, targetMouseX, 0.08);
-      mouseY = lerp(mouseY, targetMouseY, 0.08);
+    // Track mouse position
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
 
+    function updateAsteroids() {
       asteroids.forEach((asteroid) => {
+        const state = asteroidStates.get(asteroid);
         const depth = parseFloat(asteroid.dataset.depth) || 1;
-        const strength = CONFIG.parallax.asteroidStrength * depth;
-        const moveX = mouseX * strength * 100;
-        const moveY = mouseY * strength * 100;
-        const currentTransform = asteroid.dataset.scrollTransform || '';
-        asteroid.style.transform = `${currentTransform} translate(${moveX}px, ${moveY}px)`;
+
+        // Update drift (continuous slow movement)
+        state.driftX += state.driftSpeedX;
+        state.driftY += state.driftSpeedY;
+
+        // Bounce drift back if too far
+        if (Math.abs(state.driftX) > 50) state.driftSpeedX *= -1;
+        if (Math.abs(state.driftY) > 30) state.driftSpeedY *= -1;
+
+        // Update rotation
+        state.rotateX += state.rotateSpeedX;
+        state.rotateY += state.rotateSpeedY;
+        state.rotateZ += state.rotateSpeedZ;
+
+        // Update center position
+        const rect = asteroid.getBoundingClientRect();
+        state.centerX = rect.left + rect.width / 2;
+        state.centerY = rect.top + rect.height / 2;
+
+        // Check mouse proximity and apply repel
+        const dx = mouseX - state.centerX;
+        const dy = mouseY - state.centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const repelRadius = state.radius + 100; // Repel zone
+
+        if (distance < repelRadius && distance > 0) {
+          // Mouse is close - push asteroid away
+          const force = (1 - distance / repelRadius) * 80;
+          const angle = Math.atan2(dy, dx);
+          state.repelX += -Math.cos(angle) * force * 0.1;
+          state.repelY += -Math.sin(angle) * force * 0.1;
+        }
+
+        // Decay repel back to 0
+        state.repelX *= 0.95;
+        state.repelY *= 0.95;
+
+        // Combine all transforms
+        const scrollScale = asteroid.dataset.scrollTransform || 'scale(1)';
+        const totalX = state.driftX + state.repelX;
+        const totalY = state.driftY + state.repelY;
+
+        asteroid.style.transform = `
+          ${scrollScale}
+          translate(${totalX}px, ${totalY}px)
+          rotateX(${state.rotateX}deg)
+          rotateY(${state.rotateY}deg)
+          rotateZ(${state.rotateZ * 0.3}deg)
+        `;
       });
 
-      requestAnimationFrame(updateParallax);
+      requestAnimationFrame(updateAsteroids);
     }
 
-    updateParallax();
-    console.log('Liftoff: Mouse parallax initialized');
+    updateAsteroids();
+    console.log('Liftoff: Asteroid animation initialized');
   }
 
   // ==========================================================================
@@ -446,8 +523,15 @@
       const scrollTop = window.scrollY || (lenis && lenis.scroll) || 0;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       const scrollPercent = Math.min(scrollTop / docHeight, 1);
-      icon.style.top = `${scrollPercent * trackHeight}px`;
-      if (progress) progress.style.height = `${scrollPercent * 100}%`;
+      // Rocket starts at bottom (100%) and moves up to top (0%)
+      const rocketPosition = (1 - scrollPercent) * trackHeight;
+      icon.style.top = `${rocketPosition}px`;
+      // Progress fills from bottom up
+      if (progress) {
+        progress.style.height = `${scrollPercent * 100}%`;
+        progress.style.bottom = '0';
+        progress.style.top = 'auto';
+      }
     }
 
     if (lenis) {
@@ -474,7 +558,7 @@
     setTimeout(() => {
       initSmoothScroll();
       initStarfield();
-      initMouseParallax();
+      initAsteroidAnimation();
       initScrollAnimations();
       initScrollRocket();
       console.log('Liftoff: Ready for launch!');
