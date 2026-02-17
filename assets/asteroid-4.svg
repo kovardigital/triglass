@@ -1,0 +1,14 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="asteroid4-grad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" style="stop-color:#2a2a3a"/>
+      <stop offset="100%" style="stop-color:#1a1a24"/>
+    </linearGradient>
+  </defs>
+  <!-- Elongated, more horizontal asteroid -->
+  <path d="M30 90 C35 60, 65 35, 100 30 C135 25, 170 45, 185 80 C200 115, 190 150, 155 165 C120 180, 70 175, 40 150 C10 125, 25 120, 30 90 Z" fill="url(#asteroid4-grad)"/>
+  <!-- Craters -->
+  <ellipse cx="90" cy="90" rx="20" ry="15" fill="#1a1a24" opacity="0.5"/>
+  <ellipse cx="145" cy="115" rx="18" ry="13" fill="#1a1a24" opacity="0.4"/>
+  <circle cx="55" cy="125" r="10" fill="#1a1a24" opacity="0.35"/>
+</svg>
