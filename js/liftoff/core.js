@@ -8,7 +8,15 @@ import * as THREE from 'three';
 // Create canvas container
 const container = document.createElement('div');
 container.id = 'liftoff-canvas';
+container.style.opacity = '0';
+container.style.transition = 'opacity 2.5s ease-out';
 document.body.appendChild(container);
+
+// Reveal the scene (called after text starts animating)
+function revealScene() {
+  container.style.opacity = '1';
+  console.log('[LIFTOFF] Scene fading in');
+}
 
 // Scene
 const scene = new THREE.Scene();
@@ -52,4 +60,4 @@ function destroy() {
 
 console.log('%c[LIFTOFF] Core initialized', 'color: #6b7cff');
 
-export { scene, camera, renderer, worldGroup, container, destroy };
+export { scene, camera, renderer, worldGroup, container, revealScene, destroy };
