@@ -23,7 +23,7 @@ const CLOSE_Z_MIN = 500;
 const CLOSE_Z_RANGE = 1500;
 
 // Layer 3: Ultra-distant stars (galaxy distance, synced with camera)
-const ULTRA_DISTANT_STAR_COUNT = 800;
+const ULTRA_DISTANT_STAR_COUNT = 2500;
 const ULTRA_DISTANT_STAR_SIZE = 6;
 const ULTRA_DISTANT_Z_OFFSET = -2500; // Same as galaxy offset
 
