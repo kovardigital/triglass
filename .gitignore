@@ -25,3 +25,9 @@ npm-debug.log*
 
 # Wrangler
 .wrangler/
+
+# Claude Code
+.claude/
+
+# Documentation (local)
+docs/
