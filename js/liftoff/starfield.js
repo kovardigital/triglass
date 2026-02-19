@@ -11,7 +11,7 @@ const STAR_LIFECYCLE_BASE = 4.0; // base seconds for full fade in/out cycle
 const STAR_LIFECYCLE_VARIANCE = 2.0; // +/- variance (so 2-6 seconds range)
 
 // Layer 1: Distant large stars (far background)
-const DISTANT_STAR_COUNT = 1500;
+const DISTANT_STAR_COUNT = 800;
 const DISTANT_STAR_SIZE = 8;
 const DISTANT_Z_MIN = 2000;  // Very far back
 const DISTANT_Z_RANGE = 4000;
@@ -21,6 +21,11 @@ const CLOSE_STAR_COUNT = 1000;
 const CLOSE_STAR_SIZE = 2;
 const CLOSE_Z_MIN = 500;
 const CLOSE_Z_RANGE = 1500;
+
+// Layer 3: Ultra-distant stars (galaxy distance, synced with camera)
+const ULTRA_DISTANT_STAR_COUNT = 800;
+const ULTRA_DISTANT_STAR_SIZE = 6;
+const ULTRA_DISTANT_Z_OFFSET = -2500; // Same as galaxy offset
 
 // Module state
 let distantStars = null;
@@ -32,6 +37,52 @@ let closeStars = null;
 let closeMaterial = null;
 let closeLifetimes = null;
 let closeDurations = null;
+
+let ultraDistantStars = null;
+let ultraDistantMaterial = null;
+let ultraDistantLifetimes = null;
+let ultraDistantDurations = null;
+
+// Create ultra-distant star layer (syncs with camera like galaxy)
+function createUltraDistantLayer(count, size, zOffset, worldGroup) {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const lifetimes = new Float32Array(count);
+  const durations = new Float32Array(count);
+
+  for (let i = 0; i < count; i++) {
+    // Spread wider since they're further away
+    positions[i * 3] = (Math.random() - 0.5) * 8000;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 8000;
+    positions[i * 3 + 2] = zOffset + (Math.random() - 0.5) * 500; // Small z variance around offset
+
+    colors[i * 3] = 1;
+    colors[i * 3 + 1] = 1;
+    colors[i * 3 + 2] = 1;
+
+    // Slower lifecycle for distant stars
+    durations[i] = STAR_LIFECYCLE_BASE * 1.5 + (Math.random() - 0.5) * STAR_LIFECYCLE_VARIANCE * 2;
+    lifetimes[i] = Math.random() * durations[i];
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: size,
+    transparent: true,
+    opacity: 0.6, // Slightly dimmer to match galaxy opacity
+    vertexColors: true,
+    sizeAttenuation: true,
+    blending: THREE.AdditiveBlending
+  });
+
+  const stars = new THREE.Points(geometry, material);
+  worldGroup.add(stars);
+
+  return { stars, material, lifetimes, durations, basePositions: positions.slice() };
+}
 
 // Create a star layer
 function createStarLayer(count, size, zMin, zRange, worldGroup) {
@@ -123,10 +174,17 @@ function init(worldGroup) {
   closeLifetimes = close.lifetimes;
   closeDurations = close.durations;
 
-  console.log('[LIFTOFF] Dual starfield created:', DISTANT_STAR_COUNT, 'distant +', CLOSE_STAR_COUNT, 'close stars');
+  // Ultra-distant stars (galaxy distance, synced with camera)
+  const ultraDistant = createUltraDistantLayer(ULTRA_DISTANT_STAR_COUNT, ULTRA_DISTANT_STAR_SIZE, ULTRA_DISTANT_Z_OFFSET, worldGroup);
+  ultraDistantStars = ultraDistant.stars;
+  ultraDistantMaterial = ultraDistant.material;
+  ultraDistantLifetimes = ultraDistant.lifetimes;
+  ultraDistantDurations = ultraDistant.durations;
+
+  console.log('[LIFTOFF] Triple starfield created:', DISTANT_STAR_COUNT, 'distant +', CLOSE_STAR_COUNT, 'close +', ULTRA_DISTANT_STAR_COUNT, 'ultra-distant stars');
 }
 
-// Update both starfields
+// Update all starfields
 function update(camera) {
   if (!distantStars || !closeStars) return;
 
@@ -146,6 +204,33 @@ function update(camera) {
     camera,
     deltaTime
   );
+
+  // Update ultra-distant layer (synced with camera like galaxy)
+  if (ultraDistantStars && camera) {
+    // Sync z position with camera so stars have no depth movement
+    ultraDistantStars.position.z = camera.position.z;
+
+    // Update twinkling
+    const colors = ultraDistantStars.geometry.attributes.color.array;
+    const count = ultraDistantLifetimes.length;
+
+    for (let i = 0; i < count; i++) {
+      ultraDistantLifetimes[i] += deltaTime;
+      const duration = ultraDistantDurations[i];
+      const progress = (ultraDistantLifetimes[i] % duration) / duration;
+      const brightness = Math.sin(progress * Math.PI);
+
+      colors[i * 3] = brightness;
+      colors[i * 3 + 1] = brightness;
+      colors[i * 3 + 2] = brightness;
+
+      if (ultraDistantLifetimes[i] >= duration) {
+        ultraDistantLifetimes[i] = 0;
+        ultraDistantDurations[i] = STAR_LIFECYCLE_BASE * 1.5 + (Math.random() - 0.5) * STAR_LIFECYCLE_VARIANCE * 2;
+      }
+    }
+    ultraDistantStars.geometry.attributes.color.needsUpdate = true;
+  }
 
   // Subtle size pulsing for distant stars only
   distantMaterial.size = DISTANT_STAR_SIZE + Math.sin(time * 3) * 0.5;
@@ -168,6 +253,14 @@ function destroy() {
     closeMaterial = null;
     closeLifetimes = null;
     closeDurations = null;
+  }
+  if (ultraDistantStars) {
+    ultraDistantStars.geometry.dispose();
+    ultraDistantMaterial.dispose();
+    ultraDistantStars = null;
+    ultraDistantMaterial = null;
+    ultraDistantLifetimes = null;
+    ultraDistantDurations = null;
   }
 }
 

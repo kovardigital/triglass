@@ -21,7 +21,7 @@ Preloader.init();
 Preloader.setProgress(0.1); // Core loaded
 
 // Initialize modules with progress updates
-Galaxy.init(worldGroup);
+Galaxy.init(worldGroup);  // Galaxy in worldGroup for parallax, Z synced with camera
 Preloader.setProgress(0.2);
 
 Starfield.init(worldGroup);
@@ -40,6 +40,7 @@ Content.init();
 Preloader.setProgress(0.8);
 
 RocketIndicator.init();
+RocketIndicator.setOnSectionClick(Content.jumpToSection);
 Preloader.setProgress(0.9);
 
 // Register update functions with the animation loop
@@ -55,13 +56,15 @@ Preloader.setProgress(1.0);
 
 // Register intro sequence for after preloader hides
 Preloader.onReady(() => {
-  // Step 1: Text animates on
+  // Step 1: Title fades on first
   Content.reveal();
 
-  // Step 2: Scene fades in after text starts (staggered)
+  // Step 2: Subtitle animates on after title (handled by CSS delay)
+
+  // Step 3: Scene fades in slowly after text animations start
   setTimeout(() => {
     revealScene();
-  }, 800);
+  }, 1700);
 });
 
 // Start animation loop and hide preloader

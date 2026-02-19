@@ -11,22 +11,26 @@ import * as Parallax from './parallax.js';
 let world = null;
 
 // Number of asteroids
-const ASTEROID_COUNT = 40;
+const ASTEROID_COUNT = 70;
 
 // Module state
 let asteroidGroup = null;
 const asteroids = []; // { mesh, body, baseZ }
 
 // Mouse repulsion settings
-const MOUSE_REPEL_STRENGTH = 8000;  // Strong immediate repulsion
+const MOUSE_REPEL_STRENGTH = 30000; // Extremely strong immediate repulsion
 const MOUSE_REPEL_RADIUS = 80;      // Tight interaction radius around cursor
 
 // Physics settings
 const DAMPING = 0.15;               // Low damping - asteroids drift freely
 
-// Distance fade settings - quick fade in from distance
-const FADE_START_DISTANCE = 1900;   // Fully opaque at this distance
-const FADE_END_DISTANCE = 2000;     // Fully invisible at this distance (only 100 unit fade)
+// Distance fade settings - visible from farther now since they start black
+const FADE_START_DISTANCE = 2500;   // Fully opaque at this distance
+const FADE_END_DISTANCE = 3000;     // Fully invisible at this distance
+
+// Color distance settings - asteroids start black and lighten as they approach
+const COLOR_FAR_DISTANCE = 2800;    // Black at this distance
+const COLOR_CLOSE_DISTANCE = 400;   // Full brightness at this distance
 
 // Initialize physics world and asteroids
 function init(worldGroup) {
@@ -70,13 +74,24 @@ function createAsteroid(index) {
   const positions = geometry.attributes.position;
   const seed = Math.random() * 100;
 
+  // Random axis scaling for shape variety (0.5 to 1.5 range)
+  // This creates elongated, flattened, or spherical shapes
+  const scaleX = 0.5 + Math.random();
+  const scaleY = 0.5 + Math.random();
+  const scaleZ = 0.5 + Math.random();
+
   // Deform vertices using noise for natural rocky appearance
   for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i);
-    const y = positions.getY(i);
-    const z = positions.getZ(i);
+    let x = positions.getX(i);
+    let y = positions.getY(i);
+    let z = positions.getZ(i);
 
-    // Normalize to get direction
+    // Apply axis scaling first for shape variety
+    x *= scaleX;
+    y *= scaleY;
+    z *= scaleZ;
+
+    // Normalize to get direction (from scaled position)
     const len = Math.sqrt(x * x + y * y + z * z);
     const nx = x / len;
     const ny = y / len;
@@ -91,21 +106,21 @@ function createAsteroid(index) {
 
   geometry.computeVertexNormals();
 
-  // Simple dark grey material
-  const shade = 0.003 + Math.random() * 0.007; // 0.003 to 0.01 - very dark
+  // Simple dark grey material - starts black, lightens with distance
+  const baseShade = 0.003 + Math.random() * 0.007; // Target brightness when close (0.003 to 0.01 - very dark)
   const material = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(shade, shade, shade),
+    color: new THREE.Color(0, 0, 0), // Start black, updated in update()
     transparent: true,
-    opacity: 1,  // Fully opaque by default
-    depthWrite: true  // Ensure solid rendering
+    opacity: 1,
+    depthWrite: true
   });
 
   const mesh = new THREE.Mesh(geometry, material);
 
   // Spread asteroids deep into Z space for long-distance travel feel
   // Camera goes from z=100 to z=-1900, stretch asteroids much farther
-  const x = (Math.random() - 0.5) * 600;
-  const y = (Math.random() - 0.5) * 400;
+  const x = (Math.random() - 0.5) * 1000;
+  const y = (Math.random() - 0.5) * 700;
   const z = -200 - Math.random() * 5000; // Spread from z=-200 to z=-5200 (very deep)
 
   mesh.position.set(x, y, z);
@@ -145,6 +160,7 @@ function createAsteroid(index) {
     baseY: y,
     baseZ: z,
     size,
+    baseShade, // Target brightness when close
     rotSpeed: 0.001 + Math.random() * 0.002
   });
 }
@@ -218,6 +234,17 @@ function update(camera) {
       opacity = 1 - (distToAsteroid - FADE_START_DISTANCE) / (FADE_END_DISTANCE - FADE_START_DISTANCE);
     }
     asteroid.mesh.material.opacity = opacity;
+
+    // Color based on distance: black when far, lighter when close
+    let colorMult = 0;
+    if (distToAsteroid < COLOR_CLOSE_DISTANCE) {
+      colorMult = 1; // Full brightness when very close
+    } else if (distToAsteroid < COLOR_FAR_DISTANCE) {
+      // Gradual brightening as asteroid approaches
+      colorMult = 1 - (distToAsteroid - COLOR_CLOSE_DISTANCE) / (COLOR_FAR_DISTANCE - COLOR_CLOSE_DISTANCE);
+    }
+    const shade = asteroid.baseShade * colorMult;
+    asteroid.mesh.material.color.setRGB(shade, shade, shade);
   });
 
     // Apply world group rotation (parallax)

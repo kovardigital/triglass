@@ -3,6 +3,9 @@
    Vertical scroll progress with animated rocket and debris
    ========================================================================== */
 
+// Callback for when a chapter is clicked
+let onSectionClick = null;
+
 // DOM elements
 let container = null;
 let track = null;
@@ -24,7 +27,6 @@ let scrollSpeed = 0;
 // Configuration
 const TRACK_HEIGHT = 50; // Percentage of viewport height
 const SECTION_COUNT = 5;
-const SECTION_OFFSET = 0.15; // Land 15% into each section
 
 // Chapter names (index 0 = LIFTOFF at bottom, index 4 = COMING SOON at top)
 const CHAPTER_NAMES = [
@@ -35,12 +37,9 @@ const CHAPTER_NAMES = [
   'COMING SOON'
 ];
 
-// Calculate where each section click lands (same logic as click handler)
+// Calculate where each section starts (matches content.js calculation)
 function getSectionScrollProgress(sectionIndex) {
-  const sectionSize = 1 / (SECTION_COUNT - 1);
-  if (sectionIndex === 0) return 0;
-  if (sectionIndex === SECTION_COUNT - 1) return 1; // Last section lands at end
-  return (sectionIndex * sectionSize) + (sectionSize * SECTION_OFFSET);
+  return sectionIndex / (SECTION_COUNT - 1);
 }
 
 // Inject styles
@@ -219,6 +218,15 @@ function injectStyles() {
         height: 9px;
         opacity: 1;
       }
+    }
+
+    /* Hide flame when going backwards */
+    .rocket-ship.going-backwards .rocket-flame {
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+    }
+    .rocket-ship .rocket-flame {
+      transition: opacity 0.4s ease-out;
     }
 
     /* Single smoke layer - drop-shadow outlines ALL particles as one shape */
@@ -441,6 +449,11 @@ function init() {
 
     // Click to jump to section
     wrap.addEventListener('click', () => {
+      // Trigger immediate text transition
+      if (onSectionClick) {
+        onSectionClick(sectionIndex);
+      }
+
       const scrollSpacer = document.querySelector('.liftoff-scroll-spacer');
       if (scrollSpacer) {
         const maxScroll = scrollSpacer.offsetHeight - window.innerHeight;
@@ -450,8 +463,14 @@ function init() {
         // Determine travel direction (up the track = scrolling down, down the track = scrolling up)
         travelDirection = targetScroll > currentScroll ? 'up' : 'down';
 
-        // Start smoke effect while traveling
-        startSmoke();
+        // Hide flame when going backwards
+        if (travelDirection === 'down') {
+          rocket.classList.add('going-backwards');
+        } else {
+          rocket.classList.remove('going-backwards');
+          // Start smoke effect only when traveling forward
+          startSmoke();
+        }
 
         window.scrollTo({ top: targetScroll, behavior: 'smooth' });
       }
@@ -478,33 +497,43 @@ function init() {
   // Start debris animation
   debrisInterval = setInterval(createDebrisParticle, 300);
 
-  // Listen for scroll to trigger smoke (only when scrolling down/forward)
+  // Listen for scroll to trigger smoke and track direction
   lastScrollY = window.scrollY;
   scrollHandler = () => {
     const currentScrollY = window.scrollY;
     const scrollDelta = currentScrollY - lastScrollY;
 
-    // Only trigger smoke when scrolling DOWN (positive delta = scrolling down the page)
-    // which means the rocket goes UP the track (forward through experience)
+    // Scrolling DOWN = rocket goes UP = forward (show flame)
+    // Scrolling UP = rocket goes DOWN = backwards (hide flame)
     if (scrollDelta > 2) {
-      // Scrolling down = rocket goes up the track
       travelDirection = 'up';
-      scrollSpeed = Math.min(scrollDelta, 50); // Cap at 50
+      scrollSpeed = Math.min(scrollDelta, 50);
+      rocket.classList.remove('going-backwards');
 
-      // Start smoke if not already smoking
       if (!isTraveling) {
         startSmoke();
       }
 
-      // Clear existing timeout
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }
 
-      // Stop smoke after scrolling stops
       scrollTimeout = setTimeout(() => {
         stopSmoke();
         scrollSpeed = 0;
+      }, 150);
+    } else if (scrollDelta < -2) {
+      // Scrolling up = going backwards
+      travelDirection = 'down';
+      rocket.classList.add('going-backwards');
+
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      // Remove backwards class after scrolling stops
+      scrollTimeout = setTimeout(() => {
+        rocket.classList.remove('going-backwards');
       }, 150);
     }
 
@@ -576,6 +605,12 @@ function destroy() {
   lastScrollY = 0;
   scrollHandler = null;
   scrollSpeed = 0;
+  onSectionClick = null;
 }
 
-export { init, update, destroy };
+// Set callback for chapter clicks
+function setOnSectionClick(callback) {
+  onSectionClick = callback;
+}
+
+export { init, update, destroy, setOnSectionClick };

@@ -48,6 +48,13 @@ function update() {
   // Lerp current toward target for smooth inertia
   currentProgress += (targetProgress - currentProgress) * LERP_FACTOR;
 
+  // Only snap at the very ends (0 and 1) when extremely close
+  if (targetProgress === 0 && currentProgress < 0.0001) {
+    currentProgress = 0;
+  } else if (targetProgress === 1 && currentProgress > 0.9999) {
+    currentProgress = 1;
+  }
+
   // Move camera forward on scroll (flying through space)
   camera.position.z = CAMERA_START_Z - currentProgress * CAMERA_TRAVEL;
 }

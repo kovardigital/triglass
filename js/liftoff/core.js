@@ -9,7 +9,7 @@ import * as THREE from 'three';
 const container = document.createElement('div');
 container.id = 'liftoff-canvas';
 container.style.opacity = '0';
-container.style.transition = 'opacity 2.5s ease-out';
+container.style.transition = 'opacity 3s ease-out';
 document.body.appendChild(container);
 
 // Reveal the scene (called after text starts animating)

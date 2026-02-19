@@ -24,10 +24,10 @@ const SECTIONS = [
     title: 'THE CREW',
     subtitle: 'Five astronauts. One chance.',
     images: [
-      { x: -55, y: -8, width: 150, height: 200, label: 'Crew 1', delay: 0 },
-      { x: 50, y: 5, width: 150, height: 200, label: 'Crew 2', delay: 0.25 },
-      { x: -50, y: 0, width: 150, height: 200, label: 'Crew 3', delay: 0.5 },
-      { x: 55, y: -5, width: 150, height: 200, label: 'Crew 4', delay: 0.75 },
+      { x: -40, y: -8, width: 150, height: 200, label: 'Crew 1', delay: 0 },
+      { x: 35, y: 5, width: 150, height: 200, label: 'Crew 2', delay: 0.25 },
+      { x: -35, y: 0, width: 150, height: 200, label: 'Crew 3', delay: 0.5 },
+      { x: 40, y: -5, width: 150, height: 200, label: 'Crew 4', delay: 0.75 },
     ],
     zRange: 3  // Images travel 3x further in Z-space for more separation
   },
@@ -35,10 +35,10 @@ const SECTIONS = [
     title: 'THE STAKES',
     subtitle: 'Everything we know hangs in the balance',
     images: [
-      { x: -35, y: 0, width: 320, height: 200, label: 'Earth View', delay: 0 },
+      { x: -40, y: 0, width: 320, height: 200, label: 'Earth View', delay: 0 },
       { x: 35, y: 5, width: 280, height: 180, label: 'The Threat', delay: 0.35 },
     ],
-    zRange: 2.5  // More Z separation for the two images
+    zRange: 3  // Match crew section Z separation
   },
   {
     title: 'COMING SOON',
@@ -56,22 +56,18 @@ let viewport = null;
 let textContainer = null;
 let imageWorld = null;
 let scrollSpacer = null;
-let debugDisplay = null;
 let titleEl = null;
 let subtitleEl = null;
+let contactBtn = null;
+let copyrightEl = null;
 const imageElements = [];
 
 // Track current section for text transitions
 let currentSection = 0;
+let displaySection = 0; // Which section's styling to show (changes after transition completes)
 let isTransitioning = false;
-
-// Check if we're in development mode
-function isDev() {
-  const hostname = window.location.hostname;
-  return hostname === 'localhost' ||
-         hostname === '127.0.0.1' ||
-         hostname.includes('webflow.io');
-}
+let transitionTimeout = null; // Store timeout ID to cancel if needed
+let jumpTarget = null; // Section we're jumping to (blocks scroll-based updates)
 
 // Inject Google Fonts
 function injectFonts() {
@@ -157,20 +153,25 @@ function injectStyles() {
       transition: opacity 0.6s ease-out;
     }
 
-    /* Intro animation - zoom in like scrolling into view */
-    .liftoff-text.intro h1,
+    /* Intro animation - title fades on first, then subtitle */
+    .liftoff-text.intro h1 {
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 1.8s ease-out, transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
     .liftoff-text.intro p {
       opacity: 0;
-      transform: scale(0.4);
-      transition: opacity 2s ease-out, transform 3s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(20px);
+      transition: opacity 1.5s ease-out, transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 1s; /* Start after title fades in */
     }
-    .liftoff-text.intro p {
-      transition-delay: 0.3s;
-    }
-    .liftoff-text.intro.revealed h1,
-    .liftoff-text.intro.revealed p {
+    .liftoff-text.intro.revealed h1 {
       opacity: 1;
       transform: scale(1);
+    }
+    .liftoff-text.intro.revealed p {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     /* Character animation for section transitions */
@@ -200,26 +201,67 @@ function injectStyles() {
       perspective: 1000px;
     }
 
-    /* Image placeholder styling */
+    /* Image placeholder styling - frosted glass effect */
     .liftoff-image {
       position: absolute;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.4);
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       backface-visibility: hidden;
       overflow: hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
     .liftoff-image span {
       display: inline-block;
       clip-path: inset(0 100% 0 0);
       transition: clip-path 0.3s ease-out;
+    }
+
+    /* Contact button - top right */
+    .liftoff-contact {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 100;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background 0.2s ease-out, border-color 0.2s ease-out;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .liftoff-contact:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    /* Copyright - bottom left */
+    .liftoff-copyright {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 100;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.4);
     }
   `;
   document.head.appendChild(style);
@@ -278,13 +320,20 @@ function init() {
   scrollSpacer.className = 'liftoff-scroll-spacer';
   document.body.appendChild(scrollSpacer);
 
-  // Debug display (dev only)
-  if (isDev()) {
-    debugDisplay = document.createElement('div');
-    debugDisplay.className = 'liftoff-debug';
-    debugDisplay.innerHTML = 'Section: 0';
-    document.body.appendChild(debugDisplay);
-  }
+  // Contact button (top right)
+  contactBtn = document.createElement('button');
+  contactBtn.className = 'liftoff-contact';
+  contactBtn.textContent = 'Contact';
+  contactBtn.addEventListener('click', () => {
+    window.location.href = 'mailto:hello@triglass.com';
+  });
+  document.body.appendChild(contactBtn);
+
+  // Copyright (bottom left)
+  copyrightEl = document.createElement('div');
+  copyrightEl.className = 'liftoff-copyright';
+  copyrightEl.textContent = '\u00A9 2026 Triglass Productions';
+  document.body.appendChild(copyrightEl);
 
   // Set initial text
   updateText(0);
@@ -293,8 +342,8 @@ function init() {
 }
 
 // Update text with transition effect
-function updateText(sectionIndex) {
-  if (sectionIndex === currentSection && titleEl.textContent) return;
+function updateText(sectionIndex, force = false) {
+  if (!force && sectionIndex === currentSection && titleEl.textContent) return;
 
   const section = SECTIONS[sectionIndex];
   if (!section) return;
@@ -309,15 +358,31 @@ function updateText(sectionIndex) {
     return;
   }
 
+  // Cancel any pending transition
+  if (transitionTimeout) {
+    clearTimeout(transitionTimeout);
+    transitionTimeout = null;
+  }
+
   // Fade out current text
   isTransitioning = true;
   textContainer.classList.add('transitioning');
   textContainer.classList.remove('char-revealed');
 
-  setTimeout(() => {
+  transitionTimeout = setTimeout(() => {
+    transitionTimeout = null;
     isTransitioning = false;
-    // Remove intro class AFTER fade out (so text doesn't snap small before fading)
-    if (wasFirstSection && sectionIndex !== 0) {
+    displaySection = sectionIndex; // Now update the visual styling
+
+    // Clear any inline opacity from intro section fade-out
+    textContainer.style.opacity = '';
+
+    // Handle intro class based on which section we're going to
+    if (sectionIndex === 0) {
+      // Restore intro class for section 0 (larger font, etc.)
+      textContainer.classList.add('intro', 'revealed');
+    } else if (wasFirstSection) {
+      // Remove intro class when leaving section 0
       textContainer.classList.remove('intro', 'revealed');
     }
 
@@ -325,24 +390,20 @@ function updateText(sectionIndex) {
     titleEl.textContent = section.title;
     subtitleEl.textContent = section.subtitle;
 
-    // For sections after the first, use character animation
-    if (sectionIndex > 0) {
-      const titleCharCount = splitTextToChars(titleEl, 0);
-      const subtitleDelay = titleCharCount * 0.04 + 0.1;
-      splitTextToChars(subtitleEl, subtitleDelay);
-    }
+    // Use character animation for all section transitions
+    const titleCharCount = splitTextToChars(titleEl, 0);
+    const subtitleDelay = titleCharCount * 0.04 + 0.1;
+    splitTextToChars(subtitleEl, subtitleDelay);
 
     // Remove transitioning and trigger reveal
     textContainer.classList.remove('transitioning');
 
     // Trigger character animation after reflow
-    if (sectionIndex > 0) {
-      // eslint-disable-next-line no-unused-expressions
-      textContainer.offsetHeight;
-      requestAnimationFrame(() => {
-        textContainer.classList.add('char-revealed');
-      });
-    }
+    // eslint-disable-next-line no-unused-expressions
+    textContainer.offsetHeight;
+    requestAnimationFrame(() => {
+      textContainer.classList.add('char-revealed');
+    });
   }, 800); // Wait for fade out to complete
 }
 
@@ -358,8 +419,16 @@ function update(scrollProgress) {
   const sectionIndex = Math.min(Math.floor(sectionFloat), numSections - 1);
   const sectionProgress = sectionFloat - sectionIndex; // 0-1 within current section
 
-  // Update text at checkpoints
-  updateText(sectionIndex);
+  // Update text at checkpoints (but not if we're jumping to a different section)
+  if (jumpTarget !== null) {
+    // We're in the middle of a jump - only clear when scroll catches up
+    if (sectionIndex === jumpTarget) {
+      jumpTarget = null; // Arrived at target, resume normal scroll-based updates
+    }
+    // Don't call updateText while jumping - it was already triggered
+  } else {
+    updateText(sectionIndex);
+  }
 
   // Apply parallax to text - moves TOWARDS mouse (foreground feel)
   // Text rotation matches world rotation (velocity-based, springs back)
@@ -369,19 +438,21 @@ function update(scrollProgress) {
   const leanAngle = rotZ * 100; // Convert radians to degrees, lean towards mouse direction
 
   // Intro section (0): text floats in space, we fly straight through it
-  if (sectionIndex === 0) {
+  // Use displaySection for transform (only changes after transition completes)
+  // Use currentSection for opacity logic (prevents re-applying intro fade after leaving)
+  if (displaySection === 0) {
     // Move toward camera in Z space (0 -> 950px, just under perspective of 1000px)
     const introZ = sectionProgress * 950;
-    // Fade out from 60-90% progress so text is gone before hitting section boundary
-    const introOpacity = sectionProgress < 0.6 ? 1 : Math.max(0, 1 - ((sectionProgress - 0.6) / 0.3));
-    textContainer.style.opacity = introOpacity;
+    // Only apply intro opacity if we're actually still in section 0 content-wise
+    if (currentSection === 0) {
+      const introOpacity = sectionProgress < 0.6 ? 1 : Math.max(0, 1 - ((sectionProgress - 0.6) / 0.3));
+      textContainer.style.opacity = introOpacity;
+    }
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${introZ}px) rotate(${leanAngle}deg)`;
   } else {
     // Other sections: 25% from bottom (75% from top)
-    // Keep text hidden during transition to prevent flash
-    if (!isTransitioning) {
-      textContainer.style.opacity = '';
-    }
+    // Clear any stale intro opacity
+    textContainer.style.opacity = '';
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + 25vh + ${offsetY}px)) rotate(${leanAngle}deg)`;
   }
 
@@ -399,6 +470,7 @@ function update(scrollProgress) {
     const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
 
     let opacity = 0;
+    let textReveal = 0; // Separate from opacity for text clip-path
     let zPos = sectionStartZ;
 
     if (imgSection === sectionIndex) {
@@ -412,10 +484,20 @@ function update(scrollProgress) {
       // Fade in quickly, fade out as it passes the camera
       if (t < 0.15) {
         opacity = t / 0.15; // Fast fade in
+        textReveal = opacity; // Text reveals with fade-in
       } else if (t > 0.75) {
         opacity = 1 - ((t - 0.75) / 0.25); // Fade out in last 25%
+        textReveal = 1; // Text stays fully revealed during fade-out
       } else {
         opacity = 1; // Stay fully visible in middle
+        textReveal = 1;
+      }
+
+      // Additional fade when very close to camera (Z > 200)
+      // This prevents placeholders from blocking the view
+      if (zPos > 200) {
+        const proximityFade = 1 - ((zPos - 200) / 400); // Fade from z=200 to z=600
+        opacity *= Math.max(0, proximityFade);
       }
     } else if (imgSection < sectionIndex) {
       // Past section - already flown by, fade out
@@ -433,19 +515,15 @@ function update(scrollProgress) {
     img.style.transform = `translate(calc(-50% + ${imgOffsetX}px), calc(-50% + ${imgOffsetY}px)) translateZ(${zPos}px) rotate(${leanAngle}deg)`;
     img.style.opacity = Math.max(0, Math.min(1, opacity));
 
-    // Text reveal from left to right (smooth clip-path)
+    // Text reveal from left to right (smooth clip-path, not affected by proximity fade)
     const textSpan = img.querySelector('span');
     if (textSpan) {
-      const clipProgress = Math.max(0, Math.min(1, opacity));
+      const clipProgress = Math.max(0, Math.min(1, textReveal));
       const clipRight = 100 - (clipProgress * 100);
       textSpan.style.clipPath = `inset(0 ${clipRight}% 0 0)`;
     }
   });
 
-  // Update debug display
-  if (debugDisplay) {
-    debugDisplay.innerHTML = `Section: ${sectionIndex + 1}/${SECTIONS.length} | Progress: ${Math.round(sectionProgress * 100)}% | Mouse: ${mouse.x.toFixed(2)}, ${mouse.y.toFixed(2)}`;
-  }
 }
 
 // Easing function for smooth animation
@@ -488,21 +566,36 @@ function reveal() {
   });
 }
 
+// Jump to a specific section immediately (for chapter clicks)
+function jumpToSection(sectionIndex) {
+  if (sectionIndex < 0 || sectionIndex >= SECTIONS.length) return;
+  jumpTarget = sectionIndex; // Block scroll-based updates until we arrive
+  updateText(sectionIndex, true); // Force the transition even if same section
+}
+
 // Cleanup
 function destroy() {
+  if (transitionTimeout) {
+    clearTimeout(transitionTimeout);
+    transitionTimeout = null;
+  }
   if (viewport) viewport.remove();
   if (scrollSpacer) scrollSpacer.remove();
-  if (debugDisplay) debugDisplay.remove();
+  if (contactBtn) contactBtn.remove();
+  if (copyrightEl) copyrightEl.remove();
   viewport = null;
   textContainer = null;
   imageWorld = null;
   scrollSpacer = null;
-  debugDisplay = null;
   titleEl = null;
   subtitleEl = null;
+  contactBtn = null;
+  copyrightEl = null;
   imageElements.length = 0;
   currentSection = 0;
+  displaySection = 0;
   isTransitioning = false;
+  jumpTarget = null;
 }
 
-export { init, update, reveal, destroy };
+export { init, update, reveal, jumpToSection, destroy };

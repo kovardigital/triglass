@@ -4,11 +4,16 @@
    ========================================================================== */
 
 import * as THREE from 'three';
+import { camera } from './core.js';
 
 // Galaxy URL - hosted on GitHub Pages (same pattern as logo in preloader.js)
 const GALAXY_URL = 'https://kovardigital.github.io/triglass/assets/images/galaxy.jpg';
 
 let galaxyMesh = null;
+let worldGroupRef = null;
+
+// Fixed offset from camera (no depth movement as you scroll)
+const GALAXY_OFFSET = { x: -1200, y: 600, z: -2500 };
 
 // Custom shader for radial edge fade
 const galaxyVertexShader = `
@@ -27,19 +32,25 @@ const galaxyFragmentShader = `
   void main() {
     vec4 texColor = texture2D(galaxyTexture, vUv);
 
+    // Sharpen and brighten the image
+    vec3 color = texColor.rgb;
+    color = (color - 0.5) * 1.4 + 0.5;  // Increase contrast
+    color *= 1.3;  // Brighten
+    color = clamp(color, 0.0, 1.0);
+
     // Calculate distance from center (0.5, 0.5)
     vec2 center = vec2(0.5, 0.5);
     float dist = distance(vUv, center);
 
-    // Radial fade: fully visible in center, fades to transparent at edges
-    // Start fade at 0.25, fully transparent at 0.5 (edge)
-    float fade = 1.0 - smoothstep(0.2, 0.5, dist);
+    // Radial fade: fully visible in center, sharper fade at edges
+    float fade = 1.0 - smoothstep(0.35, 0.5, dist);
 
-    gl_FragColor = vec4(texColor.rgb, texColor.a * fade * opacity);
+    gl_FragColor = vec4(color, texColor.a * fade * opacity);
   }
 `;
 
 function init(worldGroup) {
+  worldGroupRef = worldGroup;
   const loader = new THREE.TextureLoader();
 
   console.log('[LIFTOFF] Loading galaxy from:', GALAXY_URL);
@@ -51,7 +62,7 @@ function init(worldGroup) {
       const material = new THREE.ShaderMaterial({
         uniforms: {
           galaxyTexture: { value: texture },
-          opacity: { value: 0.7 }  // Overall opacity
+          opacity: { value: 0.5 }  // Overall opacity
         },
         vertexShader: galaxyVertexShader,
         fragmentShader: galaxyFragmentShader,
@@ -61,13 +72,20 @@ function init(worldGroup) {
         side: THREE.DoubleSide
       });
 
-      // Large plane positioned far back (but in front of star reset point)
-      const geometry = new THREE.PlaneGeometry(2000, 2000);
+      // Plane - added to worldGroup for mouse parallax
+      const geometry = new THREE.PlaneGeometry(3200, 3200);
       galaxyMesh = new THREE.Mesh(geometry, material);
-      galaxyMesh.position.z = -1800;  // Closer than before, behind stars but visible
 
+      // Add to worldGroup (gets mouse parallax rotation)
       worldGroup.add(galaxyMesh);
-      console.log('[LIFTOFF] Galaxy loaded and added to scene');
+
+      // Initial position - Z synced with camera in update()
+      galaxyMesh.position.set(
+        GALAXY_OFFSET.x,
+        GALAXY_OFFSET.y,
+        camera.position.z + GALAXY_OFFSET.z
+      );
+      console.log('[LIFTOFF] Galaxy loaded with parallax, z offset:', GALAXY_OFFSET.z);
     },
     (progress) => {
       console.log('[LIFTOFF] Galaxy loading...', Math.round((progress.loaded / progress.total) * 100) + '%');
@@ -79,14 +97,18 @@ function init(worldGroup) {
 }
 
 function update() {
-  // Optional: very slow rotation for subtle movement
   if (galaxyMesh) {
+    // Sync Z position with camera so galaxy has no depth movement
+    galaxyMesh.position.z = camera.position.z + GALAXY_OFFSET.z;
+
+    // Very slow rotation for subtle movement
     galaxyMesh.rotation.z += 0.0001;
   }
 }
 
 function destroy() {
-  if (galaxyMesh) {
+  if (galaxyMesh && worldGroupRef) {
+    worldGroupRef.remove(galaxyMesh);
     galaxyMesh.geometry.dispose();
     galaxyMesh.material.dispose();
     galaxyMesh = null;
