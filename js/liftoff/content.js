@@ -174,6 +174,12 @@ function injectStyles() {
       transform: translateY(0);
     }
 
+    /* Outro section (COMING SOON) - smaller title, centered */
+    .liftoff-text.outro h1 {
+      font-size: clamp(12px, 2.5vw, 24px);
+      letter-spacing: 0.15em;
+    }
+
     /* Character animation for section transitions */
     .liftoff-char {
       display: inline-block;
@@ -377,13 +383,18 @@ function updateText(sectionIndex, force = false) {
     // Clear any inline opacity from intro section fade-out
     textContainer.style.opacity = '';
 
-    // Handle intro class based on which section we're going to
+    // Handle intro/outro class based on which section we're going to
     if (sectionIndex === 0) {
       // Restore intro class for section 0 (larger font, etc.)
       textContainer.classList.add('intro', 'revealed');
-    } else if (wasFirstSection) {
-      // Remove intro class when leaving section 0
+      textContainer.classList.remove('outro');
+    } else if (sectionIndex === SECTIONS.length - 1) {
+      // Add outro class for last section (smaller title, centered)
+      textContainer.classList.add('outro');
       textContainer.classList.remove('intro', 'revealed');
+    } else {
+      // Regular sections - remove both special classes
+      textContainer.classList.remove('intro', 'revealed', 'outro');
     }
 
     // Set new text and split into characters for animation
@@ -438,8 +449,11 @@ function update(scrollProgress) {
   const leanAngle = rotZ * 100; // Convert radians to degrees, lean towards mouse direction
 
   // Intro section (0): text floats in space, we fly straight through it
+  // Outro section (last): centered like intro
   // Use displaySection for transform (only changes after transition completes)
   // Use currentSection for opacity logic (prevents re-applying intro fade after leaving)
+  const lastSection = SECTIONS.length - 1;
+
   if (displaySection === 0) {
     // Move toward camera in Z space (0 -> 950px, just under perspective of 1000px)
     const introZ = sectionProgress * 950;
@@ -449,6 +463,10 @@ function update(scrollProgress) {
       textContainer.style.opacity = introOpacity;
     }
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${introZ}px) rotate(${leanAngle}deg)`;
+  } else if (displaySection === lastSection) {
+    // Outro section: centered like intro, no Z movement
+    textContainer.style.opacity = '';
+    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${leanAngle}deg)`;
   } else {
     // Other sections: 25% from bottom (75% from top)
     // Clear any stale intro opacity
