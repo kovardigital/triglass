@@ -74,7 +74,7 @@ function injectStyles() {
       right: 20px;
       white-space: nowrap;
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 400;
       letter-spacing: 0.08em;
       color: rgba(255,255,255,0.9);

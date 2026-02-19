@@ -6,6 +6,12 @@
 (function() {
   'use strict';
 
+  // Prevent browser from restoring scroll position - must run ASAP
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
+
   console.log('%c[LIFTOFF-3D] Head script starting...', 'color: #6b7cff; font-weight: bold');
 
   // Inject importmap for ES modules
@@ -14,7 +20,8 @@
   importmap.textContent = JSON.stringify({
     imports: {
       'three': 'https://unpkg.com/three@0.160.0/build/three.module.js',
-      'three/addons/': 'https://unpkg.com/three@0.160.0/examples/jsm/'
+      'three/addons/': 'https://unpkg.com/three@0.160.0/examples/jsm/',
+      'cannon-es': 'https://esm.sh/cannon-es@0.20.0'
     }
   });
   document.head.appendChild(importmap);

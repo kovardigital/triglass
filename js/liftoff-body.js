@@ -1,250 +1,19 @@
 /* ==========================================================================
-   Liftoff - Body Script
-   Creates elements and initializes animations
+   Liftoff - Body Script (Minimal)
+   Pure CSS 3D - No libraries needed
    ========================================================================== */
 
 (function() {
   'use strict';
 
-  // ==========================================================================
+  console.log('%c[LIFTOFF] Body script starting...', 'color: #6b7cff; font-weight: bold');
+
   // Configuration
-  // ==========================================================================
+  const SECTION_DEPTH = 1000;  // Distance between sections in Z-space
+  const TOTAL_SECTIONS = 5;
+  const STAR_COUNT = 600;
 
-  const CONFIG = {
-    stars: { count: 200, minSize: 0.5, maxSize: 2.5, minOpacity: 0.1, maxOpacity: 1 },
-    parallax: { asteroidStrength: 0.05, scrollZoomStrength: 0.15 },
-  };
-
-  // ==========================================================================
-  // Create DOM Elements
-  // ==========================================================================
-
-  function createElements() {
-    // Starfield
-    const starfield = document.createElement('div');
-    starfield.className = 'starfield';
-    document.body.insertBefore(starfield, document.body.firstChild);
-
-    // Asteroids
-    const asteroidsContainer = document.createElement('div');
-    asteroidsContainer.className = 'asteroids-container';
-    asteroidsContainer.innerHTML = `
-      <!-- Asteroid 1 - Large, left side -->
-      <div class="asteroid" style="top: 10%; left: -8%; width: 280px; height: 280px;" data-depth="0.3">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="a1-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#3a3a4a"/><stop offset="50%" style="stop-color:#2a2a3a"/><stop offset="100%" style="stop-color:#1a1a24"/></linearGradient></defs>
-          <path d="M95 15 C130 10, 165 35, 180 70 C195 105, 185 145, 155 170 C125 195, 75 195, 45 170 C15 145, 5 100, 20 65 C35 30, 60 20, 95 15 Z" fill="url(#a1-grad)"/>
-          <ellipse cx="80" cy="70" rx="20" ry="15" fill="#1a1a24" opacity="0.5"/>
-          <ellipse cx="130" cy="120" rx="15" ry="12" fill="#1a1a24" opacity="0.4"/>
-        </svg>
-      </div>
-
-      <!-- Asteroid 2 - Medium, right side -->
-      <div class="asteroid" style="top: 25%; right: -5%; width: 180px; height: 180px;" data-depth="0.5">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="a2-grad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#1a1a24"/><stop offset="50%" style="stop-color:#2a2a3a"/><stop offset="100%" style="stop-color:#3a3a4a"/></linearGradient></defs>
-          <path d="M100 10 C140 5, 175 25, 190 60 C205 95, 195 140, 170 165 C145 190, 100 200, 60 180 C20 160, 5 120, 15 80 C25 40, 60 15, 100 10 Z" fill="url(#a2-grad)"/>
-          <ellipse cx="120" cy="60" rx="18" ry="14" fill="#1a1a24" opacity="0.5"/>
-          <ellipse cx="70" cy="100" rx="22" ry="16" fill="#1a1a24" opacity="0.4"/>
-        </svg>
-      </div>
-
-      <!-- Asteroid 3 - Small, left mid -->
-      <div class="asteroid" style="top: 45%; left: -3%; width: 100px; height: 100px;" data-depth="0.7">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="a3-grad" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" style="stop-color:#3a3a4a"/><stop offset="100%" style="stop-color:#1a1a24"/></linearGradient></defs>
-          <path d="M90 8 C110 5, 145 15, 170 40 C195 65, 198 95, 185 125 C172 155, 150 180, 115 190 C80 200, 45 185, 25 155 C5 125, 8 85, 30 55 C52 25, 70 11, 90 8 Z" fill="url(#a3-grad)"/>
-          <ellipse cx="100" cy="80" rx="25" ry="18" fill="#1a1a24" opacity="0.45"/>
-        </svg>
-      </div>
-
-      <!-- Asteroid 4 - Large, right lower -->
-      <div class="asteroid" style="top: 55%; right: -10%; width: 320px; height: 320px;" data-depth="0.25">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="a4-grad" x1="0%" y1="50%" x2="100%" y2="50%"><stop offset="0%" style="stop-color:#2a2a3a"/><stop offset="100%" style="stop-color:#1a1a24"/></linearGradient></defs>
-          <path d="M30 90 C35 60, 65 35, 100 30 C135 25, 170 45, 185 80 C200 115, 190 150, 155 165 C120 180, 70 175, 40 150 C10 125, 25 120, 30 90 Z" fill="url(#a4-grad)"/>
-          <ellipse cx="90" cy="90" rx="20" ry="15" fill="#1a1a24" opacity="0.5"/>
-          <ellipse cx="145" cy="115" rx="18" ry="13" fill="#1a1a24" opacity="0.4"/>
-        </svg>
-      </div>
-
-      <!-- Asteroid 5 - Small, left lower -->
-      <div class="asteroid" style="top: 72%; left: 5%; width: 120px; height: 120px;" data-depth="0.6">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="a5-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2a2a3a"/><stop offset="100%" style="stop-color:#1a1a24"/></linearGradient></defs>
-          <path d="M95 15 C130 10, 165 35, 180 70 C195 105, 185 145, 155 170 C125 195, 75 195, 45 170 C15 145, 5 100, 20 65 C35 30, 60 20, 95 15 Z" fill="url(#a5-grad)"/>
-          <ellipse cx="100" cy="100" rx="25" ry="20" fill="#1a1a24" opacity="0.4"/>
-        </svg>
-      </div>
-
-      <!-- Asteroid 6 - Medium, right top -->
-      <div class="asteroid" style="top: 5%; right: 15%; width: 140px; height: 140px;" data-depth="0.8">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="a6-grad" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#3a3a4a"/><stop offset="100%" style="stop-color:#1a1a24"/></linearGradient></defs>
-          <path d="M100 10 C140 5, 175 25, 190 60 C205 95, 195 140, 170 165 C145 190, 100 200, 60 180 C20 160, 5 120, 15 80 C25 40, 60 15, 100 10 Z" fill="url(#a6-grad)"/>
-          <ellipse cx="110" cy="90" rx="20" ry="15" fill="#1a1a24" opacity="0.45"/>
-        </svg>
-      </div>
-    `;
-    document.body.insertBefore(asteroidsContainer, document.body.firstChild.nextSibling);
-
-    // Scroll Rocket with section markers
-    const scrollRocket = document.createElement('div');
-    scrollRocket.className = 'scroll-rocket';
-    scrollRocket.innerHTML = `
-      <div class="scroll-rocket__track">
-        <div class="scroll-rocket__progress"></div>
-        <div class="scroll-rocket__markers">
-          <div class="scroll-rocket__marker" data-section="hero" data-label="Home" style="top: 0%"></div>
-          <div class="scroll-rocket__marker" data-section="about" data-label="About Us" style="top: 20%"></div>
-          <div class="scroll-rocket__marker" data-section="story" data-label="The Story" style="top: 40%"></div>
-          <div class="scroll-rocket__marker" data-section="invest" data-label="Invest" style="top: 60%"></div>
-          <div class="scroll-rocket__marker" data-section="contact" data-label="Contact" style="top: 80%"></div>
-        </div>
-      </div>
-      <div class="scroll-rocket__icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
-          <path d="M12 2C12 2 8 6 8 12C8 15 9 18 12 22C15 18 16 15 16 12C16 6 12 2 12 2Z" fill="white"/>
-          <circle cx="12" cy="10" r="2" fill="#1a1a24"/>
-          <path d="M8 14L5 18L8 17V14Z" fill="white"/>
-          <path d="M16 14L19 18L16 17V14Z" fill="white"/>
-          <path d="M10 20C10 20 11 22 12 23C13 22 14 20 14 20C13 21 12 21.5 12 21.5C12 21.5 11 21 10 20Z" fill="#ff6b4a" opacity="0.9"/>
-        </svg>
-      </div>
-    `;
-    document.body.appendChild(scrollRocket);
-
-    // Demo content sections (will be replaced by Webflow native elements later)
-    const demoContent = document.createElement('div');
-    demoContent.id = 'liftoff-demo-content';
-    demoContent.innerHTML = `
-      <!-- Hero Section -->
-      <section class="liftoff-section">
-        <div class="liftoff-section__inner">
-          <div class="section-label zoom-in">The Film</div>
-          <h1 class="liftoff-heading liftoff-heading--xl zoom-in">LIFTOFF</h1>
-          <p class="liftoff-text zoom-in" style="margin-bottom: 40px;">
-            A story of dreams, determination, and the infinite possibilities beyond our world.
-          </p>
-          <a href="#about" class="liftoff-btn liftoff-btn--primary zoom-in">Explore the Journey</a>
-        </div>
-      </section>
-
-      <!-- About Section -->
-      <section class="liftoff-section" id="about">
-        <div class="liftoff-section__inner">
-          <div class="section-label zoom-in">About</div>
-          <h2 class="liftoff-heading liftoff-heading--lg zoom-in">
-            A young boy's journey to the stars
-          </h2>
-          <p class="liftoff-text zoom-in">
-            When 12-year-old Marcus discovers an abandoned spacecraft in his grandfather's barn,
-            he embarks on an adventure that will take him beyond everything he's ever known.
-            Liftoff is a heartwarming tale about believing in the impossible.
-          </p>
-        </div>
-      </section>
-
-      <!-- Story Section -->
-      <section class="liftoff-section">
-        <div class="liftoff-section__inner">
-          <div class="section-label zoom-in">The Story</div>
-          <h2 class="liftoff-heading liftoff-heading--lg zoom-in">
-            Beyond the atmosphere,<br>beyond imagination
-          </h2>
-          <p class="liftoff-text zoom-in">
-            Set in rural Montana, Liftoff follows Marcus as he repairs the mysterious craft
-            with help from his skeptical sister and an eccentric former NASA engineer.
-            Together, they discover that the ship holds secrets that could change humanity forever.
-          </p>
-        </div>
-      </section>
-
-      <!-- Investment Section -->
-      <section class="liftoff-section">
-        <div class="liftoff-section__inner">
-          <div class="section-label zoom-in">Invest</div>
-          <h2 class="liftoff-heading liftoff-heading--lg zoom-in">
-            Join the mission
-          </h2>
-          <p class="liftoff-text zoom-in" style="margin-bottom: 40px;">
-            We're seeking visionary investors to bring this story to life.
-            With an experienced team and a compelling narrative, Liftoff is poised
-            to inspire audiences worldwide.
-          </p>
-          <div class="zoom-in">
-            <a href="#contact" class="liftoff-btn liftoff-btn--outline" style="margin-right: 16px;">View Pitch Deck</a>
-            <a href="#contact" class="liftoff-btn liftoff-btn--primary">Contact Us</a>
-          </div>
-        </div>
-      </section>
-
-      <!-- Contact Section -->
-      <section class="liftoff-section" id="contact">
-        <div class="liftoff-section__inner">
-          <div class="section-label zoom-in">Contact</div>
-          <h2 class="liftoff-heading liftoff-heading--md zoom-in">
-            Ready to launch?
-          </h2>
-          <p class="liftoff-text liftoff-text--muted zoom-in">
-            hello@triglass.com
-          </p>
-        </div>
-      </section>
-
-      <!-- Footer -->
-      <footer class="liftoff-footer">
-        <p>&copy; 2026 Triglass Productions. All rights reserved.</p>
-      </footer>
-    `;
-    document.body.appendChild(demoContent);
-
-    console.log('Liftoff: Elements created');
-  }
-
-  // ==========================================================================
-  // Utilities
-  // ==========================================================================
-
-  function lerp(start, end, factor) { return start + (end - start) * factor; }
-  function mapRange(value, inMin, inMax, outMin, outMax) { return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin; }
-  function randomRange(min, max) { return Math.random() * (max - min) + min; }
-
-  // ==========================================================================
-  // Smooth Scroll (Lenis)
-  // ==========================================================================
-
-  let lenis = null;
-
-  function initSmoothScroll() {
-    if (typeof Lenis === 'undefined') {
-      console.warn('Lenis not loaded yet, retrying...');
-      setTimeout(initSmoothScroll, 100);
-      return;
-    }
-
-    lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-    });
-
-    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-      lenis.on('scroll', ScrollTrigger.update);
-      gsap.ticker.add((time) => lenis.raf(time * 1000));
-      gsap.ticker.lagSmoothing(0);
-    } else {
-      function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
-      requestAnimationFrame(raf);
-    }
-
-    console.log('Liftoff: Smooth scroll initialized');
-  }
-
-  // ==========================================================================
-  // Starfield
-  // ==========================================================================
-
+  // ========== STARFIELD ==========
   class Starfield {
     constructor(container) {
       this.container = container;
@@ -270,14 +39,15 @@
 
     createStars() {
       this.stars = [];
-      for (let i = 0; i < CONFIG.stars.count; i++) {
+      for (let i = 0; i < STAR_COUNT; i++) {
         const star = {
           x: Math.random() * this.width,
           y: Math.random() * this.height,
-          size: randomRange(CONFIG.stars.minSize, CONFIG.stars.maxSize),
-          opacity: randomRange(CONFIG.stars.minOpacity, CONFIG.stars.maxOpacity),
+          size: 0.5 + Math.random() * 1.5, // 0.5-2px, small and sharp
+          brightness: 0.3 + Math.random() * 0.7,
           twinkleOffset: Math.random() * Math.PI * 2,
-          twinkleSpeed: randomRange(0.001, 0.003),
+          twinkleSpeed: 0.003 + Math.random() * 0.006, // faster twinkle
+          twinkleAmount: 0.3 + Math.random() * 0.7,
           layer: Math.floor(Math.random() * 3),
         };
         star.baseX = star.x;
@@ -286,364 +56,239 @@
       }
     }
 
-    setScrollProgress(progress) { this.scrollProgress = progress; }
+    setScrollProgress(progress) {
+      this.scrollProgress = progress;
+    }
 
     animate() {
       this.ctx.clearRect(0, 0, this.width, this.height);
       const time = Date.now();
-      const zoomFactor = 1 + this.scrollProgress * CONFIG.parallax.scrollZoomStrength;
+      const zoomFactor = 1 + this.scrollProgress * 0.3;
 
-      this.stars.forEach((star) => {
+      this.stars.forEach(star => {
         const twinkle = Math.sin(time * star.twinkleSpeed + star.twinkleOffset);
-        const opacity = star.opacity * mapRange(twinkle, -1, 1, 0.3, 1);
-        const layerZoom = zoomFactor * (1 + star.layer * 0.1);
+        const twinkleValue = 0.5 + twinkle * 0.5;
+        const opacity = star.brightness * (1 - star.twinkleAmount + star.twinkleAmount * twinkleValue);
+        const layerZoom = zoomFactor * (1 + star.layer * 0.15);
         const dx = star.baseX - this.centerX;
         const dy = star.baseY - this.centerY;
         const x = this.centerX + dx * layerZoom;
         const y = this.centerY + dy * layerZoom;
-        const size = star.size * (1 + this.scrollProgress * 0.2);
 
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, size, 0, Math.PI * 2);
+        // Sharp square pixels
         this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-        this.ctx.fill();
-
-        if (star.size > 1.5) {
-          this.ctx.beginPath();
-          this.ctx.arc(x, y, size * 2, 0, Math.PI * 2);
-          this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.1})`;
-          this.ctx.fill();
-        }
+        this.ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(star.size), Math.ceil(star.size));
       });
 
       requestAnimationFrame(() => this.animate());
     }
   }
 
-  let starfield = null;
+  // Create starfield
+  const starfieldContainer = document.createElement('div');
+  starfieldContainer.className = 'starfield';
+  document.body.appendChild(starfieldContainer);
+  const starfield = new Starfield(starfieldContainer);
+  console.log('[LIFTOFF] Starfield created');
 
-  function initStarfield() {
-    const container = document.querySelector('.starfield');
-    if (container) {
-      starfield = new Starfield(container);
-      console.log('Liftoff: Starfield initialized');
-    }
-  }
+  // ========== ASTEROIDS ==========
+  const asteroidsContainer = document.createElement('div');
+  asteroidsContainer.className = 'asteroids';
+  document.body.appendChild(asteroidsContainer);
 
-  // ==========================================================================
-  // Asteroid Animation (drift, rotation, mouse repel)
-  // ==========================================================================
+  const asteroidConfigs = [
+    { x: -5, y: 10, size: 200, depth: 0.3, rotation: 0 },
+    { x: 85, y: 15, size: 150, depth: 0.5, rotation: 45 },
+    { x: -8, y: 45, size: 120, depth: 0.7, rotation: 90 },
+    { x: 90, y: 55, size: 250, depth: 0.2, rotation: 180 },
+    { x: 5, y: 75, size: 100, depth: 0.6, rotation: 270 },
+    { x: 80, y: 80, size: 180, depth: 0.4, rotation: 135 },
+  ];
 
+  const asteroids = [];
+  asteroidConfigs.forEach((config) => {
+    const asteroid = document.createElement('div');
+    asteroid.className = 'asteroid';
+    asteroid.style.left = `${config.x}%`;
+    asteroid.style.top = `${config.y}%`;
+    asteroid.style.width = `${config.size}px`;
+    asteroid.style.height = `${config.size}px`;
+    asteroid.innerHTML = `
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 5 C70 8, 90 25, 95 50 C92 75, 75 92, 50 95 C25 92, 8 75, 5 50 C8 25, 25 8, 50 5 Z"
+              fill="#1a1a2e" stroke="#2a2a4a" stroke-width="1"/>
+        <ellipse cx="35" cy="40" rx="12" ry="8" fill="#0f0f1a" opacity="0.5"/>
+        <ellipse cx="65" cy="60" rx="10" ry="6" fill="#0f0f1a" opacity="0.4"/>
+        <circle cx="50" cy="75" r="5" fill="#0f0f1a" opacity="0.3"/>
+      </svg>
+    `;
+    asteroid.dataset.depth = config.depth;
+    asteroid.dataset.rotation = config.rotation;
+    asteroidsContainer.appendChild(asteroid);
+    asteroids.push(asteroid);
+  });
+
+  // Mouse tracking for parallax
   let mouseX = 0, mouseY = 0;
-  const asteroidStates = new Map();
+  let targetMouseX = 0, targetMouseY = 0;
+  document.addEventListener('mousemove', (e) => {
+    targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
 
-  function initAsteroidAnimation() {
-    const asteroids = document.querySelectorAll('.asteroid');
-    if (!asteroids.length) return;
+  let scrollProgress = 0;
 
-    // Initialize state for each asteroid
-    asteroids.forEach((asteroid, i) => {
-      const rect = asteroid.getBoundingClientRect();
-      asteroidStates.set(asteroid, {
-        // Drift - slow continuous movement
-        driftX: 0,
-        driftY: 0,
-        driftSpeedX: (Math.random() - 0.5) * 0.3,
-        driftSpeedY: (Math.random() - 0.5) * 0.2,
-        // Rotation
-        rotateX: Math.random() * 360,
-        rotateY: Math.random() * 360,
-        rotateZ: Math.random() * 360,
-        rotateSpeedX: (Math.random() - 0.5) * 0.2,
-        rotateSpeedY: (Math.random() - 0.5) * 0.15,
-        rotateSpeedZ: (Math.random() - 0.5) * 0.1,
-        // Repel
-        repelX: 0,
-        repelY: 0,
-        // Center position for collision
-        centerX: rect.left + rect.width / 2,
-        centerY: rect.top + rect.height / 2,
-        radius: Math.max(rect.width, rect.height) / 2,
-      });
-    });
+  // Scene animation with parallax effect
+  function animateScene() {
+    // Smooth mouse movement
+    mouseX += (targetMouseX - mouseX) * 0.05;
+    mouseY += (targetMouseY - mouseY) * 0.05;
 
-    // Track mouse position
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
+    // Steering rotation based on horizontal mouse position (like turning a spaceship)
+    const steerAngle = mouseX * 12; // degrees of rotation - more dramatic
 
-    function updateAsteroids() {
-      asteroids.forEach((asteroid) => {
-        const state = asteroidStates.get(asteroid);
-        const depth = parseFloat(asteroid.dataset.depth) || 1;
+    // Parallax: shift opposite to mouse direction + steering rotation
+    // Starfield moves least (furthest away) - subtle shift + rotation
+    const starfieldOffsetX = -mouseX * 30;
+    const starfieldOffsetY = -mouseY * 30;
+    starfieldContainer.style.transform = `translate(${starfieldOffsetX}px, ${starfieldOffsetY}px) rotate(${steerAngle * 0.3}deg)`;
 
-        // Update drift (continuous slow movement)
-        state.driftX += state.driftSpeedX;
-        state.driftY += state.driftSpeedY;
+    // Asteroids container - medium depth, more pronounced
+    const asteroidsOffsetX = -mouseX * 80;
+    const asteroidsOffsetY = -mouseY * 80;
+    asteroidsContainer.style.transform = `translate(${asteroidsOffsetX}px, ${asteroidsOffsetY}px) rotate(${steerAngle * 0.7}deg)`;
 
-        // Bounce drift back if too far
-        if (Math.abs(state.driftX) > 50) state.driftSpeedX *= -1;
-        if (Math.abs(state.driftY) > 30) state.driftSpeedY *= -1;
-
-        // Update rotation
-        state.rotateX += state.rotateSpeedX;
-        state.rotateY += state.rotateSpeedY;
-        state.rotateZ += state.rotateSpeedZ;
-
-        // Update center position
-        const rect = asteroid.getBoundingClientRect();
-        state.centerX = rect.left + rect.width / 2;
-        state.centerY = rect.top + rect.height / 2;
-
-        // Check mouse proximity and apply repel
-        const dx = mouseX - state.centerX;
-        const dy = mouseY - state.centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const repelRadius = state.radius + 100; // Repel zone
-
-        if (distance < repelRadius && distance > 0) {
-          // Mouse is close - push asteroid away
-          const force = (1 - distance / repelRadius) * 80;
-          const angle = Math.atan2(dy, dx);
-          state.repelX += -Math.cos(angle) * force * 0.1;
-          state.repelY += -Math.sin(angle) * force * 0.1;
-        }
-
-        // Decay repel back to 0
-        state.repelX *= 0.95;
-        state.repelY *= 0.95;
-
-        // Combine all transforms
-        const scrollScale = asteroid.dataset.scrollTransform || 'scale(1)';
-        const totalX = state.driftX + state.repelX;
-        const totalY = state.driftY + state.repelY;
-
-        asteroid.style.transform = `
-          ${scrollScale}
-          translate(${totalX}px, ${totalY}px)
-          rotateX(${state.rotateX}deg)
-          rotateY(${state.rotateY}deg)
-          rotateZ(${state.rotateZ * 0.3}deg)
-        `;
-      });
-
-      requestAnimationFrame(updateAsteroids);
+    // Text viewport - closest to camera, most rotation
+    const viewportOffsetX = -mouseX * 50;
+    const viewportOffsetY = -mouseY * 50;
+    if (window.liftoffViewport) {
+      window.liftoffViewport.style.transform = `translate(${viewportOffsetX}px, ${viewportOffsetY}px) rotate(${steerAngle}deg)`;
     }
 
-    updateAsteroids();
-    console.log('Liftoff: Asteroid animation initialized');
+    // Individual asteroids: parallax + rotation + scale
+    asteroids.forEach(asteroid => {
+      const depth = parseFloat(asteroid.dataset.depth);
+      const baseRotation = parseFloat(asteroid.dataset.rotation);
+      // Each asteroid shifts based on its own depth
+      const asteroidOffsetX = -mouseX * depth * 150;
+      const asteroidOffsetY = -mouseY * depth * 150;
+      const scale = 1 + scrollProgress * depth * 0.3;
+      const rotation = baseRotation + Date.now() * 0.002 * depth;
+      asteroid.style.transform = `translate(${asteroidOffsetX}px, ${asteroidOffsetY}px) scale(${scale}) rotate(${rotation}deg)`;
+    });
+
+    requestAnimationFrame(animateScene);
   }
+  animateScene();
+  console.log('[LIFTOFF] Asteroids created:', asteroids.length);
 
-  // ==========================================================================
-  // Scroll Animations
-  // ==========================================================================
+  // Create the 3D viewport (fixed, with perspective)
+  const viewport = document.createElement('div');
+  viewport.className = 'liftoff-viewport';
+  window.liftoffViewport = viewport; // Store reference for parallax
 
-  function initScrollAnimations() {
-    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-      console.warn('GSAP/ScrollTrigger not loaded yet, retrying...');
-      setTimeout(initScrollAnimations, 100);
-      return;
-    }
+  // Create the 3D world (moves on scroll)
+  const world = document.createElement('div');
+  world.className = 'liftoff-world';
+  viewport.appendChild(world);
 
-    gsap.registerPlugin(ScrollTrigger);
+  // Create sections at different Z depths
+  const sectionData = [
+    { title: 'LIFTOFF', subtitle: 'A journey beyond the stars' },
+    { title: 'THE MISSION', subtitle: 'Humanity\'s greatest adventure' },
+    { title: 'THE CREW', subtitle: 'Five astronauts. One chance.' },
+    { title: 'THE STAKES', subtitle: 'Everything we know hangs in the balance' },
+    { title: 'COMING SOON', subtitle: '2026' }
+  ];
 
-    // Starfield zoom on scroll
-    ScrollTrigger.create({
-      trigger: 'body',
-      start: 'top top',
-      end: 'bottom bottom',
-      onUpdate: (self) => { if (starfield) starfield.setScrollProgress(self.progress); },
-    });
+  const sections = [];
+  sectionData.forEach((data, index) => {
+    const section = document.createElement('div');
+    section.className = 'liftoff-section';
+    section.innerHTML = `
+      <h1>${data.title}</h1>
+      <p>${data.subtitle}</p>
+    `;
+    // Position each section further back in Z-space
+    // Negative Z = further away from camera
+    const zPos = -index * SECTION_DEPTH;
+    section.style.transform = `translate(-50%, -50%) translateZ(${zPos}px)`;
+    section.dataset.zPos = zPos;
+    world.appendChild(section);
+    sections.push(section);
 
-    // Asteroid zoom on scroll
-    document.querySelectorAll('.asteroid').forEach((asteroid) => {
-      const depth = parseFloat(asteroid.dataset.depth) || 1;
-      const zoomAmount = 1 + CONFIG.parallax.scrollZoomStrength * depth;
+    console.log(`[LIFTOFF] Section ${index}: "${data.title}" at Z=${zPos}`);
+  });
 
-      gsap.to(asteroid, {
-        scale: zoomAmount,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: 'body',
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 1,
-          onUpdate: (self) => {
-            const scale = 1 + self.progress * (zoomAmount - 1);
-            asteroid.dataset.scrollTransform = `scale(${scale})`;
-          },
-        },
-      });
-    });
+  // Create scroll spacer (makes the page scrollable)
+  const scrollSpacer = document.createElement('div');
+  scrollSpacer.className = 'liftoff-scroll-spacer';
 
-    // Animation classes - Z-axis movement (flying towards you in 3D)
-    // Using transformPerspective on each element for proper 3D
-    gsap.utils.toArray('.zoom-in').forEach((el) => {
-      gsap.fromTo(el,
-        { opacity: 0, z: -400, transformPerspective: 1000 },
-        {
-          opacity: 1,
-          z: 0,
-          duration: 1.2,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 90%',
-            end: 'top 50%',
-            scrub: 1,
-          },
-        }
-      );
-    });
+  // Create debug display
+  const debug = document.createElement('div');
+  debug.className = 'liftoff-debug';
+  debug.innerHTML = 'Scroll: 0% | Z: 0';
 
-    gsap.utils.toArray('.scale-in').forEach((el) => {
-      gsap.fromTo(el,
-        { opacity: 0, z: -600, transformPerspective: 1000 },
-        {
-          opacity: 1,
-          z: 0,
-          duration: 1.2,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 90%',
-            end: 'top 50%',
-            scrub: 1,
-          },
-        }
-      );
-    });
+  // Add elements to page
+  document.body.appendChild(viewport);
+  document.body.appendChild(scrollSpacer);
+  document.body.appendChild(debug);
 
-    gsap.utils.toArray('.fade-left').forEach((el) => {
-      gsap.fromTo(el,
-        { opacity: 0, x: -100, z: -200, transformPerspective: 1000 },
-        {
-          opacity: 1,
-          x: 0,
-          z: 0,
-          duration: 1.2,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 90%',
-            end: 'top 50%',
-            scrub: 1,
-          },
-        }
-      );
-    });
+  console.log('%c[LIFTOFF] DOM elements created', 'color: #10b981');
 
-    gsap.utils.toArray('.fade-right').forEach((el) => {
-      gsap.fromTo(el,
-        { opacity: 0, x: 100, z: -200, transformPerspective: 1000 },
-        {
-          opacity: 1,
-          x: 0,
-          z: 0,
-          duration: 1.2,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 90%',
-            end: 'top 50%',
-            scrub: 1,
-          },
-        }
-      );
-    });
+  // Calculate total Z travel distance
+  const totalDepth = (TOTAL_SECTIONS - 1) * SECTION_DEPTH;
 
-    gsap.utils.toArray('.fade-in').forEach((el) => {
-      gsap.fromTo(el,
-        { opacity: 0 },
-        {
-          opacity: 1,
-          duration: 1,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-          },
-        }
-      );
-    });
+  // Scroll handler - moves the world forward in Z
+  function onScroll() {
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollTop = window.scrollY;
+    const progress = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
 
-    console.log('Liftoff: Scroll animations initialized');
-  }
+    // Move world forward (positive Z) based on scroll
+    // This brings the sections towards the camera
+    const worldZ = progress * totalDepth;
 
-  // ==========================================================================
-  // Scroll Rocket
-  // ==========================================================================
+    world.style.transform = `translate(-50%, -50%) translateZ(${worldZ}px)`;
 
-  function initScrollRocket() {
-    const rocket = document.querySelector('.scroll-rocket');
-    if (!rocket) return;
+    // Update starfield zoom
+    starfield.setScrollProgress(progress);
 
-    const icon = rocket.querySelector('.scroll-rocket__icon');
-    const progress = rocket.querySelector('.scroll-rocket__progress');
-    const track = rocket.querySelector('.scroll-rocket__track');
-    if (!icon || !track) return;
+    // Update asteroid scroll progress
+    scrollProgress = progress;
 
-    const trackHeight = track.offsetHeight;
+    // Update opacity for each section based on effective Z position
+    sections.forEach((section) => {
+      const sectionZ = parseFloat(section.dataset.zPos);
+      const effectiveZ = sectionZ + worldZ;
 
-    function updateRocket() {
-      const scrollTop = window.scrollY || (lenis && lenis.scroll) || 0;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = Math.min(scrollTop / docHeight, 1);
-      // Rocket starts at bottom (100%) and moves up to top (0%)
-      const rocketPosition = (1 - scrollPercent) * trackHeight;
-      icon.style.top = `${rocketPosition}px`;
-      // Progress fills from bottom up
-      if (progress) {
-        progress.style.height = `${scrollPercent * 100}%`;
-        progress.style.bottom = '0';
-        progress.style.top = 'auto';
+      let opacity = 0;
+
+      if (effectiveZ < -800) {
+        opacity = 0;
+      } else if (effectiveZ < -100) {
+        opacity = (effectiveZ + 800) / 700;
+      } else if (effectiveZ <= 300) {
+        opacity = 1;
+      } else {
+        // Very close - dim but don't disappear (min 0.3)
+        opacity = Math.max(0.3, 1 - (effectiveZ - 300) / 500);
       }
-    }
 
-    if (lenis) {
-      lenis.on('scroll', updateRocket);
-    } else {
-      window.addEventListener('scroll', updateRocket, { passive: true });
-    }
+      section.style.opacity = Math.max(0, Math.min(1, opacity));
+    });
 
-    updateRocket();
-    console.log('Liftoff: Scroll rocket initialized');
+    // Update debug
+    debug.innerHTML = `Scroll: ${Math.round(progress * 100)}% | World Z: ${Math.round(worldZ)}px`;
   }
 
-  // ==========================================================================
-  // Initialize
-  // ==========================================================================
+  // Listen for scroll
+  window.addEventListener('scroll', onScroll, { passive: true });
 
-  function init() {
-    console.log('Liftoff: Initializing...');
+  // Initial call
+  onScroll();
 
-    // Create DOM elements first
-    createElements();
+  console.log('%c[LIFTOFF] Scroll listener attached. Total Z depth: ' + totalDepth + 'px', 'color: #10b981');
+  console.log('%c[LIFTOFF] Ready! Scroll to see 3D effect.', 'color: #6b7cff; font-weight: bold');
 
-    // Wait a bit for libraries to load, then initialize
-    setTimeout(() => {
-      initSmoothScroll();
-      initStarfield();
-      initAsteroidAnimation();
-      initScrollAnimations();
-      initScrollRocket();
-      console.log('Liftoff: Ready for launch!');
-    }, 200);
-  }
-
-  // Run on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-  // Expose API
-  window.Liftoff = {
-    get lenis() { return lenis; },
-    get starfield() { return starfield; },
-    config: CONFIG
-  };
 })();
