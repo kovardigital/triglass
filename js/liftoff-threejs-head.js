@@ -10,7 +10,7 @@
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
-  window.scrollTo(0, 0);
+  // Scroll position set in scroll.js init (starts at bottom, scroll UP to progress)
 
   console.log('%c[LIFTOFF-3D] Head script starting...', 'color: #6b7cff; font-weight: bold');
 

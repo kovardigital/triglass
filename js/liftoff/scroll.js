@@ -18,9 +18,10 @@ const CAMERA_START_Z = 100;
 const CAMERA_TRAVEL = 2000; // How far camera moves on full scroll
 
 // Scroll handler - updates target immediately
+// Inverted: scroll UP to progress (start at bottom, scroll up to advance)
 function onScroll() {
   const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-  targetProgress = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+  targetProgress = scrollHeight > 0 ? 1 - (window.scrollY / scrollHeight) : 0;
 }
 
 // Initialize scroll tracking
@@ -32,13 +33,13 @@ function init(cam) {
     history.scrollRestoration = 'manual';
   }
 
-  // Always start at the top on page load/refresh
-  window.scrollTo(0, 0);
+  // Start at the bottom of the page (scroll UP to progress)
+  window.scrollTo(0, document.documentElement.scrollHeight);
   targetProgress = 0;
   currentProgress = 0;
 
   window.addEventListener('scroll', onScroll, { passive: true });
-  console.log('[LIFTOFF] Scroll tracking initialized with inertia');
+  console.log('[LIFTOFF] Scroll tracking initialized (scroll UP to progress)');
 }
 
 // Update camera position (called each frame)
