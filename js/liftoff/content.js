@@ -99,7 +99,7 @@ function injectStyles() {
       z-index: 20;
     }
     .liftoff-text h1 {
-      font-family: 'gino', sans-serif;
+      font-family: 'gin', sans-serif;
       font-size: clamp(20px, 4vw, 42px);
       font-weight: 400;
       margin: 0 0 12px 0;
