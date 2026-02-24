@@ -1,0 +1,27 @@
+<!--
+  LIFTOFF Three.js - Head Embed
+  Add this to Webflow: Page Settings > Custom Code > Head Code (for /liftoff page)
+
+  Usage:
+  - Production: https://triglass-2026.webflow.io/liftoff
+  - Local dev:  https://triglass-2026.webflow.io/liftoff?local=true
+-->
+
+<script>
+(function() {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+
+  var useLocal = new URLSearchParams(window.location.search).get('local') === 'true';
+  var baseUrl = useLocal
+    ? 'http://127.0.0.1:5503/js/'
+    : 'https://kovardigital.github.io/triglass/js/';
+
+  if (useLocal) {
+    console.log('%c[LIFTOFF] Loading from LOCAL: ' + baseUrl, 'color: #ff6b6b; font-weight: bold');
+  }
+
+  document.write('<script src="' + baseUrl + 'liftoff-threejs-head.js"><\/script>');
+})();
+</script>

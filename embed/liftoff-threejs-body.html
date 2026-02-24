@@ -1,0 +1,19 @@
+<!--
+  LIFTOFF Three.js - Body Embed
+  Add this to Webflow: Page Settings > Custom Code > Before </body> tag (for /liftoff page)
+
+  Usage:
+  - Production: https://triglass-2026.webflow.io/liftoff
+  - Local dev:  https://triglass-2026.webflow.io/liftoff?local=true
+-->
+
+<script>
+(function() {
+  var useLocal = new URLSearchParams(window.location.search).get('local') === 'true';
+  var baseUrl = useLocal
+    ? 'http://127.0.0.1:5503/js/'
+    : 'https://kovardigital.github.io/triglass/js/';
+
+  document.write('<script type="module" src="' + baseUrl + 'liftoff-threejs-body.js"><\/script>');
+})();
+</script>
