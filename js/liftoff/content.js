@@ -113,6 +113,7 @@ function injectStyles() {
       font-size: clamp(48px, 12vw, 120px);
       font-weight: 400;
       color: #FED003;
+      letter-spacing: -0.02em;
     }
     .liftoff-text p {
       font-family: 'montserrat', sans-serif;
