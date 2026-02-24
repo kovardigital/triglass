@@ -457,11 +457,12 @@ function init() {
       const scrollSpacer = document.querySelector('.liftoff-scroll-spacer');
       if (scrollSpacer) {
         const maxScroll = scrollSpacer.offsetHeight - window.innerHeight;
-        const targetScroll = Math.min(scrollProgress, 1) * maxScroll;
+        // Inverted: lower scroll position = higher progress (scroll UP to advance)
+        const targetScroll = (1 - Math.min(scrollProgress, 1)) * maxScroll;
         const currentScroll = window.scrollY;
 
-        // Determine travel direction (up the track = scrolling down, down the track = scrolling up)
-        travelDirection = targetScroll > currentScroll ? 'up' : 'down';
+        // Inverted: scrolling UP (lower scroll) = forward = rocket goes up
+        travelDirection = targetScroll < currentScroll ? 'up' : 'down';
 
         // Hide flame when going backwards
         if (travelDirection === 'down') {
@@ -498,16 +499,17 @@ function init() {
   debrisInterval = setInterval(createDebrisParticle, 300);
 
   // Listen for scroll to trigger smoke and track direction
+  // INVERTED: Scrolling UP = forward, Scrolling DOWN = backwards
   lastScrollY = window.scrollY;
   scrollHandler = () => {
     const currentScrollY = window.scrollY;
     const scrollDelta = currentScrollY - lastScrollY;
 
-    // Scrolling DOWN = rocket goes UP = forward (show flame)
-    // Scrolling UP = rocket goes DOWN = backwards (hide flame)
-    if (scrollDelta > 2) {
+    // Scrolling UP (negative delta) = rocket goes UP = forward (show flame)
+    // Scrolling DOWN (positive delta) = rocket goes DOWN = backwards (hide flame)
+    if (scrollDelta < -2) {
       travelDirection = 'up';
-      scrollSpeed = Math.min(scrollDelta, 50);
+      scrollSpeed = Math.min(Math.abs(scrollDelta), 50);
       rocket.classList.remove('going-backwards');
 
       if (!isTraveling) {
@@ -522,8 +524,8 @@ function init() {
         stopSmoke();
         scrollSpeed = 0;
       }, 150);
-    } else if (scrollDelta < -2) {
-      // Scrolling up = going backwards
+    } else if (scrollDelta > 2) {
+      // Scrolling down = going backwards
       travelDirection = 'down';
       rocket.classList.add('going-backwards');
 
