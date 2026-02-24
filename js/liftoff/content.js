@@ -100,17 +100,16 @@ function injectStyles() {
     }
     .liftoff-text h1 {
       font-family: gin, serif;
-      font-size: clamp(20px, 4vw, 42px);
+      font-size: clamp(32px, 6vw, 64px);
       font-weight: 400;
       margin: 0 0 12px 0;
-      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: #FED003;
       line-height: 1.1;
     }
     /* Larger title for intro section */
     .liftoff-text.intro h1 {
-      font-size: clamp(32px, 8vw, 72px);
+      font-size: clamp(48px, 12vw, 120px);
     }
     .liftoff-text p {
       font-family: 'montserrat', sans-serif;
