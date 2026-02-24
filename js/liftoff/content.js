@@ -69,30 +69,8 @@ let isTransitioning = false;
 let transitionTimeout = null; // Store timeout ID to cancel if needed
 let jumpTarget = null; // Section we're jumping to (blocks scroll-based updates)
 
-// Inject Google Fonts
-function injectFonts() {
-  // Preconnect for faster loading
-  const preconnect1 = document.createElement('link');
-  preconnect1.rel = 'preconnect';
-  preconnect1.href = 'https://fonts.googleapis.com';
-  document.head.appendChild(preconnect1);
-
-  const preconnect2 = document.createElement('link');
-  preconnect2.rel = 'preconnect';
-  preconnect2.href = 'https://fonts.gstatic.com';
-  preconnect2.crossOrigin = 'anonymous';
-  document.head.appendChild(preconnect2);
-
-  // Load fonts
-  const fontLink = document.createElement('link');
-  fontLink.rel = 'stylesheet';
-  fontLink.href = 'https://fonts.googleapis.com/css2?family=Michroma&family=Space+Grotesk:wght@300..700&display=swap';
-  document.head.appendChild(fontLink);
-}
-
-// Inject CSS
+// Inject CSS (Adobe Fonts loaded via Webflow)
 function injectStyles() {
-  injectFonts();
   const style = document.createElement('style');
   style.textContent = `
     .liftoff-viewport {
@@ -121,13 +99,13 @@ function injectStyles() {
       z-index: 20;
     }
     .liftoff-text h1 {
-      font-family: 'Michroma', sans-serif;
+      font-family: 'gino', sans-serif;
       font-size: clamp(20px, 4vw, 42px);
       font-weight: 400;
       margin: 0 0 12px 0;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #fff;
+      color: #FED003;
       line-height: 1.1;
     }
     /* Larger title for intro section */
@@ -135,7 +113,7 @@ function injectStyles() {
       font-size: clamp(32px, 8vw, 72px);
     }
     .liftoff-text p {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'montserrat', sans-serif;
       font-size: clamp(12px, 1.5vw, 16px);
       font-weight: 300;
       line-height: 1.6;
@@ -237,7 +215,7 @@ function injectStyles() {
       top: 24px;
       right: 24px;
       z-index: 100;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'montserrat', sans-serif;
       font-size: 13px;
       font-weight: 500;
       letter-spacing: 0.08em;
@@ -263,7 +241,7 @@ function injectStyles() {
       bottom: 24px;
       left: 24px;
       z-index: 100;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'montserrat', sans-serif;
       font-size: 11px;
       font-weight: 300;
       letter-spacing: 0.05em;
