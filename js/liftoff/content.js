@@ -110,7 +110,7 @@ function injectStyles() {
     /* Larger title for intro section - uses Gin font */
     .liftoff-text.intro h1 {
       font-family: gin, serif;
-      font-size: clamp(48px, 12vw, 120px);
+      font-size: clamp(60px, 15vw, 150px);
       font-weight: 400;
       color: #FED003;
       letter-spacing: -0.02em;
