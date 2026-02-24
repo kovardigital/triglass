@@ -99,17 +99,19 @@ function injectStyles() {
       z-index: 20;
     }
     .liftoff-text h1 {
-      font-family: gin, serif;
+      font-family: montserrat, sans-serif;
       font-size: clamp(32px, 6vw, 64px);
-      font-weight: 400;
+      font-weight: 500;
       margin: 0 0 12px 0;
       text-transform: uppercase;
       color: #FED003;
       line-height: 1.1;
     }
-    /* Larger title for intro section */
+    /* Larger title for intro section - uses Gin font */
     .liftoff-text.intro h1 {
+      font-family: gin, serif;
       font-size: clamp(48px, 12vw, 120px);
+      font-weight: 400;
     }
     .liftoff-text p {
       font-family: 'montserrat', sans-serif;
