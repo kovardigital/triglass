@@ -33,13 +33,20 @@ function init(cam) {
     history.scrollRestoration = 'manual';
   }
 
-  // Start at the bottom of the page (scroll UP to progress)
-  window.scrollTo(0, document.documentElement.scrollHeight);
   targetProgress = 0;
   currentProgress = 0;
 
   window.addEventListener('scroll', onScroll, { passive: true });
   console.log('[LIFTOFF] Scroll tracking initialized (scroll UP to progress)');
+}
+
+// Scroll to starting position (must be called after scroll spacer is created)
+function scrollToStart() {
+  // Start at the bottom of the page (scroll UP to progress)
+  window.scrollTo(0, document.documentElement.scrollHeight);
+  targetProgress = 0;
+  currentProgress = 0;
+  console.log('[LIFTOFF] Scrolled to start position (bottom)');
 }
 
 // Update camera position (called each frame)
@@ -71,4 +78,4 @@ function destroy() {
   camera = null;
 }
 
-export { init, update, getProgress, destroy };
+export { init, scrollToStart, update, getProgress, destroy };

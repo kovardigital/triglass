@@ -37,6 +37,7 @@ Scroll.init(camera);
 Preloader.setProgress(0.7);
 
 Content.init();
+Scroll.scrollToStart(); // Must be after Content.init creates scroll spacer
 Preloader.setProgress(0.8);
 
 RocketIndicator.init();
