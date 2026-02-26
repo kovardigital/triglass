@@ -4,6 +4,7 @@
    ========================================================================== */
 
 import * as Parallax from './parallax.js';
+import * as Scroll from './scroll.js';
 
 // Section content data - each section has text and optional image placeholders
 // Section 0 is intro-only (title fades on scroll, then images appear)
@@ -14,22 +15,27 @@ const SECTIONS = [
     images: []  // No images in intro - title fades first, then content appears
   },
   {
-    title: 'THE MISSION',
-    subtitle: "Humanity's greatest adventure",
+    title: 'LOGLINE',
+    subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
+    centerText: true,  // Keep text centered like intro
     images: [
-      { x: 0, y: 0, width: 480, height: 300, label: 'Hero Image', delay: 0 },
+      { x: -30, y: 0, width: 1920, height: 1080, scale: 0.25, label: 'Video', delay: 0, rotateY: 15, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4' },
+    ]
+  },
+  {
+    title: 'TRAILER',
+    subtitle: '',
+    centerText: true,
+    fadeTextEarly: true,  // Fade text out earlier in section
+    images: [
+      { x: 0, y: 5, width: 2048, height: 1025, scale: 0.35, label: 'Trailer Video', delay: 0, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', playable: true },
     ]
   },
   {
     title: 'THE CREW',
-    subtitle: 'Five astronauts. One chance.',
-    images: [
-      { x: -40, y: -8, width: 150, height: 200, label: 'Crew 1', delay: 0 },
-      { x: 35, y: 5, width: 150, height: 200, label: 'Crew 2', delay: 0.25 },
-      { x: -35, y: 0, width: 150, height: 200, label: 'Crew 3', delay: 0.5 },
-      { x: 40, y: -5, width: 150, height: 200, label: 'Crew 4', delay: 0.75 },
-    ],
-    zRange: 3  // Images travel 3x further in Z-space for more separation
+    subtitle: 'Three experiences. One life-changing event.',
+    images: [],  // Using 3D bubbles instead of placeholders
+    zRange: 3
   },
   {
     title: 'THE STAKES',
@@ -212,6 +218,108 @@ function injectStyles() {
       transition: clip-path 0.3s ease-out;
     }
 
+    /* Video placeholders */
+    .liftoff-image video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+      image-rendering: high-quality;
+      /* Feathered edge mask for seamless blend - very soft fade */
+      mask-image: radial-gradient(ellipse 70% 70% at center, black 20%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, black 20%, transparent 70%);
+    }
+    .liftoff-image.has-video {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      will-change: transform;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      border: none;
+    }
+    /* Playable videos don't need feathered edges */
+    .liftoff-image.playable-video {
+      pointer-events: auto;
+    }
+    .liftoff-image.playable-video video {
+      mask-image: none;
+      -webkit-mask-image: none;
+      border-radius: 12px;
+      pointer-events: auto;
+    }
+
+    /* Embedded title inside placeholder */
+    .liftoff-image.has-embedded-title {
+      overflow: visible;
+    }
+    .liftoff-image .embedded-title {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: montserrat, sans-serif;
+      font-size: clamp(48px, 8vw, 96px);
+      font-weight: 500;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Playable video play button */
+    .liftoff-image .video-play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease-out;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 20;
+    }
+    .liftoff-image .video-play-btn:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.5);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    .liftoff-image .video-play-btn::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 12px 0 12px 20px;
+      border-color: transparent transparent transparent rgba(255,255,255,0.9);
+      margin-left: 4px;
+    }
+    .liftoff-image .video-play-btn.playing {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .liftoff-image .video-play-btn.playing.show-pause {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .liftoff-image .video-play-btn.playing::after {
+      border-width: 0;
+      width: 20px;
+      height: 24px;
+      border-left: 6px solid rgba(255,255,255,0.9);
+      border-right: 6px solid rgba(255,255,255,0.9);
+      margin-left: 0;
+    }
+
     /* Contact button - top right */
     .liftoff-contact {
       position: fixed;
@@ -279,18 +387,111 @@ function init() {
   SECTIONS.forEach((sectionData, sectionIndex) => {
     if (!sectionData.images) return;
 
-    sectionData.images.forEach((imgConfig, imgIndex) => {
+    sectionData.images.forEach((imgConfig) => {
       const img = document.createElement('div');
       img.className = 'liftoff-image';
-      img.innerHTML = `<span>${imgConfig.label}</span>`;
       img.style.width = imgConfig.width + 'px';
       img.style.height = imgConfig.height + 'px';
+
+      // Add embedded title if section has titleInPlaceholder: true
+      if (sectionData.titleInPlaceholder && sectionData.title) {
+        img.classList.add('has-embedded-title');
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'embedded-title';
+        titleDiv.textContent = sectionData.title;
+        img.appendChild(titleDiv);
+      }
+
+      // Check if this is a video placeholder
+      if (imgConfig.video && imgConfig.video !== 'VIDEO_URL_HERE') {
+        img.classList.add('has-video');
+        const video = document.createElement('video');
+        video.src = imgConfig.video;
+        video.playsInline = true;
+        video.preload = 'auto';
+
+        if (imgConfig.playable) {
+          // Playable video with play button (not scroll-scrubbed)
+          video.muted = false;
+          video.loop = false;
+          img.dataset.playable = 'true';
+          img.classList.add('playable-video');
+
+          // Create play button
+          const playBtn = document.createElement('button');
+          playBtn.className = 'video-play-btn';
+          let hideTimeout = null;
+
+          let lastMouseX = 0;
+          let lastMouseY = 0;
+
+          const showPauseButton = (e) => {
+            // Only trigger if mouse actually moved (not just element transform)
+            if (e && e.clientX !== undefined) {
+              if (Math.abs(e.clientX - lastMouseX) < 2 && Math.abs(e.clientY - lastMouseY) < 2) {
+                return; // Mouse didn't really move
+              }
+              lastMouseX = e.clientX;
+              lastMouseY = e.clientY;
+            }
+
+            if (!video.paused) {
+              playBtn.classList.add('show-pause');
+              clearTimeout(hideTimeout);
+              hideTimeout = setTimeout(() => {
+                playBtn.classList.remove('show-pause');
+              }, 800);
+            }
+          };
+
+          playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (video.paused) {
+              video.play();
+              playBtn.classList.add('playing');
+              playBtn.classList.remove('show-pause');
+            } else {
+              video.pause();
+              playBtn.classList.remove('playing', 'show-pause');
+              clearTimeout(hideTimeout);
+            }
+          });
+
+          // Show pause button on hover when playing (listen on video too since it covers the container)
+          img.addEventListener('mouseenter', showPauseButton);
+          img.addEventListener('mousemove', showPauseButton);
+          video.addEventListener('mouseenter', showPauseButton);
+          video.addEventListener('mousemove', showPauseButton);
+
+          // Reset button when video ends
+          video.addEventListener('ended', () => {
+            playBtn.classList.remove('playing', 'show-pause');
+            clearTimeout(hideTimeout);
+            video.currentTime = 0;
+          });
+
+          img.appendChild(playBtn);
+        } else {
+          // Scroll-scrubbed video
+          video.muted = true;
+          video.loop = false;
+        }
+
+        img.appendChild(video);
+        img.dataset.hasVideo = 'true';
+      } else {
+        // Regular placeholder with label
+        img.innerHTML += `<span>${imgConfig.label}</span>`;
+      }
 
       // Store metadata
       img.dataset.section = sectionIndex;
       img.dataset.baseX = imgConfig.x; // percentage from center
       img.dataset.baseY = imgConfig.y;
       img.dataset.delay = imgConfig.delay || 0; // stagger delay (0-1)
+      img.dataset.angle = imgConfig.angle || 0; // base Z rotation angle in degrees
+      img.dataset.rotateY = imgConfig.rotateY || 0; // Y-axis 3D rotation (faces toward center)
+      img.dataset.scale = imgConfig.scale || 1; // scale factor for high-res videos
 
       // Start hidden
       img.style.opacity = 0;
@@ -404,6 +605,7 @@ function update(scrollProgress) {
   if (!viewport || !imageWorld) return;
 
   const mouse = Parallax.getMouse();
+  const elasticOffset = Scroll.getElasticOffset(); // For syncing title with camera bounce
   const numSections = SECTIONS.length;
 
   // Determine which section we're in (0 to numSections-1)
@@ -437,7 +639,8 @@ function update(scrollProgress) {
 
   if (displaySection === 0) {
     // Move toward camera in Z space (0 -> 950px, just under perspective of 1000px)
-    const introZ = sectionProgress * 950;
+    // Also apply elastic offset so title bounces back with camera (scaled to match camera travel)
+    const introZ = sectionProgress * 950 + elasticOffset * 2000;
     // Only apply intro opacity if we're actually still in section 0 content-wise
     if (currentSection === 0) {
       const introOpacity = sectionProgress < 0.6 ? 1 : Math.max(0, 1 - ((sectionProgress - 0.6) / 0.3));
@@ -447,6 +650,25 @@ function update(scrollProgress) {
   } else if (displaySection === lastSection) {
     // Outro section: centered like intro, no Z movement
     textContainer.style.opacity = '';
+    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${leanAngle}deg)`;
+  } else if (SECTIONS[displaySection]?.titleInPlaceholder) {
+    // Sections with titleInPlaceholder: true - hide regular text (it's embedded in placeholder)
+    textContainer.style.opacity = '0';
+    textContainer.style.transform = `translate(-50%, -50%)`;
+  } else if (SECTIONS[displaySection]?.textAbove) {
+    // Sections with textAbove: true - position text above content
+    textContainer.style.opacity = '';
+    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% - 25vh + ${offsetY}px)) rotate(${leanAngle}deg)`;
+  } else if (SECTIONS[displaySection]?.centerText) {
+    // Sections with centerText: true - centered like intro/outro
+    // Check if this section should fade text early
+    if (SECTIONS[displaySection]?.fadeTextEarly && currentSection === displaySection) {
+      // Fade out text early - start at 20% through section, gone by 50%
+      const fadeOpacity = sectionProgress < 0.2 ? 1 : Math.max(0, 1 - ((sectionProgress - 0.2) / 0.3));
+      textContainer.style.opacity = fadeOpacity;
+    } else {
+      textContainer.style.opacity = '';
+    }
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${leanAngle}deg)`;
   } else {
     // Other sections: 25% from bottom (75% from top)
@@ -461,6 +683,9 @@ function update(scrollProgress) {
     const baseX = parseFloat(img.dataset.baseX);
     const baseY = parseFloat(img.dataset.baseY);
     const delay = parseFloat(img.dataset.delay) || 0;
+    const baseAngle = parseFloat(img.dataset.angle) || 0;
+    const baseRotateY = parseFloat(img.dataset.rotateY) || 0;
+    const baseScale = parseFloat(img.dataset.scale) || 1;
 
     // Get section-specific Z range multiplier (default 1)
     const sectionData = SECTIONS[imgSection];
@@ -510,9 +735,21 @@ function update(scrollProgress) {
     const imgOffsetX = baseX * 3 + mouse.x * 30 * parallaxStrength;
     const imgOffsetY = baseY * 3 + mouse.y * 25 * parallaxStrength;
 
-    // Same rotation as text (velocity-based, springs back)
-    img.style.transform = `translate(calc(-50% + ${imgOffsetX}px), calc(-50% + ${imgOffsetY}px)) translateZ(${zPos}px) rotate(${leanAngle}deg)`;
+    // Same rotation as text (velocity-based, springs back) plus base angles
+    const totalAngle = leanAngle + baseAngle;
+    img.style.transform = `translate(calc(-50% + ${imgOffsetX}px), calc(-50% + ${imgOffsetY}px)) translateZ(${zPos}px) rotateY(${baseRotateY}deg) rotate(${totalAngle}deg) scale(${baseScale})`;
     img.style.opacity = Math.max(0, Math.min(1, opacity));
+
+    // Fade out embedded title earlier as it approaches camera
+    const embeddedTitle = img.querySelector('.embedded-title');
+    if (embeddedTitle) {
+      // Start fading title when Z > -500, fully gone by Z > -200
+      let titleOpacity = 1;
+      if (zPos > -500) {
+        titleOpacity = Math.max(0, 1 - ((zPos + 500) / 300));
+      }
+      embeddedTitle.style.opacity = titleOpacity;
+    }
 
     // Text reveal from left to right (smooth clip-path, not affected by proximity fade)
     const textSpan = img.querySelector('span');
@@ -520,6 +757,21 @@ function update(scrollProgress) {
       const clipProgress = Math.max(0, Math.min(1, textReveal));
       const clipRight = 100 - (clipProgress * 100);
       textSpan.style.clipPath = `inset(0 ${clipRight}% 0 0)`;
+    }
+
+    // Scroll-scrub video if present (only when in active section, skip playable videos)
+    if (img.dataset.hasVideo === 'true' && img.dataset.playable !== 'true' && imgSection === sectionIndex) {
+      const video = img.querySelector('video');
+      if (video && video.duration && !isNaN(video.duration)) {
+        // Map section progress to video time
+        // Use the adjusted progress which accounts for delay
+        const adjustedProgress = Math.max(0, (sectionProgress - delay) / (1 - delay));
+        const videoProgress = Math.min(1, Math.max(0, adjustedProgress));
+        const targetTime = videoProgress * video.duration;
+
+        // Seek immediately for responsive scrubbing
+        video.currentTime = targetTime;
+      }
     }
   });
 

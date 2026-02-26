@@ -10,16 +10,17 @@ let currentProgress = 0;
 // Inertia settings
 const LERP_FACTOR = 0.08; // Lower = more inertia (0.05-0.15 feels good)
 
-// Elastic bounce settings
-const ELASTIC_MAX = -0.08; // How far back the rubber band can stretch (negative = behind start)
-const ELASTIC_RESISTANCE = 0.3; // How much resistance when pulling back (lower = harder to pull)
-const ELASTIC_SNAPBACK = 0.12; // How fast it snaps back (higher = faster)
+// Spring physics for elastic bounce (smooth, bouncy feel)
+const SPRING_STIFFNESS = 0.025; // How quickly spring returns to rest (higher = faster)
+const SPRING_DAMPING = 0.94; // Friction (lower = more bouncy, higher = more damped)
+const ELASTIC_MAX = -0.12; // Max stretch distance
+const WHEEL_FORCE = 0.00008; // How much wheel input adds velocity (lighter feel)
 
-// State for elastic effect
-let isAtStart = true;
-let elasticOffset = 0; // Negative when stretched back
-let lastScrollY = 0;
-let scrollTimeout = null;
+// State for elastic spring
+let elasticOffset = 0; // Current position (negative = stretched back)
+let elasticVelocity = 0; // Current velocity
+let wheelTimeout = null;
+let isStretching = false; // Are we actively being pulled?
 
 // Reference to camera
 let camera = null;
@@ -32,34 +33,29 @@ const CAMERA_TRAVEL = 2000; // How far camera moves on full scroll
 // Inverted: scroll UP to progress (start at bottom, scroll up to advance)
 function onScroll() {
   const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-  const rawProgress = scrollHeight > 0 ? 1 - (window.scrollY / scrollHeight) : 0;
+  targetProgress = scrollHeight > 0 ? 1 - (window.scrollY / scrollHeight) : 0;
+}
 
-  // Detect scroll direction
-  const currentScrollY = window.scrollY;
-  const scrollDelta = currentScrollY - lastScrollY;
-  lastScrollY = currentScrollY;
-
-  // Check if we're at the start (bottom of page)
+// Wheel handler - for elastic effect at boundaries
+function onWheel(e) {
   const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  isAtStart = window.scrollY >= maxScroll - 5; // Within 5px of bottom
+  const atBottom = window.scrollY >= maxScroll - 2;
 
-  // If at start and scrolling DOWN (backwards), apply elastic effect
-  if (isAtStart && scrollDelta > 0) {
-    // Add to elastic offset with resistance
-    elasticOffset -= scrollDelta * ELASTIC_RESISTANCE * 0.001;
-    // Clamp to max stretch
-    elasticOffset = Math.max(ELASTIC_MAX, elasticOffset);
+  // If at bottom and scrolling DOWN (positive deltaY = scroll down), apply elastic
+  if (atBottom && e.deltaY > 0) {
+    isStretching = true;
 
-    // Clear any existing snapback timeout
-    if (scrollTimeout) clearTimeout(scrollTimeout);
+    // Add velocity based on wheel input (creates smooth acceleration)
+    elasticVelocity -= e.deltaY * WHEEL_FORCE;
 
-    // Set timeout to start snapback when scrolling stops
-    scrollTimeout = setTimeout(() => {
-      // Snapback will happen in update()
-    }, 50);
+    // Clear any existing timeout
+    if (wheelTimeout) clearTimeout(wheelTimeout);
+
+    // Mark as no longer stretching after wheel stops
+    wheelTimeout = setTimeout(() => {
+      isStretching = false;
+    }, 100);
   }
-
-  targetProgress = rawProgress;
 }
 
 // Initialize scroll tracking
@@ -74,9 +70,11 @@ function init(cam) {
   targetProgress = 0;
   currentProgress = 0;
   elasticOffset = 0;
-  lastScrollY = 0;
+  elasticVelocity = 0;
+  isStretching = false;
 
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('wheel', onWheel, { passive: true });
   console.log('[LIFTOFF] Scroll tracking initialized (scroll UP to progress)');
 }
 
@@ -87,7 +85,8 @@ function scrollToStart() {
   targetProgress = 0;
   currentProgress = 0;
   elasticOffset = 0;
-  lastScrollY = document.documentElement.scrollHeight;
+  elasticVelocity = 0;
+  isStretching = false;
   console.log('[LIFTOFF] Scrolled to start position (bottom)');
 }
 
@@ -98,11 +97,36 @@ function update() {
   // Lerp current toward target for smooth inertia
   currentProgress += (targetProgress - currentProgress) * LERP_FACTOR;
 
-  // Snap back elastic offset toward 0
-  if (elasticOffset < 0) {
-    elasticOffset += Math.abs(elasticOffset) * ELASTIC_SNAPBACK;
-    if (elasticOffset > -0.001) {
+  // Spring physics for elastic bounce
+  if (elasticOffset !== 0 || elasticVelocity !== 0) {
+    // Spring force pulls back toward 0
+    const springForce = -elasticOffset * SPRING_STIFFNESS;
+
+    // Apply spring force to velocity
+    elasticVelocity += springForce;
+
+    // Apply damping (friction)
+    elasticVelocity *= SPRING_DAMPING;
+
+    // Update position
+    elasticOffset += elasticVelocity;
+
+    // Clamp to max stretch
+    if (elasticOffset < ELASTIC_MAX) {
+      elasticOffset = ELASTIC_MAX;
+      elasticVelocity *= -0.3; // Bounce off the limit
+    }
+
+    // Clamp to 0 (can't stretch forward)
+    if (elasticOffset > 0) {
       elasticOffset = 0;
+      elasticVelocity = 0;
+    }
+
+    // Settle when very close to rest
+    if (Math.abs(elasticOffset) < 0.0005 && Math.abs(elasticVelocity) < 0.0001) {
+      elasticOffset = 0;
+      elasticVelocity = 0;
     }
   }
 
@@ -125,11 +149,17 @@ function getProgress() {
   return Math.max(0, currentProgress + elasticOffset);
 }
 
+// Get elastic offset for other modules to use (negative when pulled back)
+function getElasticOffset() {
+  return elasticOffset;
+}
+
 // Cleanup
 function destroy() {
   window.removeEventListener('scroll', onScroll);
-  if (scrollTimeout) clearTimeout(scrollTimeout);
+  window.removeEventListener('wheel', onWheel);
+  if (wheelTimeout) clearTimeout(wheelTimeout);
   camera = null;
 }
 
-export { init, scrollToStart, update, getProgress, destroy };
+export { init, scrollToStart, update, getProgress, getElasticOffset, destroy };

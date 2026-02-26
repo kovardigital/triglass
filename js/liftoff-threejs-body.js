@@ -13,6 +13,7 @@ import * as Scroll from './liftoff/scroll.js';
 import * as Content from './liftoff/content.js';
 import * as Preloader from './liftoff/preloader.js';
 import * as RocketIndicator from './liftoff/rocket-indicator.js';
+import * as Bubbles from './liftoff/bubbles.js';
 
 console.log('%c[LIFTOFF] Starting...', 'color: #6b7cff; font-weight: bold');
 
@@ -42,6 +43,9 @@ Preloader.setProgress(0.8);
 
 RocketIndicator.init();
 RocketIndicator.setOnSectionClick(Content.jumpToSection);
+Preloader.setProgress(0.85);
+
+Bubbles.init(worldGroup);
 Preloader.setProgress(0.9);
 
 // Register update functions with the animation loop
@@ -52,6 +56,7 @@ Loop.onUpdate('asteroids', () => Asteroids.update(camera));
 Loop.onUpdate('starfield', () => Starfield.update(camera));
 Loop.onUpdate('content', () => Content.update(Scroll.getProgress()));
 Loop.onUpdate('rocketIndicator', () => RocketIndicator.update(Scroll.getProgress()));
+Loop.onUpdate('bubbles', Bubbles.update);
 
 Preloader.setProgress(1.0);
 

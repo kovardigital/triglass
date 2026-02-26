@@ -26,12 +26,13 @@ let scrollSpeed = 0;
 
 // Configuration
 const TRACK_HEIGHT = 50; // Percentage of viewport height
-const SECTION_COUNT = 5;
+const SECTION_COUNT = 6;
 
-// Chapter names (index 0 = LIFTOFF at bottom, index 4 = COMING SOON at top)
+// Chapter names (index 0 = LIFTOFF at bottom, index 5 = COMING SOON at top)
 const CHAPTER_NAMES = [
   'LIFTOFF',
-  'THE MISSION',
+  'LOGLINE',
+  'TRAILER',
   'THE CREW',
   'THE STAKES',
   'COMING SOON'
