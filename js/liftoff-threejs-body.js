@@ -45,7 +45,7 @@ RocketIndicator.init();
 RocketIndicator.setOnSectionClick(Content.jumpToSection);
 Preloader.setProgress(0.85);
 
-Bubbles.init(worldGroup);
+Bubbles.init(worldGroup, camera);
 Preloader.setProgress(0.9);
 
 // Register update functions with the animation loop

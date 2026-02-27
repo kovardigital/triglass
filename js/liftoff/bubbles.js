@@ -25,6 +25,9 @@ let bubblesGroup = null;
 let bubbles = [];
 let time = 0;
 let isInitialized = false;
+let labelsContainer = null;
+let nameLabels = [];
+let camera = null;
 
 // Bubble shader - creates iridescent soap bubble effect
 const bubbleVertexShader = `
@@ -64,8 +67,8 @@ const characterFragmentShader = `
     vec2 center = vec2(0.5, 0.5);
     float dist = distance(vUv, center) * 2.0; // 0 at center, 1 at edge
 
-    // Soft radial fade starting at 70% from center
-    float fadeStart = 0.7;
+    // Soft radial fade - only at the very edge
+    float fadeStart = 0.92;
     float alpha = 1.0 - smoothstep(fadeStart, 1.0, dist);
 
     gl_FragColor = vec4(texColor.rgb, texColor.a * alpha * uOpacity);
@@ -194,9 +197,61 @@ function createBubble(crewMember, index) {
   return bubbleGroup;
 }
 
+// Create HTML labels for crew names
+function createLabels() {
+  // Add styles
+  const style = document.createElement('style');
+  style.textContent = `
+    .crew-labels {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+    }
+    .crew-labels.visible {
+      opacity: 1;
+    }
+    .crew-name-label {
+      position: absolute;
+      font-family: 'montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      white-space: nowrap;
+      transform: translateX(-50%);
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Create container
+  labelsContainer = document.createElement('div');
+  labelsContainer.className = 'crew-labels';
+  document.body.appendChild(labelsContainer);
+
+  // Create label for each crew member
+  CREW_DATA.forEach((crew, index) => {
+    const label = document.createElement('div');
+    label.className = 'crew-name-label';
+    label.textContent = crew.name;
+    label.dataset.index = index;
+    labelsContainer.appendChild(label);
+    nameLabels.push(label);
+  });
+}
+
 // Initialize bubbles
-function init(parentGroup) {
+function init(parentGroup, threeCamera) {
   if (isInitialized) return;
+
+  camera = threeCamera;
 
   bubblesGroup = new THREE.Group();
   bubblesGroup.position.z = -500;
@@ -209,6 +264,10 @@ function init(parentGroup) {
   });
 
   parentGroup.add(bubblesGroup);
+
+  // Create HTML labels
+  createLabels();
+
   isInitialized = true;
 
   console.log('[LIFTOFF] Bubbles initialized with', bubbles.length, 'crew members');
@@ -307,9 +366,36 @@ function update() {
     });
 
     bubble.visible = bubbleOpacity > 0.01;
+
+    // Update label position (project 3D to 2D)
+    if (camera && nameLabels[index]) {
+      const label = nameLabels[index];
+      // Get world position of bubble
+      const worldPos = new THREE.Vector3();
+      bubble.getWorldPosition(worldPos);
+      worldPos.y -= BUBBLE_RADIUS + 20; // Position below bubble
+
+      // Project to screen coordinates
+      const screenPos = worldPos.clone().project(camera);
+      const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+
+      label.style.left = `${x}px`;
+      label.style.top = `${y}px`;
+      label.style.opacity = bubbleOpacity;
+    }
   });
 
   bubblesGroup.visible = groupOpacity > 0.01;
+
+  // Show/hide labels container
+  if (labelsContainer) {
+    if (groupOpacity > 0.01) {
+      labelsContainer.classList.add('visible');
+    } else {
+      labelsContainer.classList.remove('visible');
+    }
+  }
 }
 
 // Cleanup
@@ -327,8 +413,16 @@ function destroy() {
     bubblesGroup.parent?.remove(bubblesGroup);
   }
 
+  // Clean up labels
+  if (labelsContainer) {
+    labelsContainer.remove();
+  }
+
   bubblesGroup = null;
   bubbles = [];
+  nameLabels = [];
+  labelsContainer = null;
+  camera = null;
   time = 0;
   isInitialized = false;
 }

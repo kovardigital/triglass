@@ -35,7 +35,8 @@ const SECTIONS = [
     title: 'THE CREW',
     subtitle: 'Three experiences. One life-changing event.',
     images: [],  // Using 3D bubbles instead of placeholders
-    zRange: 3
+    zRange: 3,
+    crewLayout: true  // Special layout: title top, subtitle bottom
   },
   {
     title: 'THE STAKES',
@@ -165,6 +166,29 @@ function injectStyles() {
     .liftoff-text.outro h1 {
       font-size: clamp(12px, 2.5vw, 24px);
       letter-spacing: 0.15em;
+    }
+
+    /* Crew layout - title top, subtitle bottom */
+    .liftoff-text.crew-layout {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12vh 0 15vh 0;
+      transform: none !important;
+    }
+    .liftoff-text.crew-layout h1 {
+      font-size: clamp(24px, 4vw, 48px);
+      margin: 0;
+    }
+    .liftoff-text.crew-layout p {
+      font-size: clamp(12px, 1.5vw, 18px);
+      margin: 0;
     }
 
     /* Character animation for section transitions */
@@ -655,12 +679,18 @@ function update(scrollProgress) {
     // Sections with titleInPlaceholder: true - hide regular text (it's embedded in placeholder)
     textContainer.style.opacity = '0';
     textContainer.style.transform = `translate(-50%, -50%)`;
+  } else if (SECTIONS[displaySection]?.crewLayout) {
+    // Crew section - title at top, subtitle at bottom (handled by CSS)
+    textContainer.classList.add('crew-layout');
+    textContainer.style.opacity = '';
   } else if (SECTIONS[displaySection]?.textAbove) {
     // Sections with textAbove: true - position text above content
+    textContainer.classList.remove('crew-layout');
     textContainer.style.opacity = '';
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% - 25vh + ${offsetY}px)) rotate(${leanAngle}deg)`;
   } else if (SECTIONS[displaySection]?.centerText) {
     // Sections with centerText: true - centered like intro/outro
+    textContainer.classList.remove('crew-layout');
     // Check if this section should fade text early
     if (SECTIONS[displaySection]?.fadeTextEarly && currentSection === displaySection) {
       // Fade out text early - start at 20% through section, gone by 50%
@@ -672,6 +702,7 @@ function update(scrollProgress) {
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${leanAngle}deg)`;
   } else {
     // Other sections: 25% from bottom (75% from top)
+    textContainer.classList.remove('crew-layout');
     // Clear any stale intro opacity
     textContainer.style.opacity = '';
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + 25vh + ${offsetY}px)) rotate(${leanAngle}deg)`;
