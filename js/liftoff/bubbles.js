@@ -13,10 +13,10 @@ const CREW_SECTION = 3; // Index of THE CREW section
 const BUBBLE_RADIUS = 80;
 const BUBBLE_SEGMENTS = 64;
 
-// Crew data - positions and image URLs
+// Crew data - positions and image URLs (all at same Y position)
 const CREW_DATA = [
   { name: 'Selena', x: -220, y: 20, image: 'https://triglass-assets.s3.us-east-1.amazonaws.com/selena-1.jpg' },
-  { name: 'Leo', x: 0, y: 0, image: 'https://triglass-assets.s3.us-east-1.amazonaws.com/leo-1.jpg' },
+  { name: 'Leo', x: 0, y: 20, image: 'https://triglass-assets.s3.us-east-1.amazonaws.com/leo-1.jpg' },
   { name: 'Dad', x: 220, y: 20, image: 'https://triglass-assets.s3.us-east-1.amazonaws.com/dad-1.jpg' },
 ];
 
@@ -239,17 +239,8 @@ function update() {
     const parallaxX = mouse.x * 15;
     const parallaxY = mouse.y * 10;
 
-    // Staggered delay
-    const delay = index * 0.15;
-    const adjustedProgress = sectionIndex === CREW_SECTION
-      ? Math.max(0, (sectionProgress - delay) / (1 - delay))
-      : 0;
-
-    // Individual bubble opacity with stagger
-    let bubbleOpacity = groupOpacity;
-    if (sectionIndex === CREW_SECTION && adjustedProgress < 0.2) {
-      bubbleOpacity *= adjustedProgress / 0.2;
-    }
+    // All bubbles appear together (no stagger)
+    const bubbleOpacity = groupOpacity;
 
     // Apply position
     bubble.position.x = baseX + wobbleX + parallaxX;
