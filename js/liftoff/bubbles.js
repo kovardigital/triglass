@@ -1,6 +1,7 @@
 /* ==========================================================================
    Liftoff - Bubbles Module
    3D iridescent bubbles for crew section with character images
+   Uses custom shader for soap bubble effect with fresnel and rainbow colors
    ========================================================================== */
 
 import * as THREE from 'three';
@@ -25,40 +26,67 @@ let bubbles = [];
 let time = 0;
 let isInitialized = false;
 
-// Create environment map for reflections
-function createEnvMap() {
-  const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
+// Bubble shader - creates iridescent soap bubble effect
+const bubbleVertexShader = `
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  varying vec2 vUv;
 
-  // Create a simple gradient environment
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
+  void main() {
+    vUv = uv;
+    vNormal = normalize(normalMatrix * normal);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -mvPosition.xyz;
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
 
-  // Dark space gradient with subtle star-like specs
-  const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 360);
-  gradient.addColorStop(0, '#1a1a2e');
-  gradient.addColorStop(0.5, '#0d0d1a');
-  gradient.addColorStop(1, '#050510');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 512, 512);
+const bubbleFragmentShader = `
+  uniform float uTime;
+  uniform float uOpacity;
 
-  // Add some subtle light specs
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-  for (let i = 0; i < 50; i++) {
-    const x = Math.random() * 512;
-    const y = Math.random() * 512;
-    const size = Math.random() * 2 + 0.5;
-    ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fill();
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  varying vec2 vUv;
+
+  // Rainbow color based on angle and time (thin-film interference simulation)
+  vec3 iridescence(float angle, float time) {
+    // Simulate thin-film interference with shifting wavelengths
+    float thickness = 0.5 + 0.3 * sin(time * 0.5 + angle * 2.0);
+
+    // Create rainbow colors based on interference
+    float r = 0.5 + 0.5 * sin(angle * 6.28318 + time * 0.3 + thickness * 10.0);
+    float g = 0.5 + 0.5 * sin(angle * 6.28318 + time * 0.3 + thickness * 10.0 + 2.094);
+    float b = 0.5 + 0.5 * sin(angle * 6.28318 + time * 0.3 + thickness * 10.0 + 4.188);
+
+    return vec3(r, g, b);
   }
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.mapping = THREE.EquirectangularReflectionMapping;
+  void main() {
+    // Calculate fresnel effect (more visible at edges)
+    vec3 viewDir = normalize(vViewPosition);
+    float fresnel = 1.0 - abs(dot(viewDir, vNormal));
+    fresnel = pow(fresnel, 2.0);
 
-  return texture;
-}
+    // Get iridescent color based on view angle
+    float angle = atan(vNormal.y, vNormal.x) + atan(vNormal.z, vNormal.x);
+    vec3 iridescentColor = iridescence(angle + fresnel, uTime);
+
+    // Mix with base bubble color (slight blue tint)
+    vec3 baseColor = vec3(0.9, 0.95, 1.0);
+    vec3 finalColor = mix(baseColor, iridescentColor, 0.6 + fresnel * 0.4);
+
+    // Opacity based on fresnel (transparent center, visible edges)
+    float alpha = fresnel * 0.7 + 0.1;
+    alpha *= uOpacity;
+
+    // Add subtle rim highlight
+    float rimLight = pow(fresnel, 3.0) * 0.5;
+    finalColor += vec3(rimLight);
+
+    gl_FragColor = vec4(finalColor, alpha);
+  }
+`;
 
 // Create a single bubble mesh
 function createBubble(crewMember, index) {
@@ -81,43 +109,23 @@ function createBubble(crewMember, index) {
     }
   );
 
-  // Create environment map for reflections
-  const envMap = createEnvMap();
-
-  // MeshPhysicalMaterial with iridescence for bubble effect
-  const material = new THREE.MeshPhysicalMaterial({
-    // Base - slightly tinted, mostly transparent
-    color: 0xffffff,
-    metalness: 0.0,
-    roughness: 0.05,
-
-    // Transmission (glass-like transparency)
-    transmission: 0.85,
-    thickness: 0.5,
-
-    // Iridescence (rainbow thin-film effect)
-    iridescence: 1.0,
-    iridescenceIOR: 1.3,
-    iridescenceThicknessRange: [100, 400],
-
-    // Clearcoat for extra shine
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.1,
-
-    // Reflections
-    envMap: envMap,
-    envMapIntensity: 0.5,
-
-    // Make it double-sided so we see inside
-    side: THREE.DoubleSide,
+  // Custom shader material for bubble effect
+  const bubbleMaterial = new THREE.ShaderMaterial({
+    vertexShader: bubbleVertexShader,
+    fragmentShader: bubbleFragmentShader,
+    uniforms: {
+      uTime: { value: 0 },
+      uOpacity: { value: 1.0 },
+    },
     transparent: true,
-    opacity: 0.9,
+    side: THREE.DoubleSide,
+    depthWrite: false,
   });
 
-  const bubble = new THREE.Mesh(geometry, material);
+  const bubble = new THREE.Mesh(geometry, bubbleMaterial);
 
   // Create inner circle with character image (plane facing camera)
-  const innerGeometry = new THREE.CircleGeometry(BUBBLE_RADIUS * 0.75, BUBBLE_SEGMENTS);
+  const innerGeometry = new THREE.CircleGeometry(BUBBLE_RADIUS * 0.7, BUBBLE_SEGMENTS);
   const innerMaterial = new THREE.MeshBasicMaterial({
     map: characterTexture,
     side: THREE.DoubleSide,
@@ -125,8 +133,8 @@ function createBubble(crewMember, index) {
     opacity: 1.0,
   });
   const innerCircle = new THREE.Mesh(innerGeometry, innerMaterial);
-  innerCircle.position.z = 5; // Slightly in front to be more visible
-  innerCircle.userData.isInnerCircle = true; // Mark for billboard update
+  innerCircle.position.z = 2; // Slightly in front
+  innerCircle.userData.isInnerCircle = true;
 
   // Create a group to hold bubble and inner image
   const bubbleGroup = new THREE.Group();
@@ -142,7 +150,8 @@ function createBubble(crewMember, index) {
     index: index,
     baseX: crewMember.x,
     baseY: crewMember.y,
-    phase: Math.random() * Math.PI * 2, // Random phase for wobble
+    phase: Math.random() * Math.PI * 2,
+    bubbleMaterial: bubbleMaterial, // Store reference for animation
   };
 
   return bubbleGroup;
@@ -153,7 +162,7 @@ function init(parentGroup) {
   if (isInitialized) return;
 
   bubblesGroup = new THREE.Group();
-  bubblesGroup.position.z = -500; // Start behind camera view
+  bubblesGroup.position.z = -500;
 
   // Create bubbles for each crew member
   CREW_DATA.forEach((crew, index) => {
@@ -172,7 +181,7 @@ function init(parentGroup) {
 function update() {
   if (!bubblesGroup || !isInitialized) return;
 
-  time += 0.016; // Approximate 60fps delta
+  time += 0.016;
 
   const scrollProgress = Scroll.getProgress();
   const numSections = 6;
@@ -181,10 +190,9 @@ function update() {
   const sectionProgress = sectionFloat - sectionIndex;
 
   // Calculate Z position based on section
-  // Bubbles appear in section 3 (THE CREW)
   const IMAGE_START_Z = -800;
   const IMAGE_END_Z = 600;
-  const zRange = 3; // Match crew section zRange from content.js
+  const zRange = 3;
   const zDistance = (IMAGE_END_Z - IMAGE_START_Z) * zRange;
   const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
 
@@ -192,7 +200,6 @@ function update() {
   let groupZ = sectionStartZ;
 
   if (sectionIndex === CREW_SECTION) {
-    // In crew section - animate through
     const t = Math.min(1, sectionProgress);
     groupZ = sectionStartZ + zDistance * t;
 
@@ -211,13 +218,10 @@ function update() {
       groupOpacity *= Math.max(0, proximityFade);
     }
   } else if (sectionIndex > CREW_SECTION) {
-    // Past crew section
     groupZ = sectionStartZ + zDistance + 200;
     groupOpacity = 0;
   }
-  // Future sections: stay hidden at default values
 
-  // Apply group position
   bubblesGroup.position.z = groupZ;
 
   // Get parallax for wobble
@@ -225,17 +229,17 @@ function update() {
 
   // Update each bubble
   bubbles.forEach((bubble) => {
-    const { baseX, baseY, phase, index } = bubble.userData;
+    const { baseX, baseY, phase, index, bubbleMaterial } = bubble.userData;
 
     // Gentle floating wobble
     const wobbleX = Math.sin(time * 0.5 + phase) * 8;
     const wobbleY = Math.cos(time * 0.7 + phase) * 6;
 
-    // Parallax offset (subtle)
+    // Parallax offset
     const parallaxX = mouse.x * 15;
     const parallaxY = mouse.y * 10;
 
-    // Staggered delay for each bubble
+    // Staggered delay
     const delay = index * 0.15;
     const adjustedProgress = sectionIndex === CREW_SECTION
       ? Math.max(0, (sectionProgress - delay) / (1 - delay))
@@ -251,23 +255,26 @@ function update() {
     bubble.position.x = baseX + wobbleX + parallaxX;
     bubble.position.y = baseY + wobbleY - parallaxY;
 
-    // Gentle rotation for bubble group
+    // Gentle rotation
     bubble.rotation.y = time * 0.1 + phase;
     bubble.rotation.x = Math.sin(time * 0.3 + phase) * 0.1;
 
-    // Set opacity on materials and handle inner circle billboard
+    // Update shader uniforms
+    if (bubbleMaterial) {
+      bubbleMaterial.uniforms.uTime.value = time + phase;
+      bubbleMaterial.uniforms.uOpacity.value = bubbleOpacity;
+    }
+
+    // Update inner circle
     bubble.children.forEach((child) => {
-      if (child.material) {
-        child.material.opacity = bubbleOpacity * (child.userData.isInnerCircle ? 1.0 : 0.9);
-      }
-      // Keep inner circle facing camera (counter-rotate)
       if (child.userData.isInnerCircle) {
+        child.material.opacity = bubbleOpacity;
+        // Billboard - counter-rotate to face camera
         child.rotation.y = -bubble.rotation.y;
         child.rotation.x = -bubble.rotation.x;
       }
     });
 
-    // Hide/show based on opacity
     bubble.visible = bubbleOpacity > 0.01;
   });
 
@@ -282,7 +289,6 @@ function destroy() {
         if (child.geometry) child.geometry.dispose();
         if (child.material) {
           if (child.material.map) child.material.map.dispose();
-          if (child.material.envMap) child.material.envMap.dispose();
           child.material.dispose();
         }
       });
