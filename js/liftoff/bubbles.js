@@ -41,6 +41,37 @@ const bubbleVertexShader = `
   }
 `;
 
+// Character image shader with radial edge fade
+const characterVertexShader = `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const characterFragmentShader = `
+  uniform sampler2D uTexture;
+  uniform float uOpacity;
+
+  varying vec2 vUv;
+
+  void main() {
+    vec4 texColor = texture2D(uTexture, vUv);
+
+    // Calculate distance from center (0.5, 0.5)
+    vec2 center = vec2(0.5, 0.5);
+    float dist = distance(vUv, center) * 2.0; // 0 at center, 1 at edge
+
+    // Soft radial fade starting at 70% from center
+    float fadeStart = 0.7;
+    float alpha = 1.0 - smoothstep(fadeStart, 1.0, dist);
+
+    gl_FragColor = vec4(texColor.rgb, texColor.a * alpha * uOpacity);
+  }
+`;
+
 const bubbleFragmentShader = `
   uniform float uTime;
   uniform float uOpacity;
@@ -124,17 +155,23 @@ function createBubble(crewMember, index) {
 
   const bubble = new THREE.Mesh(geometry, bubbleMaterial);
 
-  // Create inner circle with character image (plane facing camera)
-  const innerGeometry = new THREE.CircleGeometry(BUBBLE_RADIUS * 0.7, BUBBLE_SEGMENTS);
-  const innerMaterial = new THREE.MeshBasicMaterial({
-    map: characterTexture,
-    side: THREE.DoubleSide,
+  // Create inner circle with character image (full size with edge fade)
+  const innerGeometry = new THREE.CircleGeometry(BUBBLE_RADIUS * 0.95, BUBBLE_SEGMENTS);
+  const innerMaterial = new THREE.ShaderMaterial({
+    vertexShader: characterVertexShader,
+    fragmentShader: characterFragmentShader,
+    uniforms: {
+      uTexture: { value: characterTexture },
+      uOpacity: { value: 1.0 },
+    },
     transparent: true,
-    opacity: 1.0,
+    side: THREE.DoubleSide,
+    depthWrite: false,
   });
   const innerCircle = new THREE.Mesh(innerGeometry, innerMaterial);
   innerCircle.position.z = 2; // Slightly in front
   innerCircle.userData.isInnerCircle = true;
+  innerCircle.userData.innerMaterial = innerMaterial;
 
   // Create a group to hold bubble and inner image
   const bubbleGroup = new THREE.Group();
@@ -259,7 +296,10 @@ function update() {
     // Update inner circle
     bubble.children.forEach((child) => {
       if (child.userData.isInnerCircle) {
-        child.material.opacity = bubbleOpacity;
+        // Update shader uniform for opacity
+        if (child.userData.innerMaterial) {
+          child.userData.innerMaterial.uniforms.uOpacity.value = bubbleOpacity;
+        }
         // Billboard - counter-rotate to face camera
         child.rotation.y = -bubble.rotation.y;
         child.rotation.x = -bubble.rotation.x;
