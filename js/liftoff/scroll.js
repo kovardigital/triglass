@@ -78,7 +78,9 @@ function checkSnapTrigger() {
   if (currentSnappedSection < maxSnapSection) {
     const nextSnapProgress = getSectionProgress(currentSnappedSection + 1);
     const distanceToNext = nextSnapProgress - currentSnapProgress;
-    const triggerPoint = currentSnapProgress + distanceToNext * SNAP_THRESHOLD;
+    // Section 2 (Trailer) requires 60% progress to snap forward, others use 20%
+    const forwardThreshold = currentSnappedSection === 2 ? 0.6 : SNAP_THRESHOLD;
+    const triggerPoint = currentSnapProgress + distanceToNext * forwardThreshold;
 
     if (targetProgress > triggerPoint) {
       // Snap to next section

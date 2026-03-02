@@ -18,7 +18,7 @@ const SECTIONS = [
     title: 'LOGLINE',
     subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
     images: [
-      { x: -55, y: 0, width: 1920, height: 1080, scale: 0.38, label: 'Video', delay: 0, rotateY: 30, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4' },
+      { x: -75, y: 0, width: 1920, height: 1080, scale: 0.38, label: 'Video', delay: 0, rotateY: 30, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4' },
     ]
   },
   {
@@ -36,12 +36,9 @@ const SECTIONS = [
     zRange: 3
   },
   {
-    title: 'THE STAKES',
-    subtitle: 'Everything we know hangs in the balance',
-    images: [
-      { x: -40, y: 0, width: 320, height: 200, label: 'Earth View', delay: 0 },
-      { x: 35, y: 5, width: 280, height: 180, label: 'The Threat', delay: 0.35 },
-    ],
+    title: 'THE STORY',
+    subtitle: 'Begin The Adventure',
+    images: [],
     zRange: 3
   },
   {
@@ -202,7 +199,7 @@ function injectStyles() {
     }
     .liftoff-text.logline p {
       font-size: clamp(8px, 0.85vw, 10px);
-      max-width: 560px;
+      max-width: 448px;
       margin: 0 auto;
     }
 
@@ -649,6 +646,11 @@ function update(scrollProgress) {
     // Hide the CSS text container
     textContainer.style.opacity = 0;
     textContainer.style.pointerEvents = 'none';
+  } else if (sectionIndex === 4) {
+    // Story section - title/subtitle handled by earth.js with 3D projection
+    // Hide the CSS text container
+    textContainer.style.opacity = 0;
+    textContainer.style.pointerEvents = 'none';
   } else if (sectionData?.trailerLayout) {
     // Trailer section - title above video, same Z as video, auto-fade after 3s
     // Calculate video Z position (same as image Z calculation)
@@ -702,8 +704,8 @@ function update(scrollProgress) {
       zPos = imgStartZ + imgZDistance * imgT;
 
       const isPlayable = img.dataset.playable === 'true';
-      const fadeOutStart = isPlayable ? 0.97 : 0.75;
-      const fadeOutDuration = isPlayable ? 0.03 : 0.25;
+      const fadeOutStart = isPlayable ? 0.995 : 0.75;  // Playable: fade at very end (~Z -1098)
+      const fadeOutDuration = isPlayable ? 0.01 : 0.25;
 
       if (imgT < 0.15) {
         opacity = imgT / 0.15;
@@ -716,15 +718,47 @@ function update(scrollProgress) {
         textReveal = 1;
       }
 
-      const proximityStart = isPlayable ? 450 : 200;
-      const proximityRange = isPlayable ? 200 : 400;
-      if (zPos > proximityStart) {
-        const proximityFade = 1 - ((zPos - proximityStart) / proximityRange);
-        opacity *= Math.max(0, proximityFade);
+      if (isPlayable) {
+        // For playable videos: fade based on camera Z position
+        const cameraZ = 100 - scrollProgress * 2000;
+        const fadeStartZ = -1120; // Start fading when camera reaches this Z
+        const fadeRange = 100; // Fade over 100 Z units
+
+        if (cameraZ <= fadeStartZ) {
+          const fadeProgress = Math.min(1, (fadeStartZ - cameraZ) / fadeRange);
+          opacity *= (1 - fadeProgress);
+        }
+      } else {
+        // For non-playable: use proximity-based fade
+        const proximityStart = 200;
+        const proximityRange = 400;
+        if (zPos > proximityStart) {
+          const proximityFade = 1 - ((zPos - proximityStart) / proximityRange);
+          opacity *= Math.max(0, proximityFade);
+        }
       }
     } else if (imgSection < sectionIndex) {
-      zPos = imgStartZ + imgZDistance + 200;
-      opacity = 0;
+      // Past this section
+      const isPlayable = img.dataset.playable === 'true';
+
+      if (isPlayable) {
+        // Playable videos: fade based on camera Z, not section boundary
+        const cameraZ = 100 - scrollProgress * 2000;
+        const fadeStartZ = -1120;
+        const fadeRange = 100;
+
+        zPos = imgStartZ + imgZDistance; // Keep at end position
+
+        if (cameraZ > fadeStartZ) {
+          opacity = 1; // Still fully visible
+        } else {
+          const fadeProgress = Math.min(1, (fadeStartZ - cameraZ) / fadeRange);
+          opacity = 1 - fadeProgress;
+        }
+      } else {
+        zPos = imgStartZ + imgZDistance + 200;
+        opacity = 0;
+      }
     }
 
     const parallaxStrength = 0.5 + (1 - opacity) * 0.5;

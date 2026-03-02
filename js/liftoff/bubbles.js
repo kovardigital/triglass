@@ -14,12 +14,33 @@ const CREW_SECTION = 3; // Index of THE CREW section
 const BUBBLE_RADIUS = 80;
 const BUBBLE_SEGMENTS = 64;
 
-// Crew data - positions, image URLs, and color tints (all at same Y position)
+// Crew data - positions, image URLs, color tints, and descriptions
 // Using very dark colors for space context
 const CREW_DATA = [
-  { name: 'Selena', x: -220, y: 20, image: 'https://triglass-assets.s3.amazonaws.com/selena-2.jpg', tint: [0.04, 0.06, 0.18] },  // Very dark blue
-  { name: 'Leo', x: 0, y: 20, image: 'https://triglass-assets.s3.amazonaws.com/leo-2.jpg', tint: [0.18, 0.02, 0.02] },           // Very dark red
-  { name: 'Dad', x: 220, y: 20, image: 'https://triglass-assets.s3.amazonaws.com/dad-2.jpg', tint: [0.10, 0.03, 0.18] },         // Very dark purple
+  {
+    name: 'Selena',
+    x: -220,
+    y: 20,
+    image: 'https://triglass-assets.s3.amazonaws.com/selena-2.jpg',
+    tint: [0.04, 0.06, 0.18],  // Very dark blue
+    description: 'A brilliant astrophysicist whose discovery of the anomaly sets everything in motion. Her scientific curiosity masks a deeper search for meaning in a universe that suddenly feels much larger than before.',
+  },
+  {
+    name: 'Leo',
+    x: 0,
+    y: 20,
+    image: 'https://triglass-assets.s3.amazonaws.com/leo-2.jpg',
+    tint: [0.18, 0.02, 0.02],  // Very dark red
+    description: 'Selena\'s younger brother, a restless dreamer who has always felt like he doesn\'t quite fit in. The cosmic event awakens something dormant within him—a connection he never knew he had.',
+  },
+  {
+    name: 'Dad',
+    x: 220,
+    y: 20,
+    image: 'https://triglass-assets.s3.amazonaws.com/dad-2.jpg',
+    tint: [0.10, 0.03, 0.18],  // Very dark purple
+    description: 'A retired engineer haunted by a decision he made decades ago. When the truth about the anomaly emerges, he must confront secrets he thought he had buried forever.',
+  },
 ];
 
 // Module state
@@ -35,14 +56,19 @@ let camera = null;
 let envMap = null;
 let pmremGenerator = null;
 
-// Hover/jiggle state
+// Hover and click state
 let raycaster = null;
 let mouse = new THREE.Vector2();
 let hoveredBubbleIndex = -1;
-let previousHoveredIndex = -1; // Track previous to detect new hovers
-let clickedBubbleIndex = -1; // Track clicked bubble for stronger jiggle
-let jiggleIntensity = []; // Per-bubble jiggle intensity (0 = none, 1 = full jiggle)
-let jiggleVelocity = []; // Per-bubble jiggle velocity for spring effect
+let isMouseDown = false; // Track mouse down state for click darkening
+let clickIcons = []; // Click icon elements for each bubble
+let hoverBoostCurrent = [0, 0, 0]; // Current eased hover boost per bubble
+const HOVER_EASE_SPEED = 0.12; // Easing speed (0-1, higher = faster)
+
+// Selected/detail view state
+let selectedBubbleIndex = -1; // Which bubble is expanded (-1 = none)
+let detailPanel = null; // The detail view HTML element
+let isDetailTransitioning = false; // Prevent rapid clicks during transition
 
 // Load HDRI environment map for realistic bubble reflections
 function loadHDRIEnvMap(renderer, onLoaded) {
@@ -461,7 +487,7 @@ function createLabels() {
     .crew-section-title {
       position: absolute;
       font-family: 'montserrat', sans-serif;
-      font-size: clamp(24px, 4vw, 48px);
+      font-size: clamp(19px, 3.2vw, 38px);
       font-weight: 500;
       color: #fff;
       text-align: center;
@@ -473,13 +499,97 @@ function createLabels() {
     .crew-section-subtitle {
       position: absolute;
       font-family: 'montserrat', sans-serif;
-      font-size: clamp(12px, 1.5vw, 16px);
+      font-size: clamp(10px, 1.2vw, 13px);
       font-weight: 300;
       color: rgba(255,255,255,0.7);
       text-align: center;
       letter-spacing: 0.02em;
       white-space: nowrap;
       transform: translateX(-50%);
+    }
+    .crew-click-icon {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.2s ease-out;
+    }
+    .crew-click-icon svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      stroke: rgba(255,255,255,0.5);
+      fill: none;
+    }
+
+    /* Detail panel - expanded character view (positioned in 3D space) */
+    .crew-detail-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .crew-detail-panel.visible {
+      pointer-events: auto;
+    }
+    .crew-detail-text {
+      position: absolute;
+      opacity: 0;
+      transition: opacity 0.4s ease-out;
+    }
+    .crew-detail-panel.visible .crew-detail-text {
+      opacity: 1;
+    }
+    .crew-detail-name {
+      font-family: 'montserrat', sans-serif;
+      font-size: clamp(14px, 2.1vw, 24px);
+      font-weight: 500;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      margin-bottom: 10px;
+    }
+    .crew-detail-description {
+      font-family: 'montserrat', sans-serif;
+      font-size: clamp(7px, 0.7vw, 8px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.6;
+      letter-spacing: 0.01em;
+      max-width: 400px;
+    }
+    .crew-detail-text.align-right {
+      text-align: right;
+    }
+    .crew-detail-text.align-right .crew-detail-description {
+      margin-left: auto;
+    }
+    .crew-detail-close {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+    }
+    .crew-detail-panel.visible .crew-detail-close {
+      opacity: 0.6;
+    }
+    .crew-detail-close:hover {
+      opacity: 1;
+    }
+    .crew-detail-close svg {
+      width: 100%;
+      height: 100%;
+      stroke: #fff;
+      stroke-width: 2;
     }
   `;
   document.head.appendChild(style);
@@ -489,7 +599,7 @@ function createLabels() {
   labelsContainer.className = 'crew-labels';
   document.body.appendChild(labelsContainer);
 
-  // Create label for each crew member
+  // Create label and click icon for each crew member
   CREW_DATA.forEach((crew, index) => {
     const label = document.createElement('div');
     label.className = 'crew-name-label';
@@ -497,18 +607,120 @@ function createLabels() {
     label.dataset.index = index;
     labelsContainer.appendChild(label);
     nameLabels.push(label);
+
+    // Create click icon
+    const clickIcon = document.createElement('div');
+    clickIcon.className = 'crew-click-icon';
+    clickIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M8 13V4.5a1.5 1.5 0 0 1 3 0V12m0-.5v-2a1.5 1.5 0 0 1 3 0V12m0-1.5a1.5 1.5 0 0 1 3 0V12"></path><path d="M17 11.5a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-2h.208a6 6 0 0 1-5.012-2.7L7 19q-.468-.718-3.286-5.728a1.5 1.5 0 0 1 .536-2.022a1.87 1.87 0 0 1 2.28.28L8 13M5 3L4 2m0 5H3m11-4l1-1m0 4h1"></path></g></svg>`;
+    clickIcon.dataset.index = index;
+    labelsContainer.appendChild(clickIcon);
+    clickIcons.push(clickIcon);
   });
 
   // Create section title and subtitle
   sectionTitle = document.createElement('div');
   sectionTitle.className = 'crew-section-title';
-  sectionTitle.textContent = 'THE CREW';
+  sectionTitle.textContent = 'CHARACTERS';
   labelsContainer.appendChild(sectionTitle);
 
   sectionSubtitle = document.createElement('div');
   sectionSubtitle.className = 'crew-section-subtitle';
   sectionSubtitle.textContent = 'Three experiences. One life-changing event.';
   labelsContainer.appendChild(sectionSubtitle);
+
+  // Create detail panel (hidden initially) - elements positioned in 3D space
+  detailPanel = document.createElement('div');
+  detailPanel.className = 'crew-detail-panel';
+  detailPanel.innerHTML = `
+    <div class="crew-detail-text">
+      <div class="crew-detail-name"></div>
+      <div class="crew-detail-description"></div>
+    </div>
+    <div class="crew-detail-close">
+      <svg viewBox="0 0 24 24" fill="none">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </div>
+  `;
+  document.body.appendChild(detailPanel);
+
+  // Close button click handler
+  const closeBtn = detailPanel.querySelector('.crew-detail-close');
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeBubbleDetail();
+  });
+}
+
+// Toggle bubble detail view (open if closed, close if same bubble clicked)
+function toggleBubbleDetail(index) {
+  if (selectedBubbleIndex === index) {
+    // Clicking same bubble - close detail
+    closeBubbleDetail();
+  } else {
+    // Open detail for this bubble
+    openBubbleDetail(index);
+  }
+}
+
+// Open the detail view for a specific bubble
+function openBubbleDetail(index) {
+  if (index < 0 || index >= CREW_DATA.length || isDetailTransitioning) return;
+
+  isDetailTransitioning = true;
+  selectedBubbleIndex = index;
+
+  const crew = CREW_DATA[index];
+
+  // Update detail panel content
+  if (detailPanel) {
+    const textContainer = detailPanel.querySelector('.crew-detail-text');
+    const nameEl = detailPanel.querySelector('.crew-detail-name');
+    const descEl = detailPanel.querySelector('.crew-detail-description');
+
+    if (nameEl) nameEl.textContent = crew.name;
+    if (descEl) descEl.textContent = crew.description;
+
+    // Dad (index 2) gets right-aligned text (text appears to left of bubble)
+    if (textContainer) {
+      if (index === 2) {
+        textContainer.classList.add('align-right');
+      } else {
+        textContainer.classList.remove('align-right');
+      }
+    }
+
+    // Show panel
+    detailPanel.classList.add('visible');
+  }
+
+  console.log('[LIFTOFF] Opened detail for', crew.name);
+
+  // Allow clicks again after transition
+  setTimeout(() => {
+    isDetailTransitioning = false;
+  }, 400);
+}
+
+// Close the detail view
+function closeBubbleDetail() {
+  if (selectedBubbleIndex < 0 || isDetailTransitioning) return;
+
+  isDetailTransitioning = true;
+
+  // Hide panel
+  if (detailPanel) {
+    detailPanel.classList.remove('visible');
+  }
+
+  console.log('[LIFTOFF] Closed detail view');
+
+  // Clear selection after transition
+  setTimeout(() => {
+    selectedBubbleIndex = -1;
+    isDetailTransitioning = false;
+  }, 400);
 }
 
 // Initialize bubbles
@@ -553,8 +765,6 @@ function init(parentGroup, threeCamera, renderer) {
 
   // Set up raycaster for hover detection
   raycaster = new THREE.Raycaster();
-  jiggleIntensity = bubbles.map(() => 0); // Initialize jiggle intensity for each bubble
-  jiggleVelocity = bubbles.map(() => 0); // Initialize jiggle velocity for spring effect
 
   // Mouse move listener for hover detection
   const onMouseMove = (event) => {
@@ -563,14 +773,33 @@ function init(parentGroup, threeCamera, renderer) {
   };
   window.addEventListener('mousemove', onMouseMove);
 
-  // Mousedown listener for stronger jiggle (fires immediately on press)
+  // Mouse down/up listeners for click state (darken on press, brighten on release)
+  // And handle click to select/deselect bubble for detail view
+  let mouseDownOnBubble = -1; // Track which bubble (if any) we pressed down on
+
   const onMouseDown = () => {
-    // If hovering a bubble, mark it as clicked for stronger jiggle
-    if (hoveredBubbleIndex >= 0) {
-      clickedBubbleIndex = hoveredBubbleIndex;
+    if (hoveredBubbleIndex >= 0 && !isDetailTransitioning) {
+      isMouseDown = true;
+      mouseDownOnBubble = hoveredBubbleIndex;
     }
   };
+
+  const onMouseUp = () => {
+    isMouseDown = false;
+
+    // If we released on the same bubble we pressed, it's a click
+    if (mouseDownOnBubble >= 0 && mouseDownOnBubble === hoveredBubbleIndex && !isDetailTransitioning) {
+      toggleBubbleDetail(mouseDownOnBubble);
+    } else if (selectedBubbleIndex >= 0 && hoveredBubbleIndex < 0 && !isDetailTransitioning) {
+      // Clicked elsewhere while detail is open - close it
+      closeBubbleDetail();
+    }
+
+    mouseDownOnBubble = -1;
+  };
+
   window.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mouseup', onMouseUp);
 
   isInitialized = true;
 
@@ -645,53 +874,47 @@ function update() {
     hoveredBubbleIndex = -1;
   }
 
+  // Check if detail view is open
+  const isDetailOpen = selectedBubbleIndex >= 0;
+
   // Update each bubble
   bubbles.forEach((bubble, idx) => {
     const { baseX, baseY, phase, index, bubbleMaterial } = bubble.userData;
-
-    // Trigger jiggle: click = strong, hover = subtle
-    // Uses spring physics for bouncy easing
-    if (idx === clickedBubbleIndex) {
-      // Clicked - strong initial velocity
-      jiggleVelocity[idx] = 0.09;
-      clickedBubbleIndex = -1; // Reset after triggering
-    } else if (idx === hoveredBubbleIndex && idx !== previousHoveredIndex) {
-      // Just became hovered - subtle initial velocity
-      jiggleVelocity[idx] = 0.06;
-    }
-
-    // Spring physics: velocity adds to intensity, then decays with damping
-    jiggleIntensity[idx] += jiggleVelocity[idx];
-    jiggleVelocity[idx] *= 0.88; // Velocity damping
-
-    // Pull intensity back toward 0 with spring force + friction
-    const springForce = -jiggleIntensity[idx] * 0.05; // Lower spring = less bounce
-    jiggleVelocity[idx] += springForce;
-    jiggleIntensity[idx] *= 0.945; // Friction to settle
 
     // Parallax offset (responds to mouse)
     const parallaxX = parallaxMouse.x * 15;
     const parallaxY = parallaxMouse.y * 10;
 
-    // Hover jiggle effect - faster oscillation when hovered
-    const jiggle = jiggleIntensity[idx];
-    const jiggleX = Math.sin(time * 8 + phase) * 8 * jiggle;
-    const jiggleY = Math.cos(time * 10 + phase * 1.3) * 8 * jiggle;
-    const jiggleScale = 1 + Math.sin(time * 12 + phase) * 0.06 * jiggle;
+    // Calculate bubble opacity based on selection state
+    let bubbleOpacity = groupOpacity;
+    if (isDetailOpen) {
+      if (idx === selectedBubbleIndex) {
+        // Selected bubble stays visible
+        bubbleOpacity = groupOpacity;
+      } else {
+        // Non-selected bubbles fade out
+        bubbleOpacity = groupOpacity * 0.15;
+      }
+    }
 
-    // All bubbles appear together (no stagger)
-    const bubbleOpacity = groupOpacity;
+    // Apply position (parallax only)
+    // When Leo (index 1) is selected, move him to Selena's position (left side)
+    let targetX = baseX;
+    if (isDetailOpen && selectedBubbleIndex === 1 && idx === 1) {
+      targetX = CREW_DATA[0].x; // Move to Selena's X position
+    }
+    bubble.position.x = targetX + parallaxX;
+    bubble.position.y = baseY - parallaxY;
 
-    // Apply position (parallax + jiggle only, no random wobble)
-    bubble.position.x = baseX + parallaxX + jiggleX;
-    bubble.position.y = baseY - parallaxY + jiggleY;
+    // Subtle shimmer effect - varies shell opacity gently over time
+    const shimmer = 0.25 + Math.sin(time * 1.5 + phase) * 0.08 + Math.sin(time * 2.3 + phase * 1.7) * 0.05;
 
-    // Apply scale jiggle
-    bubble.scale.setScalar(jiggleScale);
-
-    // Static rotation with hover jiggle only
-    bubble.rotation.y = phase + Math.sin(time * 6) * 0.1 * jiggle;
-    bubble.rotation.x = Math.cos(time * 7) * 0.08 * jiggle;
+    // Hover highlight - brighten shimmer when hovered (but not when mouse is down)
+    const isHovered = idx === hoveredBubbleIndex;
+    const targetHoverBoost = (isHovered && !isMouseDown) ? 0.15 : 0;
+    // Ease toward target value
+    hoverBoostCurrent[idx] += (targetHoverBoost - hoverBoostCurrent[idx]) * HOVER_EASE_SPEED;
+    const hoverBoost = hoverBoostCurrent[idx];
 
     // Update shader uniforms for wobble animation and opacity
     if (bubbleMaterial) {
@@ -729,11 +952,12 @@ function update() {
           child.rotation.x = -bubble.rotation.x;
         }
       }
-      // Update iridescent shell overlay
+      // Update iridescent shell overlay with shimmer effect
       if (child.userData.isShell) {
         const shellMaterial = child.userData.shellMaterial;
         if (shellMaterial) {
-          shellMaterial.opacity = bubbleOpacity * 0.3; // Keep semi-transparent
+          // Apply shimmer + hover boost to shell opacity
+          shellMaterial.opacity = bubbleOpacity * Math.min(1, shimmer + hoverBoost);
           if (shellMaterial.userData.shader) {
             shellMaterial.userData.shader.uniforms.uTime.value = time + phase;
           }
@@ -744,43 +968,131 @@ function update() {
     bubble.visible = bubbleOpacity > 0.01;
 
     // Update label position (project 3D to 2D)
+    // Hide labels when detail view is open
     if (camera && nameLabels[index]) {
       const label = nameLabels[index];
-      // Get world position of bubble
-      const worldPos = new THREE.Vector3();
-      bubble.getWorldPosition(worldPos);
 
-      // Calculate distance from camera
-      const distanceToCamera = camera.position.z - worldPos.z;
+      if (isDetailOpen) {
+        // Hide all labels when detail is open
+        label.style.opacity = 0;
+      } else {
+        // Get world position of bubble
+        const worldPos = new THREE.Vector3();
+        bubble.getWorldPosition(worldPos);
 
-      // Only show if in front of camera and within reasonable range
-      if (distanceToCamera > 50 && distanceToCamera < 1500 && bubbleOpacity > 0.01) {
-        worldPos.y -= BUBBLE_RADIUS + 20; // Position below bubble
+        // Calculate distance from camera
+        const distanceToCamera = camera.position.z - worldPos.z;
 
-        // Project to screen coordinates
-        const screenPos = worldPos.clone().project(camera);
+        // Only show if in front of camera and within reasonable range
+        if (distanceToCamera > 50 && distanceToCamera < 1500 && bubbleOpacity > 0.01) {
+          worldPos.y -= BUBBLE_RADIUS + 20; // Position below bubble
 
-        // Check if in front of camera (z < 1 in NDC space)
-        if (screenPos.z < 1) {
-          const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
-          const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+          // Project to screen coordinates
+          const screenPos = worldPos.clone().project(camera);
 
-          label.style.left = `${x}px`;
-          label.style.top = `${y}px`;
-          label.style.opacity = bubbleOpacity;
+          // Check if in front of camera (z < 1 in NDC space)
+          if (screenPos.z < 1) {
+            const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+
+            label.style.left = `${x}px`;
+            label.style.top = `${y}px`;
+            label.style.opacity = bubbleOpacity;
+          } else {
+            label.style.opacity = 0;
+          }
         } else {
           label.style.opacity = 0;
         }
+      }
+    }
+
+    // Update click icon position (bottom-right of bubble)
+    // Hide icons when detail view is open
+    if (camera && clickIcons[index]) {
+      const clickIcon = clickIcons[index];
+
+      if (isDetailOpen) {
+        // Hide all click icons when detail is open
+        clickIcon.style.opacity = 0;
       } else {
-        label.style.opacity = 0;
+        const iconWorldPos = new THREE.Vector3();
+        bubble.getWorldPosition(iconWorldPos);
+
+        const distanceToCamera = camera.position.z - iconWorldPos.z;
+
+        if (distanceToCamera > 50 && distanceToCamera < 1500 && bubbleOpacity > 0.01) {
+          // Offset to bottom-right, closer to the bubble edge
+          iconWorldPos.x += BUBBLE_RADIUS * 0.75 + 5;
+          iconWorldPos.y -= BUBBLE_RADIUS * 0.75 + 5;
+
+          const screenPos = iconWorldPos.clone().project(camera);
+
+          if (screenPos.z < 1) {
+            const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+
+            clickIcon.style.left = `${x}px`;
+            clickIcon.style.top = `${y}px`;
+            clickIcon.style.opacity = bubbleOpacity * 0.7;
+          } else {
+            clickIcon.style.opacity = 0;
+          }
+        } else {
+          clickIcon.style.opacity = 0;
+        }
       }
     }
   });
 
+  // Update detail panel position (in 3D space relative to selected bubble)
+  if (camera && detailPanel && isDetailOpen && selectedBubbleIndex >= 0) {
+    const selectedBubble = bubbles[selectedBubbleIndex];
+    const worldPos = new THREE.Vector3();
+    selectedBubble.getWorldPosition(worldPos);
+
+    const distanceToCamera = camera.position.z - worldPos.z;
+
+    if (distanceToCamera > 50 && distanceToCamera < 1500) {
+      // Scale based on distance (like section title)
+      const baseDistance = 800;
+      const scale = Math.max(0.5, Math.min(2.5, baseDistance / distanceToCamera));
+
+      const textContainer = detailPanel.querySelector('.crew-detail-text');
+
+      // Position text based on which character is selected
+      // Dad (index 2): text to the LEFT of bubble (right-aligned text)
+      // Selena/Leo (index 0, 1): text to the RIGHT of bubble
+      const textPos = worldPos.clone();
+      let translateX;
+
+      if (selectedBubbleIndex === 2) {
+        // Dad: text to the left (100px from bubble edge)
+        textPos.x -= BUBBLE_RADIUS + 100;
+        translateX = '-100%'; // Align right edge to the position
+      } else {
+        // Selena/Leo: text to the right (100px from bubble edge)
+        textPos.x += BUBBLE_RADIUS + 100;
+        translateX = '0%'; // Align left edge to the position
+      }
+
+      const textScreen = textPos.clone().project(camera);
+
+      if (textScreen.z < 1 && textContainer) {
+        const textX = (textScreen.x * 0.5 + 0.5) * window.innerWidth;
+        const textY = (-textScreen.y * 0.5 + 0.5) * window.innerHeight;
+        textContainer.style.left = `${textX}px`;
+        textContainer.style.top = `${textY}px`;
+        textContainer.style.transform = `translate(${translateX}, -50%) scale(${scale})`;
+      }
+    }
+  }
+
   // Update section title/subtitle position (above/below bubbles)
+  // Hide when detail view is open
   if (camera && sectionTitle && sectionSubtitle && bubbles.length > 0) {
-    // Only update when section is visible
-    if (groupOpacity > 0.01) {
+    // Only update when section is visible and detail view is not open
+    if (groupOpacity > 0.01 && !isDetailOpen) {
       // Use center bubble (Leo) as reference
       const centerBubble = bubbles[1];
       const bubbleWorldPos = new THREE.Vector3();
@@ -797,10 +1109,10 @@ function update() {
         const scale = Math.max(0.5, Math.min(2.5, baseDistance / distanceToCamera));
 
         const titlePos = bubbleWorldPos.clone();
-        titlePos.y += BUBBLE_RADIUS + 120; // Position above bubbles
+        titlePos.y += BUBBLE_RADIUS + 80; // Position above bubbles
 
         const subtitlePos = bubbleWorldPos.clone();
-        subtitlePos.y -= BUBBLE_RADIUS + 100; // Position below bubbles (below name labels)
+        subtitlePos.y -= BUBBLE_RADIUS + 80; // Position below bubbles (below name labels)
 
         // Project to screen coordinates
         const titleScreen = titlePos.clone().project(camera);
@@ -857,9 +1169,6 @@ function update() {
     // Only reset if we're in the crew section (so we don't interfere with other sections)
     document.body.style.cursor = '';
   }
-
-  // Track previous hover for detecting new hovers next frame
-  previousHoveredIndex = hoveredBubbleIndex;
 }
 
 // Cleanup
@@ -882,12 +1191,21 @@ function destroy() {
     labelsContainer.remove();
   }
 
+  // Clean up detail panel
+  if (detailPanel) {
+    detailPanel.remove();
+  }
+
   bubblesGroup = null;
   bubbles = [];
   nameLabels = [];
+  clickIcons = [];
   sectionTitle = null;
   sectionSubtitle = null;
   labelsContainer = null;
+  detailPanel = null;
+  selectedBubbleIndex = -1;
+  isDetailTransitioning = false;
   camera = null;
   if (envMap) {
     envMap.dispose();
