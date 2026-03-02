@@ -1,32 +1,30 @@
 /* ==========================================================================
-   Liftoff - Content Module
-   Static text with checkpoint transitions + Z-animated image placeholders
+   Liftoff - Content Module (Simplified)
+   Text and images fly through same Z space, driven purely by scroll position
    ========================================================================== */
 
 import * as Parallax from './parallax.js';
 import * as Scroll from './scroll.js';
 
-// Section content data - each section has text and optional image placeholders
-// Section 0 is intro-only (title fades on scroll, then images appear)
+// Section content data
 const SECTIONS = [
   {
     title: 'LIFTOFF',
+    titleImage: 'https://triglass-assets.s3.amazonaws.com/image0.png',
     subtitle: 'A journey beyond the stars',
-    images: []  // No images in intro - title fades first, then content appears
+    images: []
   },
   {
     title: 'LOGLINE',
     subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
-    centerText: true,  // Keep text centered like intro
     images: [
-      { x: -30, y: 0, width: 1920, height: 1080, scale: 0.25, label: 'Video', delay: 0, rotateY: 15, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4' },
+      { x: -55, y: 0, width: 1920, height: 1080, scale: 0.38, label: 'Video', delay: 0, rotateY: 30, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4' },
     ]
   },
   {
     title: 'TRAILER',
     subtitle: '',
-    centerText: true,
-    fadeTextEarly: true,  // Fade text out earlier in section
+    trailerLayout: true,
     images: [
       { x: 0, y: 5, width: 2048, height: 1025, scale: 0.35, label: 'Trailer Video', delay: 0, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', playable: true },
     ]
@@ -34,9 +32,8 @@ const SECTIONS = [
   {
     title: 'THE CREW',
     subtitle: 'Three experiences. One life-changing event.',
-    images: [],  // Using 3D bubbles instead of placeholders
-    zRange: 3,
-    crewLayout: true  // Special layout: title top, subtitle bottom
+    images: [],
+    zRange: 3
   },
   {
     title: 'THE STAKES',
@@ -45,7 +42,7 @@ const SECTIONS = [
       { x: -40, y: 0, width: 320, height: 200, label: 'Earth View', delay: 0 },
       { x: 35, y: 5, width: 280, height: 180, label: 'The Threat', delay: 0.35 },
     ],
-    zRange: 3  // Match crew section Z separation
+    zRange: 3
   },
   {
     title: 'COMING SOON',
@@ -54,9 +51,9 @@ const SECTIONS = [
   }
 ];
 
-// Configuration
-const IMAGE_START_Z = -800;  // How far back images start
-const IMAGE_END_Z = 600;     // Images fly past the camera
+// Configuration - same Z range for text and images
+const IMAGE_START_Z = -800;
+const IMAGE_END_Z = 600;
 
 // DOM elements
 let viewport = null;
@@ -69,14 +66,13 @@ let contactBtn = null;
 let copyrightEl = null;
 const imageElements = [];
 
-// Track current section for text transitions
-let currentSection = 0;
-let displaySection = 0; // Which section's styling to show (changes after transition completes)
-let isTransitioning = false;
-let transitionTimeout = null; // Store timeout ID to cancel if needed
-let jumpTarget = null; // Section we're jumping to (blocks scroll-based updates)
+// Track which section's text is currently displayed
+let lastSectionIndex = -1;
 
-// Inject CSS (Adobe Fonts loaded via Webflow)
+// Track when we entered trailer section for auto-fade
+let trailerEnteredTime = null;
+
+// Inject CSS
 function injectStyles() {
   const style = document.createElement('style');
   style.textContent = `
@@ -91,6 +87,7 @@ function injectStyles() {
       pointer-events: none;
       perspective: 1000px;
       perspective-origin: 50% 50%;
+      transform-style: preserve-3d;
     }
 
     /* Text container with 3D transforms */
@@ -104,6 +101,7 @@ function injectStyles() {
       width: 80vw;
       max-width: 800px;
       z-index: 20;
+      pointer-events: auto;
     }
     .liftoff-text h1 {
       font-family: montserrat, sans-serif;
@@ -122,6 +120,18 @@ function injectStyles() {
       color: #FED003;
       letter-spacing: -0.02em;
     }
+    /* Title image for intro section */
+    .liftoff-text.intro h1 img.title-image {
+      max-width: clamp(300px, 60vw, 800px);
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* Intro subtitle - moved up over PNG whitespace */
+    .liftoff-text.intro p {
+      position: relative;
+      top: clamp(-243px, calc(-40vw + 57px), -123px);
+    }
     .liftoff-text p {
       font-family: 'montserrat', sans-serif;
       font-size: clamp(12px, 1.5vw, 16px);
@@ -135,11 +145,6 @@ function injectStyles() {
     .liftoff-text.intro p {
       font-size: clamp(14px, 2vw, 20px);
     }
-    .liftoff-text.transitioning h1,
-    .liftoff-text.transitioning p {
-      opacity: 0;
-      transition: opacity 0.6s ease-out;
-    }
 
     /* Intro animation - title fades on first, then subtitle */
     .liftoff-text.intro h1 {
@@ -151,7 +156,7 @@ function injectStyles() {
       opacity: 0;
       transform: translateY(20px);
       transition: opacity 1.5s ease-out, transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
-      transition-delay: 1s; /* Start after title fades in */
+      transition-delay: 1s;
     }
     .liftoff-text.intro.revealed h1 {
       opacity: 1;
@@ -162,49 +167,75 @@ function injectStyles() {
       transform: translateY(0);
     }
 
-    /* Outro section (COMING SOON) - smaller title, centered */
+    /* Chapter entrance animation - for non-intro sections */
+    .liftoff-text:not(.intro) h1 {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: none; /* No transition when resetting */
+    }
+    .liftoff-text:not(.intro) p {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: none; /* No transition when resetting */
+    }
+    .liftoff-text:not(.intro).section-entered h1 {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.8s ease-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .liftoff-text:not(.intro).section-entered p {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.7s ease-out, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 0.3s;
+    }
+
+    /* Outro section (COMING SOON) - smaller title */
     .liftoff-text.outro h1 {
       font-size: clamp(12px, 2.5vw, 24px);
       letter-spacing: 0.15em;
     }
 
+    /* Logline section - 25% smaller text */
+    .liftoff-text.logline h1 {
+      font-size: clamp(24px, 4.5vw, 48px);
+    }
+    .liftoff-text.logline p {
+      font-size: clamp(8px, 0.85vw, 10px);
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* Trailer section - smaller title */
+    .liftoff-text.trailer h1 {
+      font-size: clamp(18px, 3vw, 32px);
+    }
+
     /* Crew layout - title top, subtitle bottom */
     .liftoff-text.crew-layout {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
       height: 100%;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
       padding: 12vh 0 15vh 0;
-      transform: none !important;
     }
     .liftoff-text.crew-layout h1 {
       font-size: clamp(24px, 4vw, 48px);
       margin: 0;
+      width: 100%;
+      text-align: center !important;
     }
     .liftoff-text.crew-layout p {
       font-size: clamp(12px, 1.5vw, 18px);
       margin: 0;
-    }
-
-    /* Character animation for section transitions */
-    .liftoff-char {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(100%) rotateX(-80deg);
-      transform-origin: center top;
-      transition: opacity 0.6s ease-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .liftoff-char.space {
-      width: 0.3em;
-    }
-    .liftoff-text.char-revealed .liftoff-char {
-      opacity: 1;
-      transform: translateY(0) rotateX(0deg);
+      width: 100%;
+      text-align: center !important;
     }
 
     /* 3D world for image placeholders */
@@ -215,10 +246,9 @@ function injectStyles() {
       width: 0;
       height: 0;
       transform-style: preserve-3d;
-      perspective: 1000px;
     }
 
-    /* Image placeholder styling - frosted glass effect */
+    /* Image placeholder styling */
     .liftoff-image {
       position: absolute;
       background: rgba(255,255,255,0.05);
@@ -249,9 +279,8 @@ function injectStyles() {
       object-fit: cover;
       border-radius: 8px;
       image-rendering: high-quality;
-      /* Feathered edge mask for seamless blend - very soft fade */
-      mask-image: radial-gradient(ellipse 70% 70% at center, black 20%, transparent 70%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, black 20%, transparent 70%);
+      mask-image: radial-gradient(ellipse 80% 80% at center, black 50%, transparent 85%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 80% at center, black 50%, transparent 85%);
     }
     .liftoff-image.has-video {
       background: transparent;
@@ -262,7 +291,6 @@ function injectStyles() {
       -webkit-transform-style: preserve-3d;
       border: none;
     }
-    /* Playable videos don't need feathered edges */
     .liftoff-image.playable-video {
       pointer-events: auto;
     }
@@ -271,25 +299,6 @@ function injectStyles() {
       -webkit-mask-image: none;
       border-radius: 12px;
       pointer-events: auto;
-    }
-
-    /* Embedded title inside placeholder */
-    .liftoff-image.has-embedded-title {
-      overflow: visible;
-    }
-    .liftoff-image .embedded-title {
-      position: absolute;
-      top: -100px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: montserrat, sans-serif;
-      font-size: clamp(48px, 8vw, 96px);
-      font-weight: 500;
-      text-transform: uppercase;
-      color: #fff;
-      white-space: nowrap;
-      pointer-events: none;
-      z-index: 10;
     }
 
     /* Playable video play button */
@@ -394,9 +403,9 @@ function init() {
   viewport = document.createElement('div');
   viewport.className = 'liftoff-viewport';
 
-  // Create static text container (no Z movement)
+  // Create text container
   textContainer = document.createElement('div');
-  textContainer.className = 'liftoff-text intro'; // Start with intro class for scale animation
+  textContainer.className = 'liftoff-text intro';
   textContainer.innerHTML = `<h1></h1><p></p>`;
   titleEl = textContainer.querySelector('h1');
   subtitleEl = textContainer.querySelector('p');
@@ -407,7 +416,7 @@ function init() {
   imageWorld.className = 'liftoff-image-world';
   viewport.appendChild(imageWorld);
 
-  // Create all image placeholders for all sections
+  // Create all image placeholders
   SECTIONS.forEach((sectionData, sectionIndex) => {
     if (!sectionData.images) return;
 
@@ -416,15 +425,6 @@ function init() {
       img.className = 'liftoff-image';
       img.style.width = imgConfig.width + 'px';
       img.style.height = imgConfig.height + 'px';
-
-      // Add embedded title if section has titleInPlaceholder: true
-      if (sectionData.titleInPlaceholder && sectionData.title) {
-        img.classList.add('has-embedded-title');
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'embedded-title';
-        titleDiv.textContent = sectionData.title;
-        img.appendChild(titleDiv);
-      }
 
       // Check if this is a video placeholder
       if (imgConfig.video && imgConfig.video !== 'VIDEO_URL_HERE') {
@@ -435,36 +435,27 @@ function init() {
         video.preload = 'auto';
 
         if (imgConfig.playable) {
-          // Playable video with play button (not scroll-scrubbed)
           video.muted = false;
           video.loop = false;
           img.dataset.playable = 'true';
           img.classList.add('playable-video');
 
-          // Create play button
           const playBtn = document.createElement('button');
           playBtn.className = 'video-play-btn';
           let hideTimeout = null;
-
           let lastMouseX = 0;
           let lastMouseY = 0;
 
           const showPauseButton = (e) => {
-            // Only trigger if mouse actually moved (not just element transform)
             if (e && e.clientX !== undefined) {
-              if (Math.abs(e.clientX - lastMouseX) < 2 && Math.abs(e.clientY - lastMouseY) < 2) {
-                return; // Mouse didn't really move
-              }
+              if (Math.abs(e.clientX - lastMouseX) < 2 && Math.abs(e.clientY - lastMouseY) < 2) return;
               lastMouseX = e.clientX;
               lastMouseY = e.clientY;
             }
-
             if (!video.paused) {
               playBtn.classList.add('show-pause');
               clearTimeout(hideTimeout);
-              hideTimeout = setTimeout(() => {
-                playBtn.classList.remove('show-pause');
-              }, 800);
+              hideTimeout = setTimeout(() => playBtn.classList.remove('show-pause'), 800);
             }
           };
 
@@ -481,13 +472,10 @@ function init() {
             }
           });
 
-          // Show pause button on hover when playing (listen on video too since it covers the container)
           img.addEventListener('mouseenter', showPauseButton);
           img.addEventListener('mousemove', showPauseButton);
           video.addEventListener('mouseenter', showPauseButton);
           video.addEventListener('mousemove', showPauseButton);
-
-          // Reset button when video ends
           video.addEventListener('ended', () => {
             playBtn.classList.remove('playing', 'show-pause');
             clearTimeout(hideTimeout);
@@ -496,7 +484,6 @@ function init() {
 
           img.appendChild(playBtn);
         } else {
-          // Scroll-scrubbed video
           video.muted = true;
           video.loop = false;
         }
@@ -504,20 +491,17 @@ function init() {
         img.appendChild(video);
         img.dataset.hasVideo = 'true';
       } else {
-        // Regular placeholder with label
         img.innerHTML += `<span>${imgConfig.label}</span>`;
       }
 
       // Store metadata
       img.dataset.section = sectionIndex;
-      img.dataset.baseX = imgConfig.x; // percentage from center
+      img.dataset.baseX = imgConfig.x;
       img.dataset.baseY = imgConfig.y;
-      img.dataset.delay = imgConfig.delay || 0; // stagger delay (0-1)
-      img.dataset.angle = imgConfig.angle || 0; // base Z rotation angle in degrees
-      img.dataset.rotateY = imgConfig.rotateY || 0; // Y-axis 3D rotation (faces toward center)
-      img.dataset.scale = imgConfig.scale || 1; // scale factor for high-res videos
-
-      // Start hidden
+      img.dataset.delay = imgConfig.delay || 0;
+      img.dataset.angle = imgConfig.angle || 0;
+      img.dataset.rotateY = imgConfig.rotateY || 0;
+      img.dataset.scale = imgConfig.scale || 1;
       img.style.opacity = 0;
 
       imageWorld.appendChild(img);
@@ -532,7 +516,7 @@ function init() {
   scrollSpacer.className = 'liftoff-scroll-spacer';
   document.body.appendChild(scrollSpacer);
 
-  // Contact button (top right)
+  // Contact button
   contactBtn = document.createElement('button');
   contactBtn.className = 'liftoff-contact';
   contactBtn.textContent = 'Contact';
@@ -541,87 +525,60 @@ function init() {
   });
   document.body.appendChild(contactBtn);
 
-  // Copyright (bottom left)
+  // Copyright
   copyrightEl = document.createElement('div');
   copyrightEl.className = 'liftoff-copyright';
   copyrightEl.textContent = '\u00A9 2026 Triglass Productions';
   document.body.appendChild(copyrightEl);
 
-  // Set initial text
-  updateText(0);
+  // Set initial text for intro
+  setTextContent(0);
 
   console.log('[LIFTOFF] Content initialized with', SECTIONS.length, 'sections,', imageElements.length, 'images');
 }
 
-// Update text with transition effect
-function updateText(sectionIndex, force = false) {
-  if (!force && sectionIndex === currentSection && titleEl.textContent) return;
-
+// Set text content with entrance animation
+function setTextContent(sectionIndex) {
   const section = SECTIONS[sectionIndex];
   if (!section) return;
 
-  const wasFirstSection = currentSection === 0;
-  currentSection = sectionIndex;
+  // Remove entrance animation class to reset for new section
+  textContainer.classList.remove('section-entered');
 
-  // First section on init - just set text (intro animation handles reveal)
-  if (sectionIndex === 0 && !titleEl.textContent) {
+  // Update text content
+  if (section.titleImage && sectionIndex === 0) {
+    titleEl.innerHTML = `<img src="${section.titleImage}" alt="${section.title}" class="title-image">`;
+  } else {
     titleEl.textContent = section.title;
-    subtitleEl.textContent = section.subtitle;
-    return;
+  }
+  subtitleEl.textContent = section.subtitle;
+
+  // Update CSS classes for styling
+  // Note: we never remove 'revealed' - once added by reveal(), it persists
+  textContainer.classList.remove('intro', 'logline', 'trailer', 'outro', 'crew-layout');
+  if (sectionIndex === 0) {
+    textContainer.classList.add('intro');
+  } else if (sectionIndex === 1) {
+    textContainer.classList.add('logline');
+  } else if (sectionIndex === 2) {
+    textContainer.classList.add('trailer');
+  } else if (sectionIndex === SECTIONS.length - 1) {
+    textContainer.classList.add('outro');
+  }
+  if (section.crewLayout) {
+    textContainer.classList.add('crew-layout');
   }
 
-  // Cancel any pending transition
-  if (transitionTimeout) {
-    clearTimeout(transitionTimeout);
-    transitionTimeout = null;
-  }
-
-  // Fade out current text
-  isTransitioning = true;
-  textContainer.classList.add('transitioning');
-  textContainer.classList.remove('char-revealed');
-
-  transitionTimeout = setTimeout(() => {
-    transitionTimeout = null;
-    isTransitioning = false;
-    displaySection = sectionIndex; // Now update the visual styling
-
-    // Clear any inline opacity from intro section fade-out
-    textContainer.style.opacity = '';
-
-    // Handle intro/outro class based on which section we're going to
-    if (sectionIndex === 0) {
-      // Restore intro class for section 0 (larger font, etc.)
-      textContainer.classList.add('intro', 'revealed');
-      textContainer.classList.remove('outro');
-    } else if (sectionIndex === SECTIONS.length - 1) {
-      // Add outro class for last section (smaller title, centered)
-      textContainer.classList.add('outro');
-      textContainer.classList.remove('intro', 'revealed');
-    } else {
-      // Regular sections - remove both special classes
-      textContainer.classList.remove('intro', 'revealed', 'outro');
-    }
-
-    // Set new text and split into characters for animation
-    titleEl.textContent = section.title;
-    subtitleEl.textContent = section.subtitle;
-
-    // Use character animation for all section transitions
-    const titleCharCount = splitTextToChars(titleEl, 0);
-    const subtitleDelay = titleCharCount * 0.04 + 0.1;
-    splitTextToChars(subtitleEl, subtitleDelay);
-
-    // Remove transitioning and trigger reveal
-    textContainer.classList.remove('transitioning');
-
-    // Trigger character animation after reflow
-    // eslint-disable-next-line no-unused-expressions
-    textContainer.offsetHeight;
+  // Trigger entrance animation immediately (for non-intro sections)
+  if (sectionIndex !== 0) {
     requestAnimationFrame(() => {
-      textContainer.classList.add('char-revealed');
+      requestAnimationFrame(() => {
+        textContainer.classList.add('section-entered');
+      });
     });
-  }, 800); // Wait for fade out to complete
+  }
+
+  lastSectionIndex = sectionIndex;
 }
 
 // Update content based on scroll progress
@@ -629,86 +586,97 @@ function update(scrollProgress) {
   if (!viewport || !imageWorld) return;
 
   const mouse = Parallax.getMouse();
-  const elasticOffset = Scroll.getElasticOffset(); // For syncing title with camera bounce
+  const elasticOffset = Scroll.getElasticOffset();
   const numSections = SECTIONS.length;
 
-  // Determine which section we're in (0 to numSections-1)
+  // Determine which section we're in
   const sectionFloat = scrollProgress * (numSections - 1);
   const sectionIndex = Math.min(Math.floor(sectionFloat), numSections - 1);
-  const sectionProgress = sectionFloat - sectionIndex; // 0-1 within current section
+  const sectionProgress = sectionFloat - sectionIndex;
 
-  // Update text at checkpoints (but not if we're jumping to a different section)
-  if (jumpTarget !== null) {
-    // We're in the middle of a jump - only clear when scroll catches up
-    if (sectionIndex === jumpTarget) {
-      jumpTarget = null; // Arrived at target, resume normal scroll-based updates
+  // Update text content when section changes
+  if (sectionIndex !== lastSectionIndex) {
+    setTextContent(sectionIndex);
+    // Track when we enter trailer section for auto-fade
+    if (sectionIndex === 2) {
+      trailerEnteredTime = performance.now();
+    } else {
+      trailerEnteredTime = null;
     }
-    // Don't call updateText while jumping - it was already triggered
-  } else {
-    updateText(sectionIndex);
   }
 
-  // Apply parallax to text - moves TOWARDS mouse (foreground feel)
-  // Text rotation matches world rotation (velocity-based, springs back)
+  // Parallax offsets
   const offsetX = mouse.x * 40;
-  const offsetY = -mouse.y * 8; // Minimal Y movement (negative to match CSS coords)
-  const rotZ = Parallax.getRotationZ(); // Get velocity-based rotation that springs back
-  const leanAngle = rotZ * 100; // Convert radians to degrees, lean towards mouse direction
+  const offsetY = -mouse.y * 8;
+  const rotZ = Parallax.getRotationZ();
+  const leanAngle = rotZ * 100;
 
-  // Intro section (0): text floats in space, we fly straight through it
-  // Outro section (last): centered like intro
-  // Use displaySection for transform (only changes after transition completes)
-  // Use currentSection for opacity logic (prevents re-applying intro fade after leaving)
-  const lastSection = SECTIONS.length - 1;
+  // Calculate text Z position (same system as images)
+  const sectionData = SECTIONS[sectionIndex];
+  const zRange = sectionData?.zRange || 1;
+  const zDistance = (IMAGE_END_Z - IMAGE_START_Z) * zRange;
+  const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
 
-  if (displaySection === 0) {
-    // Move toward camera in Z space (0 -> 950px, just under perspective of 1000px)
-    // Also apply elastic offset so title bounces back with camera (scaled to match camera travel)
-    const introZ = sectionProgress * 950 + elasticOffset * 2000;
-    // Only apply intro opacity if we're actually still in section 0 content-wise
-    if (currentSection === 0) {
-      const introOpacity = sectionProgress < 0.6 ? 1 : Math.max(0, 1 - ((sectionProgress - 0.6) / 0.3));
+  const t = Math.max(0, Math.min(1, sectionProgress));
+  const textZ = sectionStartZ + zDistance * t + elasticOffset * 1000;
+  const clampedZ = Math.max(-800, Math.min(950, textZ));
+
+  // Calculate opacity - text is visible at start of section, fades out as you leave
+  // (Unlike images which fade in from far away, text should be readable when you arrive)
+  let textOpacity = 1;
+  if (t > 0.6) {
+    textOpacity = 1 - ((t - 0.6) / 0.4); // Fade out in last 40% of section
+  }
+  // Proximity fade when very close to camera
+  if (clampedZ > 400) {
+    const proximityFade = 1 - ((clampedZ - 400) / 300);
+    textOpacity *= Math.max(0, proximityFade);
+  }
+
+  // Special handling for intro (section 0) - use zoom behavior
+  // Start closer to camera (Z=150) so title appears larger initially
+  if (sectionIndex === 0) {
+    const introZ = 150 + sectionProgress * 800 + elasticOffset * 2000;
+    const introOpacity = sectionProgress < 0.6 ? 1 : Math.max(0, 1 - ((sectionProgress - 0.6) / 0.3));
+    // Only apply opacity if revealed
+    if (textContainer.classList.contains('revealed')) {
       textContainer.style.opacity = introOpacity;
     }
     textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${introZ}px) rotate(${leanAngle}deg)`;
-  } else if (displaySection === lastSection) {
-    // Outro section: centered like intro, no Z movement
-    textContainer.style.opacity = '';
-    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${leanAngle}deg)`;
-  } else if (SECTIONS[displaySection]?.titleInPlaceholder) {
-    // Sections with titleInPlaceholder: true - hide regular text (it's embedded in placeholder)
-    textContainer.style.opacity = '0';
-    textContainer.style.transform = `translate(-50%, -50%)`;
-  } else if (SECTIONS[displaySection]?.crewLayout) {
-    // Crew section - title at top, subtitle at bottom (handled by CSS)
-    textContainer.classList.add('crew-layout');
-    textContainer.style.opacity = '';
-  } else if (SECTIONS[displaySection]?.textAbove) {
-    // Sections with textAbove: true - position text above content
-    textContainer.classList.remove('crew-layout');
-    textContainer.style.opacity = '';
-    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% - 25vh + ${offsetY}px)) rotate(${leanAngle}deg)`;
-  } else if (SECTIONS[displaySection]?.centerText) {
-    // Sections with centerText: true - centered like intro/outro
-    textContainer.classList.remove('crew-layout');
-    // Check if this section should fade text early
-    if (SECTIONS[displaySection]?.fadeTextEarly && currentSection === displaySection) {
-      // Fade out text early - start at 20% through section, gone by 50%
-      const fadeOpacity = sectionProgress < 0.2 ? 1 : Math.max(0, 1 - ((sectionProgress - 0.2) / 0.3));
-      textContainer.style.opacity = fadeOpacity;
-    } else {
-      textContainer.style.opacity = '';
+    textContainer.style.pointerEvents = 'auto';
+  } else if (sectionIndex === 3) {
+    // Crew section - title/subtitle handled by bubbles.js with 3D projection
+    // Hide the CSS text container
+    textContainer.style.opacity = 0;
+    textContainer.style.pointerEvents = 'none';
+  } else if (sectionData?.trailerLayout) {
+    // Trailer section - title above video, same Z as video, auto-fade after 3s
+    // Calculate video Z position (same as image Z calculation)
+    const videoZ = IMAGE_START_Z + (IMAGE_END_Z - IMAGE_START_Z) * t;
+
+    // Auto-fade: full opacity for 3 seconds, then fade out over 1 second
+    let trailerOpacity = 1;
+    if (trailerEnteredTime) {
+      const elapsed = (performance.now() - trailerEnteredTime) / 1000;
+      if (elapsed > 3) {
+        trailerOpacity = Math.max(0, 1 - (elapsed - 3));
+      }
     }
-    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${leanAngle}deg)`;
+
+    // Position above the video (not too high)
+    textContainer.style.opacity = trailerOpacity;
+    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-18vh + ${offsetY}px)) translateZ(${videoZ}px) rotate(${leanAngle}deg)`;
+    textContainer.style.pointerEvents = trailerOpacity < 0.1 ? 'none' : 'auto';
   } else {
-    // Other sections: 25% from bottom (75% from top)
-    textContainer.classList.remove('crew-layout');
-    // Clear any stale intro opacity
-    textContainer.style.opacity = '';
-    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + 25vh + ${offsetY}px)) rotate(${leanAngle}deg)`;
+    // Standard sections
+    // For logline (section 1), push text ahead of the video so it doesn't clip through
+    const textZOffset = sectionIndex === 1 ? 150 : 0;
+    textContainer.style.opacity = textOpacity;
+    textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${clampedZ + textZOffset}px) rotate(${leanAngle}deg)`;
+    textContainer.style.pointerEvents = 'auto';
   }
 
-  // Update image placeholders - they fly in from Z distance, staggered by delay
+  // Update images - same Z calculation
   imageElements.forEach((img) => {
     const imgSection = parseInt(img.dataset.section);
     const baseX = parseFloat(img.dataset.baseX);
@@ -718,71 +686,56 @@ function update(scrollProgress) {
     const baseRotateY = parseFloat(img.dataset.rotateY) || 0;
     const baseScale = parseFloat(img.dataset.scale) || 1;
 
-    // Get section-specific Z range multiplier (default 1)
-    const sectionData = SECTIONS[imgSection];
-    const zRange = sectionData?.zRange || 1;
-    const zDistance = (IMAGE_END_Z - IMAGE_START_Z) * zRange;
-    const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
+    const imgSectionData = SECTIONS[imgSection];
+    const imgZRange = imgSectionData?.zRange || 1;
+    const imgZDistance = (IMAGE_END_Z - IMAGE_START_Z) * imgZRange;
+    const imgStartZ = IMAGE_START_Z - (imgZDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
 
     let opacity = 0;
-    let textReveal = 0; // Separate from opacity for text clip-path
-    let zPos = sectionStartZ;
+    let textReveal = 0;
+    let zPos = imgStartZ;
 
     if (imgSection === sectionIndex) {
-      // Each image has its own timing based on delay
-      // delay 0 = starts at section start, delay 0.5 = starts halfway through section
       const adjustedProgress = Math.max(0, (sectionProgress - delay) / (1 - delay));
-      const t = Math.min(1, adjustedProgress);
+      const imgT = Math.min(1, adjustedProgress);
 
-      zPos = sectionStartZ + zDistance * t;
+      zPos = imgStartZ + imgZDistance * imgT;
 
-      // Fade in quickly, fade out as it passes the camera
-      if (t < 0.15) {
-        opacity = t / 0.15; // Fast fade in
-        textReveal = opacity; // Text reveals with fade-in
-      } else if (t > 0.75) {
-        opacity = 1 - ((t - 0.75) / 0.25); // Fade out in last 25%
-        textReveal = 1; // Text stays fully revealed during fade-out
+      const isPlayable = img.dataset.playable === 'true';
+      const fadeOutStart = isPlayable ? 0.97 : 0.75;
+      const fadeOutDuration = isPlayable ? 0.03 : 0.25;
+
+      if (imgT < 0.15) {
+        opacity = imgT / 0.15;
+        textReveal = opacity;
+      } else if (imgT > fadeOutStart) {
+        opacity = 1 - ((imgT - fadeOutStart) / fadeOutDuration);
+        textReveal = 1;
       } else {
-        opacity = 1; // Stay fully visible in middle
+        opacity = 1;
         textReveal = 1;
       }
 
-      // Additional fade when very close to camera (Z > 200)
-      // This prevents placeholders from blocking the view
-      if (zPos > 200) {
-        const proximityFade = 1 - ((zPos - 200) / 400); // Fade from z=200 to z=600
+      const proximityStart = isPlayable ? 450 : 200;
+      const proximityRange = isPlayable ? 200 : 400;
+      if (zPos > proximityStart) {
+        const proximityFade = 1 - ((zPos - proximityStart) / proximityRange);
         opacity *= Math.max(0, proximityFade);
       }
     } else if (imgSection < sectionIndex) {
-      // Past section - already flown by, fade out
-      zPos = sectionStartZ + zDistance + 200;
+      zPos = imgStartZ + imgZDistance + 200;
       opacity = 0;
     }
-    // Future sections stay hidden at default values
 
-    // Calculate position with parallax
-    const parallaxStrength = 0.5 + (1 - opacity) * 0.5; // More parallax when further away
+    const parallaxStrength = 0.5 + (1 - opacity) * 0.5;
     const imgOffsetX = baseX * 3 + mouse.x * 30 * parallaxStrength;
     const imgOffsetY = baseY * 3 + mouse.y * 25 * parallaxStrength;
-
-    // Same rotation as text (velocity-based, springs back) plus base angles
     const totalAngle = leanAngle + baseAngle;
+
     img.style.transform = `translate(calc(-50% + ${imgOffsetX}px), calc(-50% + ${imgOffsetY}px)) translateZ(${zPos}px) rotateY(${baseRotateY}deg) rotate(${totalAngle}deg) scale(${baseScale})`;
     img.style.opacity = Math.max(0, Math.min(1, opacity));
 
-    // Fade out embedded title earlier as it approaches camera
-    const embeddedTitle = img.querySelector('.embedded-title');
-    if (embeddedTitle) {
-      // Start fading title when Z > -500, fully gone by Z > -200
-      let titleOpacity = 1;
-      if (zPos > -500) {
-        titleOpacity = Math.max(0, 1 - ((zPos + 500) / 300));
-      }
-      embeddedTitle.style.opacity = titleOpacity;
-    }
-
-    // Text reveal from left to right (smooth clip-path, not affected by proximity fade)
+    // Text reveal clip-path
     const textSpan = img.querySelector('span');
     if (textSpan) {
       const clipProgress = Math.max(0, Math.min(1, textReveal));
@@ -790,77 +743,37 @@ function update(scrollProgress) {
       textSpan.style.clipPath = `inset(0 ${clipRight}% 0 0)`;
     }
 
-    // Scroll-scrub video if present (only when in active section, skip playable videos)
+    // Scroll-scrub video
     if (img.dataset.hasVideo === 'true' && img.dataset.playable !== 'true' && imgSection === sectionIndex) {
       const video = img.querySelector('video');
       if (video && video.duration && !isNaN(video.duration)) {
-        // Map section progress to video time
-        // Use the adjusted progress which accounts for delay
         const adjustedProgress = Math.max(0, (sectionProgress - delay) / (1 - delay));
         const videoProgress = Math.min(1, Math.max(0, adjustedProgress));
-        const targetTime = videoProgress * video.duration;
-
-        // Seek immediately for responsive scrubbing
-        video.currentTime = targetTime;
+        video.currentTime = videoProgress * video.duration;
       }
     }
   });
-
-}
-
-// Easing function for smooth animation
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-// Split text into animated characters
-function splitTextToChars(element, baseDelay = 0) {
-  const text = element.textContent;
-  element.innerHTML = '';
-
-  let charIndex = 0;
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const span = document.createElement('span');
-    span.className = 'liftoff-char' + (char === ' ' ? ' space' : '');
-    span.textContent = char === ' ' ? '\u00A0' : char; // Use non-breaking space
-    span.style.transitionDelay = `${baseDelay + charIndex * 0.04}s`;
-    element.appendChild(span);
-    charIndex++;
-  }
-
-  return charIndex; // Return count for calculating subtitle delay
 }
 
 // Reveal intro animation (called after preloader hides)
-// First section uses simple scale animation, not character animation
 function reveal() {
   if (!textContainer) return;
-
-  // Force browser to acknowledge initial state before animating
   // eslint-disable-next-line no-unused-expressions
   textContainer.offsetHeight;
-
-  // Add revealed class to trigger scale animation
   requestAnimationFrame(() => {
     textContainer.classList.add('revealed');
-    console.log('[LIFTOFF] Content intro revealed (scale animation)');
+    console.log('[LIFTOFF] Content intro revealed');
   });
 }
 
-// Jump to a specific section immediately (for chapter clicks)
+// Jump to section - just scroll there, content updates automatically
 function jumpToSection(sectionIndex) {
   if (sectionIndex < 0 || sectionIndex >= SECTIONS.length) return;
-  jumpTarget = sectionIndex; // Block scroll-based updates until we arrive
-  updateText(sectionIndex, true); // Force the transition even if same section
+  Scroll.jumpToSection(sectionIndex);
 }
 
 // Cleanup
 function destroy() {
-  if (transitionTimeout) {
-    clearTimeout(transitionTimeout);
-    transitionTimeout = null;
-  }
   if (viewport) viewport.remove();
   if (scrollSpacer) scrollSpacer.remove();
   if (contactBtn) contactBtn.remove();
@@ -874,10 +787,7 @@ function destroy() {
   contactBtn = null;
   copyrightEl = null;
   imageElements.length = 0;
-  currentSection = 0;
-  displaySection = 0;
-  isTransitioning = false;
-  jumpTarget = null;
+  lastSectionIndex = -1;
 }
 
 export { init, update, reveal, jumpToSection, destroy };

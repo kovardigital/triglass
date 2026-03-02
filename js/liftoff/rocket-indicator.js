@@ -3,6 +3,8 @@
    Vertical scroll progress with animated rocket and debris
    ========================================================================== */
 
+import { SECTION_COUNT, getSnapPoints, getChapterNames, getSectionSnapProgress } from './config.js';
+
 // Callback for when a chapter is clicked
 let onSectionClick = null;
 
@@ -26,21 +28,37 @@ let scrollSpeed = 0;
 
 // Configuration
 const TRACK_HEIGHT = 50; // Percentage of viewport height
-const SECTION_COUNT = 6;
 
-// Chapter names (index 0 = LIFTOFF at bottom, index 5 = COMING SOON at top)
-const CHAPTER_NAMES = [
-  'LIFTOFF',
-  'LOGLINE',
-  'TRAILER',
-  'THE CREW',
-  'THE STAKES',
-  'COMING SOON'
-];
+// Get config from centralized source
+const SNAP_POINTS = getSnapPoints();
+const CHAPTER_NAMES = getChapterNames();
 
-// Calculate where each section starts (matches content.js calculation)
+// Alias for cleaner code
 function getSectionScrollProgress(sectionIndex) {
+  return getSectionSnapProgress(sectionIndex);
+}
+
+// Get evenly-spaced visual position for a section (for marker placement)
+function getSectionVisualPosition(sectionIndex) {
   return sectionIndex / (SECTION_COUNT - 1);
+}
+
+// Map actual scroll progress to visual track position
+// This makes the rocket land on evenly-spaced markers
+function progressToVisualPosition(scrollProgress) {
+  // Find which section we're in or between
+  for (let i = 0; i < SECTION_COUNT - 1; i++) {
+    const start = SNAP_POINTS[i];
+    const end = SNAP_POINTS[i + 1];
+    if (scrollProgress >= start && scrollProgress <= end) {
+      // Interpolate between evenly-spaced positions
+      const t = (scrollProgress - start) / (end - start);
+      const visualStart = getSectionVisualPosition(i);
+      const visualEnd = getSectionVisualPosition(i + 1);
+      return visualStart + t * (visualEnd - visualStart);
+    }
+  }
+  return scrollProgress; // Fallback
 }
 
 // Inject styles
@@ -427,11 +445,11 @@ function init() {
   smokeLayer.className = 'smoke-layer';
   container.appendChild(smokeLayer);
 
-  // Create section markers - positioned where rocket actually lands
+  // Create section markers - evenly spaced regardless of snap points
   for (let i = 0; i < SECTION_COUNT; i++) {
     const sectionIndex = (SECTION_COUNT - 1) - i; // Invert: i=0 is top (COMING SOON)
-    const scrollProgress = getSectionScrollProgress(sectionIndex);
-    const trackPercent = (1 - scrollProgress) * 100; // Invert for track position
+    const visualPosition = getSectionVisualPosition(sectionIndex);
+    const trackPercent = (1 - visualPosition) * 100; // Invert for track position
 
     const wrap = document.createElement('div');
     wrap.className = 'rocket-marker-wrap';
@@ -458,8 +476,9 @@ function init() {
       const scrollSpacer = document.querySelector('.liftoff-scroll-spacer');
       if (scrollSpacer) {
         const maxScroll = scrollSpacer.offsetHeight - window.innerHeight;
-        // Inverted: lower scroll position = higher progress (scroll UP to advance)
-        const targetScroll = (1 - Math.min(scrollProgress, 1)) * maxScroll;
+        // Use actual snap point progress for navigation (not visual position)
+        const snapProgress = getSectionScrollProgress(sectionIndex);
+        const targetScroll = (1 - Math.min(snapProgress, 1)) * maxScroll;
         const currentScroll = window.scrollY;
 
         // Inverted: scrolling UP (lower scroll) = forward = rocket goes up
@@ -555,9 +574,12 @@ function update(scrollProgress) {
   // Clamp progress
   const p = Math.max(0, Math.min(1, scrollProgress));
 
+  // Map actual scroll progress to visual position (so rocket lands on evenly-spaced markers)
+  const visualP = progressToVisualPosition(p);
+
   // Update rocket position (bottom = 0%, top = 100%)
   const trackHeight = container.offsetHeight;
-  const rocketTop = (1 - p) * trackHeight;
+  const rocketTop = (1 - visualP) * trackHeight;
   rocket.style.top = `${rocketTop}px`;
 
   // Detect when rocket stops moving (for smoke effect)
