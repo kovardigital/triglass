@@ -742,12 +742,17 @@ function update(scrollProgress) {
       const isPlayable = img.dataset.playable === 'true';
 
       if (isPlayable) {
-        // Playable videos: fade based on camera Z, not section boundary
+        // Playable videos: continue moving forward past their section
         const cameraZ = 100 - scrollProgress * 2000;
         const fadeStartZ = -1120;
         const fadeRange = 100;
 
-        zPos = imgStartZ + imgZDistance; // Keep at end position
+        // Continue moving at same rate as during the section
+        const sectionWidth = 1 / (numSections - 1);
+        const sectionEndProgress = (imgSection + 1) * sectionWidth;
+        const progressPastSection = scrollProgress - sectionEndProgress;
+        const zSpeed = imgZDistance / sectionWidth; // Z units per progress unit
+        zPos = (imgStartZ + imgZDistance) + progressPastSection * zSpeed;
 
         if (cameraZ > fadeStartZ) {
           opacity = 1; // Still fully visible
