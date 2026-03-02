@@ -26,7 +26,7 @@ const SECTIONS = [
     subtitle: '',
     trailerLayout: true,
     images: [
-      { x: 0, y: 5, width: 2048, height: 1025, scale: 0.35, label: 'Trailer Video', delay: 0, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', playable: true },
+      // HIDDEN: { x: 0, y: 5, width: 2048, height: 1025, scale: 0.35, label: 'Trailer Video', delay: 0, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', playable: true },
     ]
   },
   {
