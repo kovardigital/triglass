@@ -704,14 +704,13 @@ function update(scrollProgress) {
       zPos = imgStartZ + imgZDistance * imgT;
 
       const isPlayable = img.dataset.playable === 'true';
-      const fadeOutStart = isPlayable ? 0.995 : 0.75;  // Playable: fade at very end (~Z -1098)
-      const fadeOutDuration = isPlayable ? 0.01 : 0.25;
 
       if (imgT < 0.15) {
         opacity = imgT / 0.15;
         textReveal = opacity;
-      } else if (imgT > fadeOutStart) {
-        opacity = 1 - ((imgT - fadeOutStart) / fadeOutDuration);
+      } else if (!isPlayable && imgT > 0.75) {
+        // Non-playable: fade out in last 25% of section
+        opacity = 1 - ((imgT - 0.75) / 0.25);
         textReveal = 1;
       } else {
         opacity = 1;
@@ -719,6 +718,7 @@ function update(scrollProgress) {
       }
 
       if (isPlayable) {
+        // Playable videos: ONLY fade based on camera Z position (no imgT fade)
         // For playable videos: fade based on camera Z position
         const cameraZ = 100 - scrollProgress * 2000;
         const fadeStartZ = -1120; // Start fading when camera reaches this Z
