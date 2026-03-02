@@ -28,12 +28,12 @@ export const SECTIONS = [
   {
     id: 'characters',
     title: 'CHARACTERS',
-    snapZ: -1156,
+    snapZ: -1350,
   },
   {
     id: 'the-story',
     title: 'THE STORY',
-    snapZ: -1525,
+    snapZ: -1625,
   },
   {
     id: 'coming-soon',
