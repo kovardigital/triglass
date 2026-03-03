@@ -49,8 +49,9 @@ const SECTIONS = [
 ];
 
 // Configuration - same Z range for text and images
-const IMAGE_START_Z = -800;
-const IMAGE_END_Z = 600;
+// With 1000px perspective: Z=-200 ≈ 83% scale, Z=600 ≈ 250% scale
+const IMAGE_START_Z = -200;
+const IMAGE_END_Z = 800;
 
 // DOM elements
 let viewport = null;
@@ -616,7 +617,7 @@ function update(scrollProgress) {
 
   const t = Math.max(0, Math.min(1, sectionProgress));
   const textZ = sectionStartZ + zDistance * t + elasticOffset * 1000;
-  const clampedZ = Math.max(-800, Math.min(950, textZ));
+  const clampedZ = Math.max(IMAGE_START_Z, Math.min(950, textZ));
 
   // Calculate opacity - text is visible at start of section, fades out as you leave
   // (Unlike images which fade in from far away, text should be readable when you arrive)
