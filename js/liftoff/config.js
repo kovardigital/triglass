@@ -4,42 +4,41 @@
    ========================================================================== */
 
 // Camera Z range
-export const CAMERA_START_Z = 0;
-export const CAMERA_TRAVEL = 5000;
+export const CAMERA_START_Z = 100;
+export const CAMERA_TRAVEL = 2000;
 
 // Section definitions - add/remove/reorder sections here
-// snapZ: the camera Z position where this section snaps
-// Standardized: 1000 Z units between each checkpoint
+// snapZ: the camera Z position where this section snaps (calculated to progress automatically)
 export const SECTIONS = [
   {
     id: 'liftoff',
     title: 'LIFTOFF',
-    snapZ: 0,      // Starting position
+    snapZ: 100,  // Starting position
   },
   {
     id: 'logline',
     title: 'LOGLINE',
-    snapZ: -1000,
+    snapZ: -607,
   },
   {
     id: 'trailer',
     title: 'TRAILER',
-    snapZ: -2000,
+    snapZ: -1072,
   },
   {
     id: 'characters',
     title: 'CHARACTERS',
-    snapZ: -3000,
+    snapZ: -1156,
   },
   {
     id: 'the-story',
     title: 'THE STORY',
-    snapZ: -4000,
+    snapZ: -1525,
   },
   {
     id: 'coming-soon',
     title: 'COMING SOON',
-    snapZ: -5000,  // End position
+    snapZ: -1900,  // End position
   },
 ];
 

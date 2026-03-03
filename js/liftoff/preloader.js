@@ -1,6 +1,6 @@
 /* ==========================================================================
    Liftoff - Preloader Module
-   Logo reveal animation from left to right
+   Logo reveal animation from left to right with actual asset loading
    ========================================================================== */
 
 // DOM elements
@@ -13,6 +13,88 @@ const readyCallbacks = [];
 
 // Logo URL - hosted on GitHub Pages
 const LOGO_URL = 'https://kovardigital.github.io/triglass/assets/images/triglass-logo.png';
+
+// Assets to preload
+const ASSETS = {
+  images: [
+    'https://triglass-assets.s3.amazonaws.com/image0.png', // Title image
+    'https://triglass-assets.s3.amazonaws.com/selena-2.jpg', // Character
+    'https://triglass-assets.s3.amazonaws.com/leo-2.jpg', // Character
+    'https://triglass-assets.s3.amazonaws.com/dad-2.jpg', // Character
+    'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg', // Earth texture
+  ],
+  videos: [
+    'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4', // Logline scrub
+    'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', // Trailer
+  ],
+};
+
+// Loading state
+let loadedCount = 0;
+let totalAssets = 0;
+
+// Preload a single image
+function preloadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      updateProgress();
+      resolve();
+    };
+    img.onerror = () => {
+      console.warn('[LIFTOFF] Failed to preload image:', src);
+      loadedCount++;
+      updateProgress();
+      resolve(); // Resolve anyway to not block
+    };
+    img.src = src;
+  });
+}
+
+// Preload a single video (just metadata, not full download)
+function preloadVideo(src) {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => {
+      loadedCount++;
+      updateProgress();
+      resolve();
+    };
+    video.onerror = () => {
+      console.warn('[LIFTOFF] Failed to preload video:', src);
+      loadedCount++;
+      updateProgress();
+      resolve(); // Resolve anyway to not block
+    };
+    video.src = src;
+  });
+}
+
+// Update progress bar based on loaded assets
+function updateProgress() {
+  if (totalAssets > 0) {
+    // Reserve first 10% for initialization, rest for assets
+    const assetProgress = loadedCount / totalAssets;
+    setProgress(0.1 + assetProgress * 0.9);
+  }
+}
+
+// Start preloading all assets
+function preloadAssets() {
+  const imagePromises = ASSETS.images.map(preloadImage);
+  const videoPromises = ASSETS.videos.map(preloadVideo);
+
+  totalAssets = ASSETS.images.length + ASSETS.videos.length;
+  loadedCount = 0;
+
+  console.log('[LIFTOFF] Preloading', totalAssets, 'assets...');
+
+  return Promise.all([...imagePromises, ...videoPromises]).then(() => {
+    console.log('[LIFTOFF] All assets preloaded');
+  });
+}
 
 // Initialize preloader (show immediately)
 function init() {
@@ -125,4 +207,4 @@ function onReady(callback) {
   readyCallbacks.push(callback);
 }
 
-export { init, setProgress, hide, onReady };
+export { init, setProgress, hide, onReady, preloadAssets };

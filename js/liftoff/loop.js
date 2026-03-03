@@ -8,6 +8,9 @@ import { scene, camera, renderer } from './core.js';
 // Registry of update functions
 const updateFns = new Map();
 
+// Custom render function (for effects like blur)
+let customRenderFn = null;
+
 // Animation state
 let animationId = null;
 let isRunning = false;
@@ -27,8 +30,12 @@ function animate() {
     }
   });
 
-  // Render the scene
-  renderer.render(scene, camera);
+  // Use custom render if set, otherwise standard render
+  if (customRenderFn) {
+    customRenderFn(renderer, scene, camera);
+  } else {
+    renderer.render(scene, camera);
+  }
 }
 
 // Register an update function
@@ -39,6 +46,16 @@ function onUpdate(name, fn) {
 // Remove an update function
 function offUpdate(name) {
   updateFns.delete(name);
+}
+
+// Set custom render function (for post-processing effects)
+function setCustomRender(fn) {
+  customRenderFn = fn;
+}
+
+// Clear custom render function
+function clearCustomRender() {
+  customRenderFn = null;
 }
 
 // Start the animation loop
@@ -59,4 +76,4 @@ function stop() {
   console.log('[LIFTOFF] Animation loop stopped');
 }
 
-export { start, stop, onUpdate, offUpdate };
+export { start, stop, onUpdate, offUpdate, setCustomRender, clearCustomRender };

@@ -49,9 +49,8 @@ const SECTIONS = [
 ];
 
 // Configuration - same Z range for text and images
-// With 1000px perspective: Z=-200 ≈ 83% scale, Z=600 ≈ 250% scale
-const IMAGE_START_Z = -200;
-const IMAGE_END_Z = 800;
+const IMAGE_START_Z = -800;
+const IMAGE_END_Z = 600;
 
 // DOM elements
 let viewport = null;
@@ -617,7 +616,7 @@ function update(scrollProgress) {
 
   const t = Math.max(0, Math.min(1, sectionProgress));
   const textZ = sectionStartZ + zDistance * t + elasticOffset * 1000;
-  const clampedZ = Math.max(IMAGE_START_Z, Math.min(950, textZ));
+  const clampedZ = Math.max(-800, Math.min(950, textZ));
 
   // Calculate opacity - text is visible at start of section, fades out as you leave
   // (Unlike images which fade in from far away, text should be readable when you arrive)
@@ -720,10 +719,9 @@ function update(scrollProgress) {
 
       if (isPlayable) {
         // Playable videos: ONLY fade based on camera Z position (no imgT fade)
-        // Camera goes from 0 to -5000 (standardized 1000 Z per section)
-        const cameraZ = -scrollProgress * 5000;
-        // Section 2 (TRAILER) is at camera Z = -2000
-        const fadeStartZ = -2100; // Start fading when camera reaches this Z
+        // For playable videos: fade based on camera Z position
+        const cameraZ = 100 - scrollProgress * 2000;
+        const fadeStartZ = -1120; // Start fading when camera reaches this Z
         const fadeRange = 100; // Fade over 100 Z units
 
         if (cameraZ <= fadeStartZ) {
@@ -745,9 +743,8 @@ function update(scrollProgress) {
 
       if (isPlayable) {
         // Playable videos: continue moving forward past their section
-        // Camera goes from 0 to -5000 (standardized 1000 Z per section)
-        const cameraZ = -scrollProgress * 5000;
-        const fadeStartZ = -2100; // Section 2 (TRAILER) fade point
+        const cameraZ = 100 - scrollProgress * 2000;
+        const fadeStartZ = -1120;
         const fadeRange = 100;
 
         // Continue moving at same rate as during the section
