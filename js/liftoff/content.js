@@ -719,9 +719,10 @@ function update(scrollProgress) {
 
       if (isPlayable) {
         // Playable videos: ONLY fade based on camera Z position (no imgT fade)
-        // For playable videos: fade based on camera Z position
-        const cameraZ = 100 - scrollProgress * 2000;
-        const fadeStartZ = -1120; // Start fading when camera reaches this Z
+        // Camera goes from 0 to -5000 (standardized 1000 Z per section)
+        const cameraZ = -scrollProgress * 5000;
+        // Section 2 (TRAILER) is at camera Z = -2000
+        const fadeStartZ = -2100; // Start fading when camera reaches this Z
         const fadeRange = 100; // Fade over 100 Z units
 
         if (cameraZ <= fadeStartZ) {
@@ -743,8 +744,9 @@ function update(scrollProgress) {
 
       if (isPlayable) {
         // Playable videos: continue moving forward past their section
-        const cameraZ = 100 - scrollProgress * 2000;
-        const fadeStartZ = -1120;
+        // Camera goes from 0 to -5000 (standardized 1000 Z per section)
+        const cameraZ = -scrollProgress * 5000;
+        const fadeStartZ = -2100; // Section 2 (TRAILER) fade point
         const fadeRange = 100;
 
         // Continue moving at same rate as during the section

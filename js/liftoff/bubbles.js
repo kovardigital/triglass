@@ -819,8 +819,10 @@ function update() {
   const sectionProgress = sectionFloat - sectionIndex;
 
   // Calculate Z position based on section
-  const IMAGE_START_Z = -800;
-  const IMAGE_END_Z = 600;
+  // Section 3 (CHARACTERS): camera goes from -3000 to -4000
+  // Position bubbles to be visible during this range
+  const IMAGE_START_Z = -3800;
+  const IMAGE_END_Z = -2400;
   const zRange = 3;
   const zDistance = (IMAGE_END_Z - IMAGE_START_Z) * zRange;
   const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;

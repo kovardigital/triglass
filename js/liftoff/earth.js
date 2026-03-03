@@ -232,8 +232,10 @@ function update() {
   const sectionProgress = sectionFloat - sectionIndex;
 
   // Calculate Z position based on section
-  const IMAGE_START_Z = -800;
-  const IMAGE_END_Z = 600;
+  // Section 4 (THE STORY): camera goes from -4000 to -5000
+  // Position Earth to be visible during this range
+  const IMAGE_START_Z = -4800;
+  const IMAGE_END_Z = -3400;
   const zRange = 3;
   const zDistance = (IMAGE_END_Z - IMAGE_START_Z) * zRange;
   const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
