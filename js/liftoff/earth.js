@@ -219,52 +219,47 @@ function init(parentGroup, threeCamera, threeRenderer) {
   console.log('[LIFTOFF] Earth initialized with mouse rotation');
 }
 
+// Fixed Z positions for fly-through effect (same as content.js)
+const REST_Z = 200;       // Where content sits when active
+const APPROACH_Z = -1400; // Where content starts when approaching (farther back)
+const DEPART_Z = 1600;    // Where content goes when departing (farther past camera)
+
 // Update Earth based on scroll and time
 function update() {
   if (!earthGroup || !isInitialized) return;
 
   time += 0.016;
 
-  const scrollProgress = Scroll.getProgress();
-  const numSections = 6;
-  const sectionFloat = scrollProgress * (numSections - 1);
-  const sectionIndex = Math.floor(sectionFloat);
-  const sectionProgress = sectionFloat - sectionIndex;
-
-  // Calculate Z position based on section
-  // Section 4 (THE STORY): camera goes from -4000 to -5000
-  // Position Earth to be visible during this range
-  const IMAGE_START_Z = -4800;
-  const IMAGE_END_Z = -3400;
-  const zRange = 3;
-  const zDistance = (IMAGE_END_Z - IMAGE_START_Z) * zRange;
-  const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
+  // Use new discrete section API
+  const currentSection = Scroll.getCurrentSection();
+  const targetSection = Scroll.getTargetSection();
+  const transitionProgress = Scroll.getTransitionProgress();
+  const isTransitioning = Scroll.isInTransition();
 
   let groupOpacity = 0;
-  let groupZ = sectionStartZ;
+  let groupZ = APPROACH_Z;
 
-  if (sectionIndex === STORY_SECTION) {
-    const t = Math.min(1, sectionProgress);
-    groupZ = sectionStartZ + zDistance * t;
-
-    // Fade in/out
-    if (t < 0.15) {
-      groupOpacity = t / 0.15;
-    } else if (t > 0.75) {
-      groupOpacity = 1 - ((t - 0.75) / 0.25);
-    } else {
+  // Determine visibility and position based on discrete section state
+  if (!isTransitioning) {
+    // Static state - show if we're at the story section
+    if (currentSection === STORY_SECTION) {
+      groupZ = REST_Z;
       groupOpacity = 1;
     }
+  } else {
+    // Transitioning - handle fly-through effect
+    const isApproaching = targetSection === STORY_SECTION;
+    const isDeparting = currentSection === STORY_SECTION;
 
-    // Additional fade when close to camera
-    const distanceToCamera = camera.position.z - groupZ;
-    if (distanceToCamera < 300) {
-      const proximityFade = Math.max(0, (distanceToCamera - 50) / 250);
-      groupOpacity *= proximityFade;
+    if (isApproaching) {
+      // Flying in from behind camera
+      groupZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+      groupOpacity = transitionProgress;
+    } else if (isDeparting) {
+      // Flying past camera
+      groupZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+      groupOpacity = 1 - transitionProgress;
     }
-  } else if (sectionIndex > STORY_SECTION) {
-    groupZ = sectionStartZ + zDistance + 200;
-    groupOpacity = 0;
   }
 
   earthGroup.position.z = groupZ;

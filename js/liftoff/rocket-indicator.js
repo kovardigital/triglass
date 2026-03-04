@@ -3,7 +3,8 @@
    Vertical scroll progress with animated rocket and debris
    ========================================================================== */
 
-import { SECTION_COUNT, getSnapPoints, getChapterNames, getSectionSnapProgress } from './config.js';
+import { SECTION_COUNT, getChapterNames } from './config.js';
+import * as Scroll from './scroll.js';
 
 // Callback for when a chapter is clicked
 let onSectionClick = null;
@@ -30,35 +31,28 @@ let scrollSpeed = 0;
 const TRACK_HEIGHT = 50; // Percentage of viewport height
 
 // Get config from centralized source
-const SNAP_POINTS = getSnapPoints();
 const CHAPTER_NAMES = getChapterNames();
-
-// Alias for cleaner code
-function getSectionScrollProgress(sectionIndex) {
-  return getSectionSnapProgress(sectionIndex);
-}
 
 // Get evenly-spaced visual position for a section (for marker placement)
 function getSectionVisualPosition(sectionIndex) {
   return sectionIndex / (SECTION_COUNT - 1);
 }
 
-// Map actual scroll progress to visual track position
-// This makes the rocket land on evenly-spaced markers
-function progressToVisualPosition(scrollProgress) {
-  // Find which section we're in or between
-  for (let i = 0; i < SECTION_COUNT - 1; i++) {
-    const start = SNAP_POINTS[i];
-    const end = SNAP_POINTS[i + 1];
-    if (scrollProgress >= start && scrollProgress <= end) {
-      // Interpolate between evenly-spaced positions
-      const t = (scrollProgress - start) / (end - start);
-      const visualStart = getSectionVisualPosition(i);
-      const visualEnd = getSectionVisualPosition(i + 1);
-      return visualStart + t * (visualEnd - visualStart);
-    }
+// Calculate visual position from discrete section state
+function getVisualPositionFromSections() {
+  const currentSection = Scroll.getCurrentSection();
+  const targetSection = Scroll.getTargetSection();
+  const transitionProgress = Scroll.getTransitionProgress();
+  const isTransitioning = Scroll.isInTransition();
+
+  if (!isTransitioning) {
+    return getSectionVisualPosition(currentSection);
   }
-  return scrollProgress; // Fallback
+
+  // Interpolate during transition
+  const currentPos = getSectionVisualPosition(currentSection);
+  const targetPos = getSectionVisualPosition(targetSection);
+  return currentPos + (targetPos - currentPos) * transitionProgress;
 }
 
 // Inject styles
@@ -468,32 +462,27 @@ function init() {
 
     // Click to jump to section
     wrap.addEventListener('click', () => {
-      // Trigger immediate text transition
-      if (onSectionClick) {
-        onSectionClick(sectionIndex);
+      const currentSection = Scroll.getCurrentSection();
+
+      // Determine travel direction (forward = higher section index = rocket goes up visually)
+      const goingForward = sectionIndex > currentSection;
+      travelDirection = goingForward ? 'up' : 'down';
+
+      // Hide flame when going backwards
+      if (!goingForward) {
+        rocket.classList.add('going-backwards');
+      } else {
+        rocket.classList.remove('going-backwards');
+        // Start smoke effect only when traveling forward
+        startSmoke();
       }
 
-      const scrollSpacer = document.querySelector('.liftoff-scroll-spacer');
-      if (scrollSpacer) {
-        const maxScroll = scrollSpacer.offsetHeight - window.innerHeight;
-        // Use actual snap point progress for navigation (not visual position)
-        const snapProgress = getSectionScrollProgress(sectionIndex);
-        const targetScroll = (1 - Math.min(snapProgress, 1)) * maxScroll;
-        const currentScroll = window.scrollY;
+      // Use scroll.js jumpToSection for discrete navigation
+      Scroll.jumpToSection(sectionIndex);
 
-        // Inverted: scrolling UP (lower scroll) = forward = rocket goes up
-        travelDirection = targetScroll < currentScroll ? 'up' : 'down';
-
-        // Hide flame when going backwards
-        if (travelDirection === 'down') {
-          rocket.classList.add('going-backwards');
-        } else {
-          rocket.classList.remove('going-backwards');
-          // Start smoke effect only when traveling forward
-          startSmoke();
-        }
-
-        window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      // Also call the content callback if provided
+      if (onSectionClick) {
+        onSectionClick(sectionIndex);
       }
     });
 
@@ -567,15 +556,12 @@ function init() {
   console.log('[LIFTOFF] Rocket indicator initialized');
 }
 
-// Update rocket position based on scroll progress
-function update(scrollProgress) {
+// Update rocket position based on discrete section state
+function update() {
   if (!rocket || !track) return;
 
-  // Clamp progress
-  const p = Math.max(0, Math.min(1, scrollProgress));
-
-  // Map actual scroll progress to visual position (so rocket lands on evenly-spaced markers)
-  const visualP = progressToVisualPosition(p);
+  // Get visual position from discrete section state
+  const visualP = getVisualPositionFromSections();
 
   // Update rocket position (bottom = 0%, top = 100%)
   const trackHeight = container.offsetHeight;
@@ -590,17 +576,15 @@ function update(scrollProgress) {
   }
   lastRocketTop = rocketTop;
 
-  // Update markers based on current scroll position
-  markers.forEach(({ marker, sectionIndex }) => {
-    const sectionStart = getSectionScrollProgress(sectionIndex);
-    const nextSection = sectionIndex + 1;
-    const sectionEnd = nextSection < SECTION_COUNT ? getSectionScrollProgress(nextSection) : 1;
+  // Update markers based on current section
+  const currentSection = Scroll.getCurrentSection();
 
+  markers.forEach(({ marker, sectionIndex }) => {
     marker.classList.remove('active', 'passed');
 
-    if (p >= sectionStart && p < sectionEnd) {
+    if (sectionIndex === currentSection) {
       marker.classList.add('active');
-    } else if (p >= sectionEnd) {
+    } else if (sectionIndex < currentSection) {
       marker.classList.add('passed');
     }
   });

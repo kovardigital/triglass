@@ -4,11 +4,18 @@
    Based on fantik.studio implementation
    ========================================================================== */
 
+import * as Scroll from './scroll.js';
+
 // Mouse position state (normalized -1 to 1)
 let mouseX = 0;
 let mouseY = 0;
 let prevMouseX = 0;
 let prevMouseY = 0;
+
+// Smoothed mouse values for other modules
+let smoothMouseX = 0;
+let smoothMouseY = 0;
+const MOUSE_SMOOTH_FACTOR = 0.08; // Lower = smoother but more laggy
 
 // Inertia for Z rotation (accumulated from mouse delta)
 let inertiaZ = 0;
@@ -66,6 +73,10 @@ function init(group) {
 function update() {
   if (!worldGroup) return;
 
+  // Smooth mouse values for other modules (eased movement)
+  smoothMouseX += (mouseX - smoothMouseX) * MOUSE_SMOOTH_FACTOR;
+  smoothMouseY += (mouseY - smoothMouseY) * MOUSE_SMOOTH_FACTOR;
+
   // Target rotations based on mouse position - everything moves WITH mouse
   const targetRotX = mouseY * CONFIG.rotation.strengthX;
   const targetRotY = mouseX * CONFIG.rotation.strengthY;
@@ -85,11 +96,14 @@ function update() {
   worldGroup.rotation.x = rotationX;
   worldGroup.rotation.y = rotationY;
   worldGroup.rotation.z = rotationZ;
+
+  // Apply space Z movement - creates fly-through-space effect during transitions
+  worldGroup.position.z = Scroll.getSpaceZ();
 }
 
-// Get current mouse values (for other modules)
+// Get smoothed mouse values (for other modules)
 function getMouse() {
-  return { x: mouseX, y: mouseY };
+  return { x: smoothMouseX, y: smoothMouseY };
 }
 
 // Get current rotation Z (for text to match world rotation)

@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import { camera } from './core.js';
+import * as Scroll from './scroll.js';
 
 // Galaxy URL - hosted on GitHub Pages (same pattern as logo in preloader.js)
 const GALAXY_URL = 'https://kovardigital.github.io/triglass/assets/images/galaxy.jpg';
@@ -99,7 +100,8 @@ function init(worldGroup) {
 function update() {
   if (galaxyMesh) {
     // Sync Z position with camera so galaxy has no depth movement
-    galaxyMesh.position.z = camera.position.z + GALAXY_OFFSET.z;
+    // Compensate for worldGroup.z (spaceZ) to keep galaxy truly fixed
+    galaxyMesh.position.z = camera.position.z + GALAXY_OFFSET.z - Scroll.getSpaceZ();
 
     // Very slow rotation for subtle movement
     galaxyMesh.rotation.z += 0.0001;

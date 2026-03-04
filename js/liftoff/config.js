@@ -1,73 +1,29 @@
 /* ==========================================================================
    Liftoff - Centralized Configuration
-   Single source of truth for sections, snap points, and camera settings
+   Single source of truth for sections (discrete section system)
    ========================================================================== */
 
-// Camera Z range
-export const CAMERA_START_Z = 100;
-export const CAMERA_TRAVEL = 2000;
-
 // Section definitions - add/remove/reorder sections here
-// snapZ: the camera Z position where this section snaps (calculated to progress automatically)
+// No Z positions needed - sections are discrete, not spread across Z space
 export const SECTIONS = [
-  {
-    id: 'liftoff',
-    title: 'LIFTOFF',
-    snapZ: 100,  // Starting position
-  },
-  {
-    id: 'logline',
-    title: 'LOGLINE',
-    snapZ: -607,
-  },
-  {
-    id: 'trailer',
-    title: 'TRAILER',
-    snapZ: -1072,
-  },
-  {
-    id: 'characters',
-    title: 'CHARACTERS',
-    snapZ: -1156,
-  },
-  {
-    id: 'the-story',
-    title: 'THE STORY',
-    snapZ: -1525,
-  },
-  {
-    id: 'coming-soon',
-    title: 'COMING SOON',
-    snapZ: -1900,  // End position
-  },
+  { id: 'liftoff', title: 'LIFTOFF' },
+  { id: 'logline', title: 'LOGLINE' },
+  { id: 'trailer', title: 'TRAILER' },
+  { id: 'characters', title: 'CHARACTERS' },
+  { id: 'the-story', title: 'THE STORY' },
+  { id: 'comps', title: 'COMPS' },
+  { id: 'target-market', title: 'TARGET MARKET' },
+  { id: 'the-crew', title: 'THE CREW' },
+  { id: 'completion', title: 'COMPLETION' },
+  { id: 'budget', title: 'BUDGET' },
+  { id: 'schedule', title: 'SCHEDULE' },
+  { id: 'coming-soon', title: 'COMING SOON' },
 ];
 
-// Derived values (auto-calculated)
+// Derived values
 export const SECTION_COUNT = SECTIONS.length;
 
-// Convert camera Z to progress (0-1)
-export function zToProgress(z) {
-  return (CAMERA_START_Z - z) / CAMERA_TRAVEL;
-}
-
-// Convert progress to camera Z
-export function progressToZ(progress) {
-  return CAMERA_START_Z - progress * CAMERA_TRAVEL;
-}
-
-// Get snap point progress values (auto-calculated from snapZ)
-export function getSnapPoints() {
-  return SECTIONS.map(s => zToProgress(s.snapZ));
-}
-
-// Get snap progress for a specific section index
-export function getSectionSnapProgress(sectionIndex) {
-  if (sectionIndex < 0) return 0;
-  if (sectionIndex >= SECTION_COUNT) return 1;
-  return zToProgress(SECTIONS[sectionIndex].snapZ);
-}
-
-// Get chapter names array
+// Get chapter names array (for sidebar)
 export function getChapterNames() {
   return SECTIONS.map(s => s.title);
 }

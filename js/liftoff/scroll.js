@@ -1,160 +1,163 @@
 /* ==========================================================================
-   Liftoff - Scroll Module
-   Scroll tracking with inertia, camera Z position, elastic bounce, and snap points
+   Liftoff - Scroll Module (Discrete Sections)
+   Scroll triggers section changes with fly-through transitions
    ========================================================================== */
 
-import { SECTION_COUNT, CAMERA_START_Z, CAMERA_TRAVEL, getSectionSnapProgress } from './config.js';
+import { SECTION_COUNT } from './config.js';
 
-// Scroll state - target is actual scroll, current lerps toward it for smoothness
-let targetProgress = 0;
-let currentProgress = 0;
+// Section state - discrete sections instead of continuous progress
+let currentSection = 0;
+let targetSection = 0;
+let transitionProgress = 0;  // 0 = at currentSection, 1 = arrived at targetSection
+let isTransitioning = false;
 
-// Inertia settings
-const LERP_FACTOR = 0.08; // Lower = more inertia (0.05-0.15 feels good)
+// Scroll accumulation for threshold detection
+let accumulatedScroll = 0;
+let scrollDirection = 0; // -1 = forward, 1 = backward, 0 = none
 
-// Spring physics for elastic bounce (smooth, bouncy feel)
-const SPRING_STIFFNESS = 0.025; // How quickly spring returns to rest (higher = faster)
-const SPRING_DAMPING = 0.94; // Friction (lower = more bouncy, higher = more damped)
-const ELASTIC_MAX = -0.12; // Max stretch distance
-const WHEEL_FORCE = 0.00008; // How much wheel input adds velocity (lighter feel)
+// Transition settings
+const TRANSITION_SPEED = 0.09;
+const SIDEBAR_TRANSITION_SPEED = 0.05; // Slower, smoother for sidebar clicks
+const SCROLL_THRESHOLD = 75;
 
-// State for elastic spring
-let elasticOffset = 0; // Current position (negative = stretched back)
-let elasticVelocity = 0; // Current velocity
+// Track if current transition is from sidebar click
+let isSidebarTransition = false;
+
+// Elastic bounce for visual feedback
+const SPRING_STIFFNESS = 0.025;
+const SPRING_DAMPING = 0.94;
+const ELASTIC_MAX = -0.08;
+const WHEEL_FORCE = 0.00006;
+
+let elasticOffset = 0;
+let elasticVelocity = 0;
 let wheelTimeout = null;
-let isStretching = false; // Are we actively being pulled?
+let isStretching = false;
 
-// Snap point settings
-const SNAP_THRESHOLD = 0.2; // 20% past a snap point triggers snap to next
-let currentSnappedSection = 0; // Which section we're "committed" to
-let isSnapping = false; // Are we currently in a snap animation?
-let snapTargetProgress = null; // Track where we're snapping to
-let snapCooldown = false; // Prevent immediate re-snap after arriving
+// Decay timeout - reset scroll when user stops
+let decayTimeout = null;
 
-// Debug indicator element
+// Smoothed anticipation for visual feedback
+let smoothedAnticipation = 0;
+const ANTICIPATION_SMOOTH_FACTOR = 0.12; // Lower = smoother
+
+// Chain cooldown - prevents inertia from triggering multiple chains
+let chainCooldown = false;
+let chainCooldownTimeout = null;
+const CHAIN_COOLDOWN_MS = 250; // Time before another chain can happen
+
+// Space Z movement - accumulates as user navigates, creating fly-through-space effect
+let spaceZ = 0;           // Current interpolated Z position
+let spaceZStart = 0;      // Z at start of transition
+let spaceZTarget = 0;     // Z target for current transition
+const SPACE_Z_PER_SECTION = 100; // How far to travel per section change
+
+// Debug indicator
 let debugIndicator = null;
 
 // Reference to camera
 let camera = null;
 
-// Alias for cleaner code
-function getSectionProgress(sectionIndex) {
-  return getSectionSnapProgress(sectionIndex);
+// Trigger a section change with transition
+function triggerSectionChange(newSection) {
+  if (newSection < 0 || newSection >= SECTION_COUNT) return;
+  if (newSection === currentSection) return;
+
+  targetSection = newSection;
+  isTransitioning = true;
+  isSidebarTransition = false; // Scroll uses faster transition
+  transitionProgress = 0;
+  accumulatedScroll = 0;
+
+  // Set space Z target - forward = positive Z (space comes at us), backward = negative Z
+  const direction = newSection > currentSection ? 1 : -1;
+  spaceZStart = spaceZ;
+  spaceZTarget = spaceZ + direction * SPACE_Z_PER_SECTION;
+
+  console.log('[LIFTOFF] Transitioning to section', newSection);
 }
 
-// Scroll handler - updates target immediately
-// Inverted: scroll UP to progress (start at bottom, scroll up to advance)
-function onScroll() {
-  const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-  targetProgress = scrollHeight > 0 ? 1 - (window.scrollY / scrollHeight) : 0;
-
-  // If snapping, check if we've arrived at the target
-  if (isSnapping && snapTargetProgress !== null) {
-    if (Math.abs(targetProgress - snapTargetProgress) < 0.02) {
-      isSnapping = false;
-      snapTargetProgress = null;
-      // Brief cooldown to prevent immediate re-snap
-      snapCooldown = true;
-      setTimeout(() => { snapCooldown = false; }, 300);
-    }
-    return; // Don't check snap triggers while snapping
-  }
-
-  // Check if we should snap (only if not already snapping or cooling down)
-  // TESTING: Snap between sections 0, 1, and 2 for now
-  if (!isSnapping && !snapCooldown && currentSnappedSection <= 2) {
-    checkSnapTrigger();
-  }
-}
-
-// Check if progress has crossed a snap threshold
-function checkSnapTrigger() {
-  const currentSnapProgress = getSectionProgress(currentSnappedSection);
-
-  // TESTING: Allow snapping to sections 0, 1, and 2
-  const maxSnapSection = 2;
-
-  // Check if we've moved past threshold toward next section
-  if (currentSnappedSection < maxSnapSection) {
-    const nextSnapProgress = getSectionProgress(currentSnappedSection + 1);
-    const distanceToNext = nextSnapProgress - currentSnapProgress;
-    // Section 2 (Trailer) requires 60% progress to snap forward, others use 20%
-    const forwardThreshold = currentSnappedSection === 2 ? 0.6 : SNAP_THRESHOLD;
-    const triggerPoint = currentSnapProgress + distanceToNext * forwardThreshold;
-
-    if (targetProgress > triggerPoint) {
-      // Snap to next section
-      snapToSection(currentSnappedSection + 1);
-      return;
-    }
-  }
-
-  // Check if we've moved past threshold toward previous section
-  if (currentSnappedSection > 0) {
-    const prevSnapProgress = getSectionProgress(currentSnappedSection - 1);
-    const distanceToPrev = currentSnapProgress - prevSnapProgress;
-    const triggerPoint = currentSnapProgress - distanceToPrev * SNAP_THRESHOLD;
-
-    if (targetProgress < triggerPoint) {
-      // Snap to previous section
-      snapToSection(currentSnappedSection - 1);
-      return;
-    }
-  }
-}
-
-// Smoothly scroll to a section's snap point
-function snapToSection(sectionIndex) {
-  if (sectionIndex < 0 || sectionIndex >= SECTION_COUNT) return;
-
-  isSnapping = true;
-  currentSnappedSection = sectionIndex;
-
-  const targetSnapProg = getSectionProgress(sectionIndex);
-  snapTargetProgress = targetSnapProg; // Track where we're snapping to
-
-  const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-  // Invert: progress 0 = bottom, progress 1 = top
-  const targetScrollY = (1 - targetSnapProg) * scrollHeight;
-
-  // Use smooth scroll behavior
-  window.scrollTo({
-    top: targetScrollY,
-    behavior: 'smooth'
-  });
-
-  // Fallback: clear snapping flag after max animation time
-  setTimeout(() => {
-    if (isSnapping) {
-      isSnapping = false;
-      snapTargetProgress = null;
-      snapCooldown = true;
-      setTimeout(() => { snapCooldown = false; }, 300);
-    }
-  }, 1000);
-
-  console.log('[LIFTOFF] Snapping to section', sectionIndex, 'at progress', targetSnapProg.toFixed(2));
-}
-
-// Wheel handler - for elastic effect at boundaries
+// Wheel handler - only source of scroll detection
 function onWheel(e) {
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  const atBottom = window.scrollY >= maxScroll - 2;
+  // Accumulate scroll freely - even during transitions (allows interruption)
+  // Cap per-event contribution to prevent fast scrolling from being too sensitive
+  accumulatedScroll += Math.min(Math.abs(e.deltaY), 15) * Math.sign(e.deltaY);
 
-  // If at bottom and scrolling DOWN (positive deltaY = scroll down), apply elastic
-  if (atBottom && e.deltaY > 0) {
+  // Clamp to prevent over-accumulation beyond thresholds
+  accumulatedScroll = Math.max(-SCROLL_THRESHOLD * 1.5, Math.min(SCROLL_THRESHOLD * 1.5, accumulatedScroll));
+
+  // During transition: allow reversal OR chaining to next section
+  if (isTransitioning) {
+    const goingForward = targetSection > currentSection;
+
+    // REVERSAL: scrolling opposite to transition direction
+    if (goingForward && accumulatedScroll > SCROLL_THRESHOLD * 0.5) {
+      // Scrolling backward during forward transition - reverse it
+      targetSection = currentSection;
+      isTransitioning = false;
+      accumulatedScroll = SCROLL_THRESHOLD * 0.3; // Start with some backward momentum
+    } else if (!goingForward && accumulatedScroll < -SCROLL_THRESHOLD * 0.5) {
+      // Scrolling forward during backward transition - reverse it
+      targetSection = currentSection;
+      isTransitioning = false;
+      accumulatedScroll = -SCROLL_THRESHOLD * 0.3; // Start with some forward momentum
+    }
+    // CHAINING: scrolling same direction past threshold - skip to next section
+    // Only allow if not in cooldown AND transition is at least 40% complete
+    // This prevents accidental chaining from a single scroll gesture
+    else if (!chainCooldown && transitionProgress > 0.4 && goingForward && accumulatedScroll < -SCROLL_THRESHOLD && targetSection < SECTION_COUNT - 1) {
+      // Snap current transition complete, start next
+      currentSection = targetSection;
+      targetSection = targetSection + 1;
+      transitionProgress = 0;
+      accumulatedScroll = 0;
+      isSidebarTransition = false; // Chaining uses fast scroll speed
+      // Update space Z for chained transition
+      spaceZStart = spaceZ;
+      spaceZTarget = spaceZ + SPACE_Z_PER_SECTION; // Forward = positive Z
+      // Start cooldown to prevent inertia chaining
+      chainCooldown = true;
+      if (chainCooldownTimeout) clearTimeout(chainCooldownTimeout);
+      chainCooldownTimeout = setTimeout(() => { chainCooldown = false; }, CHAIN_COOLDOWN_MS);
+      console.log('[LIFTOFF] Chaining forward to section', targetSection);
+    } else if (!chainCooldown && transitionProgress > 0.4 && !goingForward && accumulatedScroll > SCROLL_THRESHOLD && targetSection > 0) {
+      // Snap current transition complete, start prev
+      currentSection = targetSection;
+      targetSection = targetSection - 1;
+      transitionProgress = 0;
+      accumulatedScroll = 0;
+      isSidebarTransition = false; // Chaining uses fast scroll speed
+      // Update space Z for chained transition
+      spaceZStart = spaceZ;
+      spaceZTarget = spaceZ - SPACE_Z_PER_SECTION; // Backward = negative Z
+      // Start cooldown to prevent inertia chaining
+      chainCooldown = true;
+      if (chainCooldownTimeout) clearTimeout(chainCooldownTimeout);
+      chainCooldownTimeout = setTimeout(() => { chainCooldown = false; }, CHAIN_COOLDOWN_MS);
+      console.log('[LIFTOFF] Chaining backward to section', targetSection);
+    }
+    return;
+  }
+
+  // Check threshold for new transitions
+  if (accumulatedScroll > SCROLL_THRESHOLD && currentSection > 0) {
+    triggerSectionChange(currentSection - 1);
+  } else if (accumulatedScroll < -SCROLL_THRESHOLD && currentSection < SECTION_COUNT - 1) {
+    triggerSectionChange(currentSection + 1);
+  }
+
+  // Elastic stretch at boundaries
+  if (currentSection === SECTION_COUNT - 1 && e.deltaY < 0) {
     isStretching = true;
-
-    // Add velocity based on wheel input (creates smooth acceleration)
-    elasticVelocity -= e.deltaY * WHEEL_FORCE;
-
-    // Clear any existing timeout
+    elasticVelocity += e.deltaY * WHEEL_FORCE;
     if (wheelTimeout) clearTimeout(wheelTimeout);
-
-    // Mark as no longer stretching after wheel stops
-    wheelTimeout = setTimeout(() => {
-      isStretching = false;
-    }, 100);
+    wheelTimeout = setTimeout(() => { isStretching = false; }, 100);
+  }
+  if (currentSection === 0 && e.deltaY > 0) {
+    isStretching = true;
+    elasticVelocity -= e.deltaY * WHEEL_FORCE;
+    if (wheelTimeout) clearTimeout(wheelTimeout);
+    wheelTimeout = setTimeout(() => { isStretching = false; }, 100);
   }
 }
 
@@ -162,18 +165,20 @@ function onWheel(e) {
 function init(cam) {
   camera = cam;
 
-  // Prevent browser from restoring scroll position on refresh
+  // Prevent browser from restoring scroll position
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
 
-  targetProgress = 0;
-  currentProgress = 0;
+  currentSection = 0;
+  targetSection = 0;
+  transitionProgress = 0;
+  isTransitioning = false;
+  accumulatedScroll = 0;
   elasticOffset = 0;
   elasticVelocity = 0;
-  isStretching = false;
 
-  // Create debug indicator (top-left corner)
+  // Create debug indicator
   debugIndicator = document.createElement('div');
   debugIndicator.style.cssText = `
     position: fixed;
@@ -191,138 +196,189 @@ function init(cam) {
   `;
   document.body.appendChild(debugIndicator);
 
-  window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('wheel', onWheel, { passive: true });
-  console.log('[LIFTOFF] Scroll tracking initialized (scroll UP to progress)');
+
+  console.log('[LIFTOFF] Discrete scroll initialized');
 }
 
-// Scroll to starting position (must be called after scroll spacer is created)
+// Scroll to starting position
 function scrollToStart() {
-  // Start at the bottom of the page (scroll UP to progress)
-  window.scrollTo(0, document.documentElement.scrollHeight);
-  targetProgress = 0;
-  currentProgress = 0;
+  currentSection = 0;
+  targetSection = 0;
+  transitionProgress = 0;
+  isTransitioning = false;
+  isSidebarTransition = false;
+  accumulatedScroll = 0;
+  scrollDirection = 0;
   elasticOffset = 0;
   elasticVelocity = 0;
-  isStretching = false;
-  currentSnappedSection = 0;
-  isSnapping = false;
-  snapTargetProgress = null;
-  snapCooldown = false;
-  console.log('[LIFTOFF] Scrolled to start position (bottom)');
+  smoothedAnticipation = 0;
+  chainCooldown = false;
+  spaceZ = 0;
+  spaceZStart = 0;
+  spaceZTarget = 0;
+  if (chainCooldownTimeout) clearTimeout(chainCooldownTimeout);
+
+  console.log('[LIFTOFF] Reset to section 0');
 }
 
-// Jump directly to a section (for sidebar clicks) - immediate snap, no threshold
+// Jump directly to a section (for sidebar clicks)
 function jumpToSection(sectionIndex) {
   if (sectionIndex < 0 || sectionIndex >= SECTION_COUNT) return;
+  if (sectionIndex === currentSection && !isTransitioning) return;
 
-  currentSnappedSection = sectionIndex;
-  isSnapping = true;
+  // Calculate how many sections we're jumping
+  const sectionDelta = sectionIndex - currentSection;
+  const direction = sectionDelta > 0 ? 1 : -1;
 
-  const targetSnapProg = getSectionProgress(sectionIndex);
-  snapTargetProgress = targetSnapProg;
+  targetSection = sectionIndex;
+  isTransitioning = true;
+  isSidebarTransition = true; // Use slower, smoother transition
+  transitionProgress = 0;
+  accumulatedScroll = 0;
 
-  const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-  const targetScrollY = (1 - targetSnapProg) * scrollHeight;
-
-  window.scrollTo({
-    top: targetScrollY,
-    behavior: 'smooth'
-  });
-
-  // Fallback timeout
-  setTimeout(() => {
-    if (isSnapping) {
-      isSnapping = false;
-      snapTargetProgress = null;
-      snapCooldown = true;
-      setTimeout(() => { snapCooldown = false; }, 300);
-    }
-  }, 1000);
+  // Set space Z target - travel proportional to number of sections jumped
+  spaceZStart = spaceZ;
+  spaceZTarget = spaceZ + direction * Math.abs(sectionDelta) * SPACE_Z_PER_SECTION;
 
   console.log('[LIFTOFF] Jumping to section', sectionIndex);
 }
 
-// Update camera position (called each frame)
+// Update transition state (called each frame)
 function update() {
-  if (!camera) return;
+  // Animate transition
+  if (isTransitioning) {
+    // Ease-out animation - use slower speed for sidebar clicks
+    const speed = isSidebarTransition ? SIDEBAR_TRANSITION_SPEED : TRANSITION_SPEED;
+    transitionProgress += (1 - transitionProgress) * speed;
 
-  // Lerp current toward target for smooth inertia
-  currentProgress += (targetProgress - currentProgress) * LERP_FACTOR;
+    // Interpolate space Z position during transition
+    spaceZ = spaceZStart + (spaceZTarget - spaceZStart) * transitionProgress;
+
+    // Check if transition is complete - snap sooner to avoid slow crawl at end
+    if (transitionProgress > 0.96) {
+      transitionProgress = 1;
+      spaceZ = spaceZTarget; // Snap to exact target
+      currentSection = targetSection;
+      isTransitioning = false;
+      isSidebarTransition = false;
+      accumulatedScroll = 0;
+      scrollDirection = 0;
+    }
+  }
 
   // Spring physics for elastic bounce
   if (elasticOffset !== 0 || elasticVelocity !== 0) {
-    // Spring force pulls back toward 0
     const springForce = -elasticOffset * SPRING_STIFFNESS;
-
-    // Apply spring force to velocity
     elasticVelocity += springForce;
-
-    // Apply damping (friction)
     elasticVelocity *= SPRING_DAMPING;
-
-    // Update position
     elasticOffset += elasticVelocity;
 
-    // Clamp to max stretch
+    // Clamp elastic range
     if (elasticOffset < ELASTIC_MAX) {
       elasticOffset = ELASTIC_MAX;
-      elasticVelocity *= -0.3; // Bounce off the limit
+      elasticVelocity *= -0.3;
+    }
+    if (elasticOffset > -ELASTIC_MAX) {
+      elasticOffset = Math.min(elasticOffset, -ELASTIC_MAX);
+      if (elasticOffset > 0) elasticOffset = 0;
     }
 
-    // Clamp to 0 (can't stretch forward)
-    if (elasticOffset > 0) {
-      elasticOffset = 0;
-      elasticVelocity = 0;
-    }
-
-    // Settle when very close to rest
+    // Settle when close to rest
     if (Math.abs(elasticOffset) < 0.0005 && Math.abs(elasticVelocity) < 0.0001) {
       elasticOffset = 0;
       elasticVelocity = 0;
     }
   }
 
-  // Only snap at the very ends (0 and 1) when extremely close
-  if (targetProgress === 0 && currentProgress < 0.0001 && elasticOffset === 0) {
-    currentProgress = 0;
-  } else if (targetProgress === 1 && currentProgress > 0.9999) {
-    currentProgress = 1;
+  // Smooth the anticipation value for visual feedback
+  const rawAnticipation = isTransitioning ? 0 : Math.max(-1, Math.min(1, accumulatedScroll / SCROLL_THRESHOLD));
+  smoothedAnticipation += (rawAnticipation - smoothedAnticipation) * ANTICIPATION_SMOOTH_FACTOR;
+
+  // Settle when very close to target
+  if (Math.abs(smoothedAnticipation - rawAnticipation) < 0.001) {
+    smoothedAnticipation = rawAnticipation;
   }
-
-  // Combine progress with elastic offset for final position
-  const effectiveProgress = currentProgress + elasticOffset;
-
-  // Move camera forward on scroll (flying through space)
-  camera.position.z = CAMERA_START_Z - effectiveProgress * CAMERA_TRAVEL;
 
   // Update debug indicator
   if (debugIndicator) {
-    const zPos = camera.position.z.toFixed(0);
-    const progress = (currentProgress * 100).toFixed(1);
+    const transState = isTransitioning ? `→ ${targetSection} (${(transitionProgress * 100).toFixed(0)}%)` : 'idle';
+    const anticipation = getScrollAnticipation();
+    const direction = anticipation > 0 ? '← BACK' : anticipation < 0 ? 'FWD →' : '';
     debugIndicator.innerHTML = `
-      Progress: ${progress}%<br>
-      Camera Z: ${zPos}<br>
-      Section: ${currentSnappedSection}
+      Section: ${currentSection}<br>
+      Transition: ${transState}<br>
+      Scroll: ${accumulatedScroll.toFixed(0)} ${direction}<br>
+      Anticipation: ${(anticipation * 100).toFixed(0)}%
     `;
   }
 }
 
-// Get current scroll progress (0 to 1) - returns the smoothed value with elastic
-function getProgress() {
-  return Math.max(0, currentProgress + elasticOffset);
+// === New API for discrete sections ===
+
+// Get current section index (the one we're at or leaving from)
+function getCurrentSection() {
+  return currentSection;
 }
 
-// Get elastic offset for other modules to use (negative when pulled back)
+// Get target section index (where we're going, or same as current if not transitioning)
+function getTargetSection() {
+  return targetSection;
+}
+
+// Get transition progress (0 = at current, 1 = arrived at target)
+function getTransitionProgress() {
+  return transitionProgress;
+}
+
+// Get transition direction (1 = forward, -1 = backward, 0 = not transitioning)
+function getTransitionDirection() {
+  if (!isTransitioning) return 0;
+  return targetSection > currentSection ? 1 : -1;
+}
+
+// Check if currently transitioning
+function isInTransition() {
+  return isTransitioning;
+}
+
+// Get elastic offset for visual effects
 function getElasticOffset() {
   return elasticOffset;
 }
 
+// Get scroll anticipation (0-1 range, negative = scrolling backward)
+// Reduced effect - subtle visual feedback before threshold is crossed
+function getScrollAnticipation() {
+  return smoothedAnticipation * 0.4; // Scale down the effect
+}
+
+// Get space Z offset for 3D world movement
+// This accumulates as user navigates, creating fly-through-space effect
+function getSpaceZ() {
+  return spaceZ;
+}
+
+// Legacy: get progress (for backwards compatibility during transition)
+// Maps section + transition to 0-1 range
+function getProgress() {
+  const sectionWidth = 1 / (SECTION_COUNT - 1);
+  const baseProgress = currentSection * sectionWidth;
+
+  if (isTransitioning) {
+    const direction = targetSection > currentSection ? 1 : -1;
+    return baseProgress + direction * sectionWidth * transitionProgress;
+  }
+
+  return baseProgress;
+}
+
 // Cleanup
 function destroy() {
-  window.removeEventListener('scroll', onScroll);
   window.removeEventListener('wheel', onWheel);
   if (wheelTimeout) clearTimeout(wheelTimeout);
+  if (decayTimeout) clearTimeout(decayTimeout);
+  if (chainCooldownTimeout) clearTimeout(chainCooldownTimeout);
   if (debugIndicator) {
     debugIndicator.remove();
     debugIndicator = null;
@@ -330,4 +386,21 @@ function destroy() {
   camera = null;
 }
 
-export { init, scrollToStart, update, getProgress, getElasticOffset, jumpToSection, destroy };
+export {
+  init,
+  scrollToStart,
+  update,
+  jumpToSection,
+  destroy,
+  // New discrete API
+  getCurrentSection,
+  getTargetSection,
+  getTransitionProgress,
+  getTransitionDirection,
+  isInTransition,
+  getElasticOffset,
+  getScrollAnticipation,
+  getSpaceZ,
+  // Legacy
+  getProgress
+};

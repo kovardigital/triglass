@@ -5,6 +5,7 @@
    ========================================================================== */
 
 import * as THREE from 'three';
+import * as Scroll from './scroll.js';
 
 // Configuration
 const STAR_LIFECYCLE_BASE = 4.0; // base seconds for full fade in/out cycle
@@ -208,7 +209,8 @@ function update(camera) {
   // Update ultra-distant layer (synced with camera like galaxy)
   if (ultraDistantStars && camera) {
     // Sync z position with camera so stars have no depth movement
-    ultraDistantStars.position.z = camera.position.z;
+    // Compensate for worldGroup.z (spaceZ) to keep them truly fixed
+    ultraDistantStars.position.z = camera.position.z - Scroll.getSpaceZ();
 
     // Update twinkling
     const colors = ultraDistantStars.geometry.attributes.color.array;

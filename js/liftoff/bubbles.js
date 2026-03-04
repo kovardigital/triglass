@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import * as Scroll from './scroll.js';
 import * as Parallax from './parallax.js';
 import { setCustomRender, clearCustomRender } from './loop.js';
-import { SECTION_COUNT, SECTIONS } from './config.js';
+import { SECTIONS } from './config.js';
 
 // Configuration - find characters section dynamically
 const CREW_SECTION = SECTIONS.findIndex(s => s.id === 'characters');
@@ -619,48 +619,45 @@ function onResize() {
   blurMaterialV.uniforms.blurSize.value = BLUR_AMOUNT / height;
 }
 
+// Fixed Z positions for fly-through effect (same as content.js)
+const REST_Z = 200;       // Where content sits when active
+const APPROACH_Z = -1400; // Where content starts when approaching (farther back)
+const DEPART_Z = 1600;    // Where content goes when departing (farther past camera)
+
 // Update
 function update() {
   if (!container || !isInitialized || !camera) return;
 
-  const scrollProgress = Scroll.getProgress();
-  const numSections = SECTION_COUNT;
-  const sectionFloat = scrollProgress * (numSections - 1);
-  const sectionIndex = Math.floor(sectionFloat);
-  const sectionProgress = sectionFloat - sectionIndex;
-
-  // Z position - same approach as content.js
-  // Position bubbles relative to camera, flying through during section
-  const IMAGE_START_Z = -800;
-  const IMAGE_END_Z = -200;
-  const zRange = 3;
-  const zDistance = (IMAGE_END_Z - IMAGE_START_Z) * zRange;
-  const sectionStartZ = IMAGE_START_Z - (zDistance - (IMAGE_END_Z - IMAGE_START_Z)) / 2;
+  // Use new discrete section API
+  const currentSection = Scroll.getCurrentSection();
+  const targetSection = Scroll.getTargetSection();
+  const transitionProgress = Scroll.getTransitionProgress();
+  const isTransitioning = Scroll.isInTransition();
 
   let groupOpacity = 0;
-  let groupZ = sectionStartZ;
+  let groupZ = APPROACH_Z;
 
-  if (sectionIndex === CREW_SECTION) {
-    const t = Math.min(1, sectionProgress);
-    groupZ = sectionStartZ + zDistance * t;
-
-    // Fade in/out based on section progress
-    if (t < 0.15) {
-      groupOpacity = t / 0.15;
-    } else if (t > 0.75) {
-      groupOpacity = 1 - ((t - 0.75) / 0.25);
-    } else {
+  // Determine visibility and position based on discrete section state
+  if (!isTransitioning) {
+    // Static state - show if we're at the characters section
+    if (currentSection === CREW_SECTION) {
+      groupZ = REST_Z;
       groupOpacity = 1;
     }
+  } else {
+    // Transitioning - handle fly-through effect
+    const isApproaching = targetSection === CREW_SECTION;
+    const isDeparting = currentSection === CREW_SECTION;
 
-    const distanceToCamera = camera.position.z - groupZ;
-    if (distanceToCamera < 300) {
-      const proximityFade = Math.max(0, (distanceToCamera - 50) / 250);
-      groupOpacity *= proximityFade;
+    if (isApproaching) {
+      // Flying in from behind camera
+      groupZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+      groupOpacity = transitionProgress;
+    } else if (isDeparting) {
+      // Flying past camera
+      groupZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+      groupOpacity = 1 - transitionProgress;
     }
-  } else if (sectionIndex > CREW_SECTION) {
-    groupZ = sectionStartZ + zDistance + 200;
-    groupOpacity = 0;
   }
 
   bubblesGroup.position.z = groupZ;
