@@ -273,6 +273,10 @@ function injectStyles() {
       max-width: 800px;
       z-index: 20;
       pointer-events: auto;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      backface-visibility: hidden;
     }
     .liftoff-text h1 {
       font-family: montserrat, sans-serif;
@@ -282,6 +286,7 @@ function injectStyles() {
       text-transform: uppercase;
       color: #d4d4d4;
       line-height: 1.1;
+      backface-visibility: hidden;
     }
     /* Larger title for intro section - uses Gin font */
     .liftoff-text.intro h1 {
@@ -376,6 +381,10 @@ function injectStyles() {
       z-index: 15;
       pointer-events: none;
       opacity: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      backface-visibility: hidden;
     }
     .liftoff-preview h1 {
       font-family: montserrat, sans-serif;
@@ -385,6 +394,7 @@ function injectStyles() {
       text-transform: uppercase;
       color: #d4d4d4;
       line-height: 1.1;
+      backface-visibility: hidden;
     }
     .liftoff-preview p {
       font-family: 'montserrat', sans-serif;
@@ -471,6 +481,11 @@ function injectStyles() {
       padding: 0 20px;
       text-align: center;
       line-height: 1.6;
+    }
+    /* Preview outro styling - matches main outro (COMING SOON) */
+    .liftoff-preview.preview-outro h1 {
+      font-size: clamp(12px, 2.5vw, 24px);
+      letter-spacing: 0.15em;
     }
 
     /* 3D world for image placeholders */
@@ -1120,7 +1135,7 @@ function update() {
       }
       previewSubtitleEl.textContent = targetData.subtitle;
 
-      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-schedule');
+      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-schedule', 'preview-outro');
       if (targetSection === 0) {
         previewContainer.classList.add('preview-intro');
         // Ensure main container will be revealed when we land on intro
@@ -1136,6 +1151,7 @@ function update() {
       else if (SECTIONS[targetSection]?.completionLayout) previewContainer.classList.add('preview-completion');
       else if (SECTIONS[targetSection]?.budgetLayout) previewContainer.classList.add('preview-budget');
       else if (SECTIONS[targetSection]?.scheduleLayout) previewContainer.classList.add('preview-schedule');
+      else if (targetSection === SECTIONS.length - 1) previewContainer.classList.add('preview-outro');
     }
 
     if (goingForward) {
@@ -1191,7 +1207,7 @@ function update() {
           }
           previewSubtitleEl.textContent = prevSection.subtitle;
 
-          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-schedule');
+          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-schedule', 'preview-outro');
           if (currentSection - 1 === 0) {
             previewContainer.classList.add('preview-intro');
             // Ensure main container will be revealed when we land on intro
@@ -1207,6 +1223,7 @@ function update() {
           else if (SECTIONS[currentSection - 1]?.completionLayout) previewContainer.classList.add('preview-completion');
           else if (SECTIONS[currentSection - 1]?.budgetLayout) previewContainer.classList.add('preview-budget');
           else if (SECTIONS[currentSection - 1]?.scheduleLayout) previewContainer.classList.add('preview-schedule');
+          else if (currentSection - 1 === SECTIONS.length - 1) previewContainer.classList.add('preview-outro');
 
           // Preview comes from DEPART_Z back toward REST_Z
           previewZ = DEPART_Z - scrollAnticipation * (DEPART_Z - REST_Z);

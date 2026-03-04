@@ -89,7 +89,7 @@ const POST_PHASES = [
   },
   {
     id: 'delivery',
-    name: 'Final Mix & Delivery',
+    name: 'Final Mix',
     description: 'Final sound mix, mastering, and deliverables for distribution.',
     color: 'rgba(60, 160, 160, 0.8)',
     glowColor: 'rgba(60, 160, 160, 0.4)',
@@ -239,6 +239,34 @@ function injectStyles() {
       transform: translateY(0);
     }
 
+    /* Vertical month guide lines */
+    .schedule-month-guides {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 250%;
+      pointer-events: none;
+    }
+    .schedule-month-guide {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      height: 100%;
+      background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0.06) 40%,
+        rgba(255, 255, 255, 0) 100%);
+      opacity: 0;
+      transform: scaleY(0);
+      transform-origin: top center;
+      transition: opacity 0.4s ease, transform 0.5s ease;
+    }
+    .schedule-month-guide.animate-in {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+
     /* Timeline track (background line) */
     .schedule-track {
       position: absolute;
@@ -264,19 +292,19 @@ function injectStyles() {
       height: ${BAR_HEIGHT}px;
       border-radius: ${BAR_HEIGHT / 2}px;
       cursor: pointer;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  box-shadow 0.3s ease,
-                  opacity 0.5s ease;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.4s ease;
       display: flex;
       align-items: center;
       padding: 0 16px;
       overflow: hidden;
       opacity: 0;
-      transform: translateX(-30px) scale(0.95);
+      transform: scaleX(0);
+      transform-origin: left center;
     }
     .schedule-bar.animate-in {
       opacity: 1;
-      transform: translateX(0) scale(1);
+      transform: scaleX(1);
     }
     .schedule-bar::before {
       content: '';
@@ -400,6 +428,17 @@ function buildTimeline() {
   track.className = 'schedule-track';
   barsContainer.appendChild(track);
 
+  // Month guide lines (separators between months)
+  const guidesContainer = document.createElement('div');
+  guidesContainer.className = 'schedule-month-guides';
+  for (let i = 1; i < 12; i++) {
+    const guide = document.createElement('div');
+    guide.className = 'schedule-month-guide';
+    guide.style.left = `${(i / 12) * 100}%`;
+    guidesContainer.appendChild(guide);
+  }
+  barsContainer.appendChild(guidesContainer);
+
   // Phase bars
   phases.forEach(phase => {
     const bar = document.createElement('div');
@@ -409,7 +448,6 @@ function buildTimeline() {
     bar.style.marginLeft = style.left;
     bar.style.width = style.width;
     bar.style.background = phase.color;
-    bar.style.boxShadow = `0 4px 20px ${phase.glowColor}`;
 
     // Label inside bar
     const label = document.createElement('span');
@@ -487,11 +525,19 @@ function triggerAnimations() {
     });
   }
 
-  // Animate bars with stagger
+  // Animate month guide lines with stagger
+  const monthGuides = timelineContainer?.querySelectorAll('.schedule-month-guide');
+  if (monthGuides) {
+    monthGuides.forEach((guide, i) => {
+      setTimeout(() => guide.classList.add('animate-in'), 300 + i * 40);
+    });
+  }
+
+  // Animate bars with stagger (left-to-right grow effect)
   const bars = timelineContainer?.querySelectorAll('.schedule-bar');
   if (bars) {
     bars.forEach((bar, i) => {
-      setTimeout(() => bar.classList.add('animate-in'), 500 + i * 120);
+      setTimeout(() => bar.classList.add('animate-in'), 500 + i * 150);
     });
   }
 }
@@ -505,6 +551,11 @@ function resetAnimations() {
   const monthMarkers = timelineContainer?.querySelectorAll('.schedule-month-marker');
   if (monthMarkers) {
     monthMarkers.forEach(marker => marker.classList.remove('animate-in'));
+  }
+
+  const monthGuides = timelineContainer?.querySelectorAll('.schedule-month-guide');
+  if (monthGuides) {
+    monthGuides.forEach(guide => guide.classList.remove('animate-in'));
   }
 
   const bars = timelineContainer?.querySelectorAll('.schedule-bar');
@@ -678,8 +729,10 @@ export function destroy() {
   timelineContainer = null;
   yearLabel = null;
   yearToggle = null;
+  yearRow = null;
   sectionIndex = -1;
   currentYear = 2026;
+  hasAnimated = false;
 
   const styles = document.getElementById('schedule-chapter-styles');
   if (styles) styles.remove();

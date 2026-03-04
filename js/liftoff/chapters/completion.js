@@ -148,6 +148,9 @@ function injectStyles() {
       color: rgba(255, 255, 255, 0.95);
       text-shadow: 0 0 10px rgba(60, 200, 220, 0.5);
       letter-spacing: 0.05em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      backface-visibility: hidden;
     }
 
     /* 100% label */
@@ -157,6 +160,9 @@ function injectStyles() {
       font-weight: 400;
       color: rgba(255, 255, 255, 0.4);
       letter-spacing: 0.05em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      backface-visibility: hidden;
     }
 
     /* Status text below bar */
@@ -167,6 +173,9 @@ function injectStyles() {
       color: rgba(255, 255, 255, 0.7);
       text-align: center;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      backface-visibility: hidden;
     }
     .completion-status strong {
       font-weight: 600;
