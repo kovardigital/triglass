@@ -66,24 +66,33 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = 'comps-chapter-styles';
   style.textContent = `
+    /* Comps layout - expand container width */
+    .liftoff-text.comps-layout,
+    .liftoff-preview.preview-comps {
+      max-width: 1600px;
+      width: 95vw;
+    }
+
     /* Comps layout - title above posters, subtitle below */
-    .liftoff-text.comps-layout h1 {
+    .liftoff-text.comps-layout h1,
+    .liftoff-preview.preview-comps h1 {
       position: absolute;
       top: -280px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(24px, 4vw, 48px);
+      font-size: clamp(36px, 6vw, 72px);
       width: 100%;
       text-align: center;
       white-space: nowrap;
     }
-    .liftoff-text.comps-layout p {
+    .liftoff-text.comps-layout p,
+    .liftoff-preview.preview-comps p {
       position: absolute;
-      top: 280px;
+      top: 220px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(10px, 1.2vw, 13px);
-      max-width: 800px;
+      font-size: clamp(11px, 1.3vw, 15px);
+      max-width: 1400px;
       padding: 0 20px;
       text-align: center;
       line-height: 1.6;

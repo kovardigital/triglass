@@ -7,6 +7,7 @@ import * as Parallax from './parallax.js';
 import * as Scroll from './scroll.js';
 import * as CompsChapter from './chapters/comps.js';
 import * as TargetMarketChapter from './chapters/target-market.js';
+import * as CrewChapter from './chapters/crew.js';
 
 // Section content data (simplified - no zRange needed)
 const SECTIONS = [
@@ -81,6 +82,7 @@ const SECTIONS = [
   {
     title: 'THE CREW',
     subtitle: 'The Team Behind The Film',
+    crewLayout: true,
     images: []
   },
   {
@@ -443,6 +445,26 @@ function injectStyles() {
     }
     .liftoff-preview.preview-story p {
       font-size: clamp(10px, 1.2vw, 14px);
+    }
+    .liftoff-preview.preview-target-market {
+      top: calc(28% - 50px);
+      max-width: none;
+      width: 100vw;
+    }
+    .liftoff-preview.preview-target-market h1 {
+      font-size: clamp(32px, 5vw, 56px);
+    }
+    .liftoff-preview.preview-target-market p {
+      position: absolute;
+      top: 550px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(11px, 1.3vw, 15px);
+      max-width: 900px;
+      width: 90vw;
+      padding: 0 20px;
+      text-align: center;
+      line-height: 1.6;
     }
 
     /* 3D world for image placeholders */
@@ -984,6 +1006,7 @@ function init() {
   // Initialize chapter modules
   CompsChapter.init(imageWorld, SECTIONS);
   TargetMarketChapter.init(imageWorld, SECTIONS);
+  CrewChapter.init(imageWorld, SECTIONS);
 
   // Set initial text for intro
   setTextContent(0);
@@ -1005,7 +1028,7 @@ function setTextContent(sectionIndex) {
   subtitleEl.textContent = section.subtitle;
 
   // Update CSS classes for styling
-  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'story', 'comps-layout', 'outro');
+  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'story', 'comps-layout', 'target-market-layout', 'crew-layout', 'outro');
   if (sectionIndex === 0) {
     textContainer.classList.add('intro');
   } else if (sectionIndex === 1) {
@@ -1018,6 +1041,10 @@ function setTextContent(sectionIndex) {
     textContainer.classList.add('story');
   } else if (section.compsLayout) {
     textContainer.classList.add('comps-layout');
+  } else if (section.targetMarketLayout) {
+    textContainer.classList.add('target-market-layout');
+  } else if (section.crewLayout) {
+    textContainer.classList.add('crew-layout');
   } else if (sectionIndex === SECTIONS.length - 1) {
     textContainer.classList.add('outro');
   }
@@ -1078,7 +1105,7 @@ function update() {
       }
       previewSubtitleEl.textContent = targetData.subtitle;
 
-      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story');
+      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew');
       if (targetSection === 0) {
         previewContainer.classList.add('preview-intro');
         // Ensure main container will be revealed when we land on intro
@@ -1088,6 +1115,9 @@ function update() {
       else if (targetSection === 2) previewContainer.classList.add('preview-trailer');
       else if (targetSection === 3) previewContainer.classList.add('preview-characters');
       else if (targetSection === 4) previewContainer.classList.add('preview-story');
+      else if (SECTIONS[targetSection]?.compsLayout) previewContainer.classList.add('preview-comps');
+      else if (SECTIONS[targetSection]?.targetMarketLayout) previewContainer.classList.add('preview-target-market');
+      else if (SECTIONS[targetSection]?.crewLayout) previewContainer.classList.add('preview-crew');
     }
 
     if (goingForward) {
@@ -1143,7 +1173,7 @@ function update() {
           }
           previewSubtitleEl.textContent = prevSection.subtitle;
 
-          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story');
+          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew');
           if (currentSection - 1 === 0) {
             previewContainer.classList.add('preview-intro');
             // Ensure main container will be revealed when we land on intro
@@ -1153,6 +1183,9 @@ function update() {
           else if (currentSection - 1 === 2) previewContainer.classList.add('preview-trailer');
           else if (currentSection - 1 === 3) previewContainer.classList.add('preview-characters');
           else if (currentSection - 1 === 4) previewContainer.classList.add('preview-story');
+          else if (SECTIONS[currentSection - 1]?.compsLayout) previewContainer.classList.add('preview-comps');
+          else if (SECTIONS[currentSection - 1]?.targetMarketLayout) previewContainer.classList.add('preview-target-market');
+          else if (SECTIONS[currentSection - 1]?.crewLayout) previewContainer.classList.add('preview-crew');
 
           // Preview comes from DEPART_Z back toward REST_Z
           previewZ = DEPART_Z - scrollAnticipation * (DEPART_Z - REST_Z);
@@ -1475,6 +1508,7 @@ function update() {
   // Update chapter modules
   CompsChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
   TargetMarketChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
+  CrewChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
 }
 
 // Reveal intro animation (called after preloader hides)
@@ -1498,6 +1532,7 @@ function destroy() {
   document.removeEventListener('click', onDocumentClick);
   CompsChapter.destroy();
   TargetMarketChapter.destroy();
+  CrewChapter.destroy();
   if (viewport) viewport.remove();
   if (scrollSpacer) scrollSpacer.remove();
   if (contactBtn) contactBtn.remove();

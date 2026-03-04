@@ -28,7 +28,9 @@ const AUDIENCE_SEGMENTS = [
     offsetY: -55,
     // Label offset from circle center (push towards outer edge)
     labelOffsetX: -30,
-    labelOffsetY: -25
+    labelOffsetY: -25,
+    // Dark blue
+    color: 'rgb(20 30 50 / 70%)'
   },
   {
     id: 'parents',
@@ -39,7 +41,9 @@ const AUDIENCE_SEGMENTS = [
     offsetY: -55,
     // Label offset from circle center
     labelOffsetX: 30,
-    labelOffsetY: -25
+    labelOffsetY: -25,
+    // Dark gold/brown
+    color: 'rgb(39 36 19 / 70%)'
   },
   {
     id: 'nostalgia',
@@ -50,7 +54,9 @@ const AUDIENCE_SEGMENTS = [
     offsetY: 65,
     // Label offset from circle center
     labelOffsetX: 0,
-    labelOffsetY: 35
+    labelOffsetY: 35,
+    // Dark green
+    color: 'rgb(20 40 25 / 70%)'
   }
 ];
 
@@ -70,33 +76,25 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = 'target-market-chapter-styles';
   style.textContent = `
-    /* Target Market layout - title at top, subtitle at bottom */
+    /* Target Market layout - title above Venn diagram, subtitle below */
     .liftoff-text.target-market-layout {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10vh 0 8vh 0;
-      transform: none !important;
+      top: calc(28% - 50px);
+      max-width: none;
+      width: 100vw;
     }
     .liftoff-text.target-market-layout h1 {
-      font-size: clamp(24px, 4vw, 48px);
-      margin: 0;
-      width: 100%;
-      text-align: center !important;
+      font-size: clamp(32px, 5vw, 56px);
     }
     .liftoff-text.target-market-layout p {
-      font-size: clamp(10px, 1.2vw, 13px);
-      max-width: 800px;
-      margin: 0 auto;
+      position: absolute;
+      top: 550px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(11px, 1.3vw, 15px);
+      max-width: 900px;
+      width: 90vw;
       padding: 0 20px;
-      text-align: center !important;
+      text-align: center;
       line-height: 1.6;
     }
 
@@ -109,22 +107,53 @@ function injectStyles() {
       pointer-events: none;
     }
 
-    /* Individual circle - light fill with visible stroke */
+    /* Individual circle - darker fill to dim space scene behind */
     .venn-circle {
       position: absolute;
       width: ${CIRCLE_RADIUS * 2}px;
       height: ${CIRCLE_RADIUS * 2}px;
       border-radius: 50%;
-      background: rgba(60,60,90,0.25);
-      border: 1px solid rgba(255,255,255,0.35);
+      background: rgb(20 25 40 / 70%);
+      border: none;
+      box-shadow:
+        inset 0 -40px 60px -30px rgba(0,0,0,0.3),
+        inset 0 40px 60px -30px rgba(255,255,255,0.1),
+        0 2px 8px rgba(0,0,0,0.2);
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  border-color 0.3s ease-out,
                   box-shadow 0.3s ease-out;
+    }
+    /* Gradient border - bright top to black bottom */
+    .venn-circle::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      padding: 1px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.6) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    /* Rim light highlight */
+    .venn-circle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 10%;
+      right: 10%;
+      height: 40%;
+      border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.08) 0%, transparent 100%);
+      pointer-events: none;
     }
     .venn-circle:hover {
       transform: scale(1.02) translateZ(10px);
-      border-color: rgba(255,255,255,0.5);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      box-shadow:
+        inset 0 -40px 60px -30px rgba(0,0,0,0.3),
+        inset 0 40px 60px -30px rgba(255,255,255,0.15),
+        0 10px 30px rgba(0,0,0,0.3);
       z-index: 10;
     }
 
@@ -215,6 +244,11 @@ export function init(imgWorld, sections) {
     const y = centerY + segment.offsetY - CIRCLE_RADIUS;
     circle.style.left = `${x}px`;
     circle.style.top = `${y}px`;
+
+    // Apply segment color
+    if (segment.color) {
+      circle.style.background = segment.color;
+    }
 
     // Create label container positioned towards outer edge
     const labelContainer = document.createElement('div');
