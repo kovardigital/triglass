@@ -520,7 +520,8 @@ export function update(currentSection, targetSection, transitionProgress, isTran
 
     elements.portrait.style.transform = `translate(calc(-50% + ${state.x}px), calc(-50% + ${state.y}px))`;
     elements.portrait.style.opacity = Math.max(0, Math.min(1, state.opacity));
-    elements.portrait.style.pointerEvents = (sectionIndex === currentSection && state.opacity > 0.5) ? 'auto' : 'none';
+    // Only allow interactions when this is the active section and not transitioning
+    elements.portrait.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && state.opacity > 0.5) ? 'auto' : 'none';
 
     elements.label.style.transform = `translate(calc(-50% + ${state.labelX}px), calc(-50% + ${state.labelY}px))`;
     elements.label.style.opacity = Math.max(0, Math.min(1, state.labelOpacity));

@@ -27,10 +27,10 @@ const AUDIENCE_SEGMENTS = [
     offsetX: -65,
     offsetY: -55,
     // Label offset from circle center (push towards outer edge)
-    labelOffsetX: -30,
-    labelOffsetY: -25,
-    // Dark blue
-    color: 'rgb(20 30 50 / 70%)'
+    labelOffsetX: -45,
+    labelOffsetY: -40,
+    // Bright blue (matching reference)
+    color: 'rgb(55 140 200)'
   },
   {
     id: 'parents',
@@ -40,10 +40,10 @@ const AUDIENCE_SEGMENTS = [
     offsetX: 65,
     offsetY: -55,
     // Label offset from circle center
-    labelOffsetX: 30,
-    labelOffsetY: -25,
-    // Dark gold/brown
-    color: 'rgb(39 36 19 / 70%)'
+    labelOffsetX: 45,
+    labelOffsetY: -40,
+    // Orange/amber (matching reference)
+    color: 'rgb(220 160 40)'
   },
   {
     id: 'nostalgia',
@@ -54,9 +54,9 @@ const AUDIENCE_SEGMENTS = [
     offsetY: 65,
     // Label offset from circle center
     labelOffsetX: 0,
-    labelOffsetY: 35,
-    // Dark green
-    color: 'rgb(20 40 25 / 70%)'
+    labelOffsetY: 50,
+    // Bright green (matching reference)
+    color: 'rgb(65 155 85)'
   }
 ];
 
@@ -107,53 +107,19 @@ function injectStyles() {
       pointer-events: none;
     }
 
-    /* Individual circle - darker fill to dim space scene behind */
+    /* Individual circle - colored fill with multiply blend for overlaps */
     .venn-circle {
       position: absolute;
       width: ${CIRCLE_RADIUS * 2}px;
       height: ${CIRCLE_RADIUS * 2}px;
       border-radius: 50%;
-      background: rgb(20 25 40 / 70%);
+      background: rgb(100 150 200);
       border: none;
-      box-shadow:
-        inset 0 -40px 60px -30px rgba(0,0,0,0.3),
-        inset 0 40px 60px -30px rgba(255,255,255,0.1),
-        0 2px 8px rgba(0,0,0,0.2);
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  box-shadow 0.3s ease-out;
-    }
-    /* Gradient border - bright top to black bottom */
-    .venn-circle::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      padding: 1px;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.6) 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-    /* Rim light highlight */
-    .venn-circle::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 10%;
-      right: 10%;
-      height: 40%;
-      border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.08) 0%, transparent 100%);
-      pointer-events: none;
+      mix-blend-mode: screen;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .venn-circle:hover {
       transform: scale(1.02) translateZ(10px);
-      box-shadow:
-        inset 0 -40px 60px -30px rgba(0,0,0,0.3),
-        inset 0 40px 60px -30px rgba(255,255,255,0.15),
-        0 10px 30px rgba(0,0,0,0.3);
       z-index: 10;
     }
 
@@ -188,30 +154,37 @@ function injectStyles() {
       margin-top: 6px;
     }
 
-    /* Center overlap area */
+    /* Center overlap area - always on top, isolated from blend modes */
     .venn-center {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 20;
+      z-index: 100;
       pointer-events: none;
-      width: 90px;
-      height: 90px;
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
-      background: rgba(30,30,50,0.6);
-      border: 1px solid rgba(255,255,255,0.4);
+      background: rgb(20, 30, 50);
+      border: 2px solid rgba(255, 215, 0, 0.6);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 4px;
+      isolation: isolate;
+      mix-blend-mode: normal;
+    }
+    .venn-center .center-rocket {
+      font-size: 16px;
     }
     .venn-center .center-logo {
       font-family: 'gin', serif;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 400;
       color: #FED003;
-      text-shadow: 0 0 20px rgba(254,208,3,0.5);
-      letter-spacing: 0.02em;
+      text-shadow: 0 0 15px rgba(254,208,3,0.4);
+      letter-spacing: 0.05em;
     }
   `;
   document.head.appendChild(style);
@@ -274,10 +247,10 @@ export function init(imgWorld, sections) {
     vennContainer.appendChild(circle);
   });
 
-  // Create center label (LIFTOFF)
+  // Create center label (LIFTOFF with rocket)
   const centerLabel = document.createElement('div');
   centerLabel.className = 'venn-center';
-  centerLabel.innerHTML = `<span class="center-logo">LIFTOFF</span>`;
+  centerLabel.innerHTML = `<span class="center-rocket">🚀</span><span class="center-logo">LIFTOFF</span>`;
   vennContainer.appendChild(centerLabel);
 
   vennContainer.style.opacity = 0;
@@ -345,8 +318,8 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   // Apply transform to Venn container
   vennContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${vennZ}px) rotate(${leanAngle}deg) scale(${vennScale})`;
   vennContainer.style.opacity = Math.max(0, Math.min(1, vennOpacity));
-  // Only allow interactions when visible
-  vennContainer.style.pointerEvents = vennOpacity > 0.5 ? 'auto' : 'none';
+  // Only allow interactions when this is the active section and not transitioning
+  vennContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && vennOpacity > 0.5) ? 'auto' : 'none';
 }
 
 // Cleanup chapter DOM

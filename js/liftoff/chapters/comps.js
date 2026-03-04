@@ -353,8 +353,8 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   // Apply transform to wall container - centered
   wallContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${wallZ}px) rotate(${leanAngle}deg) scale(${wallScale})`;
   wallContainer.style.opacity = Math.max(0, Math.min(1, wallOpacity));
-  // Only allow interactions when visible
-  wallContainer.style.pointerEvents = wallOpacity > 0.5 ? 'auto' : 'none';
+  // Only allow interactions when this is the active section and not transitioning
+  wallContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && wallOpacity > 0.5) ? 'auto' : 'none';
 }
 
 // Cleanup chapter DOM
