@@ -3,7 +3,7 @@
    Wall of movie poster comps - flat wall at section Z, pan with mouse
    ========================================================================== */
 
-import { getSectionConfig } from '../config.js';
+// Uses discrete section system from content.js
 
 // Chapter configuration
 export const config = {
@@ -43,10 +43,10 @@ const HIDDEN_POSITIONS = [
 
 // Featured poster data
 const FEATURED_DATA = [
-  { title: 'E.T.', budget: '~$10.5M', boxOffice: '~$797.3M', year: '1982' },
-  { title: 'Jumanji', budget: '~$65M', boxOffice: '~$262.8M', year: '1995' },
-  { title: 'Bridge to Terabithia', budget: '~$20M', boxOffice: '~$137M', year: '2007' },
-  { title: 'Sketch', budget: '~$3M', boxOffice: '~$10.8M', year: '2025' },
+  { title: 'E.T.', budget: '~$10.5M', boxOffice: '~$797.3M', year: '1982', image: 'https://triglass-assets.s3.amazonaws.com/movie-1.jpg' },
+  { title: 'Jumanji', budget: '~$65M', boxOffice: '~$262.8M', year: '1995', image: 'https://triglass-assets.s3.amazonaws.com/movie-2.jpg' },
+  { title: 'Bridge to Terabithia', budget: '~$20M', boxOffice: '~$137M', year: '2007', image: 'https://triglass-assets.s3.amazonaws.com/movie-3.jpg' },
+  { title: 'Sketch', budget: '~$3M', boxOffice: '~$10.8M', year: '2025', image: 'https://triglass-assets.s3.amazonaws.com/movie-4.jpg' },
 ];
 
 // DOM elements
@@ -54,9 +54,10 @@ let wallContainer = null;
 let posterElements = [];
 let sectionIndex = -1;
 
-// Z range for content (matching content.js)
-const IMAGE_START_Z = -800;
-const IMAGE_END_Z = 600;
+// Z positions matching content.js fly-through system
+const REST_Z = 200;           // Where content sits when active
+const APPROACH_Z = -1400;     // Where content starts when approaching
+const DEPART_Z = 800;         // Where content goes when departing (must be < perspective 1000px)
 
 // Inject chapter-specific styles
 function injectStyles() {
@@ -65,35 +66,26 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = 'comps-chapter-styles';
   style.textContent = `
-    /* Comps layout - title and subtitle close to center cards */
-    .liftoff-text.comps-layout {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 0;
-      transform: translate(-50%, -50%) translateZ(200px) !important;
-      top: 50% !important;
-      left: 50% !important;
-    }
+    /* Comps layout - title above posters, subtitle below */
     .liftoff-text.comps-layout h1 {
+      position: absolute;
+      top: -280px;
+      left: 50%;
+      transform: translateX(-50%);
       font-size: clamp(24px, 4vw, 48px);
-      margin: 0 0 320px 0;
       width: 100%;
-      text-align: center !important;
+      text-align: center;
+      white-space: nowrap;
     }
     .liftoff-text.comps-layout p {
+      position: absolute;
+      top: 280px;
+      left: 50%;
+      transform: translateX(-50%);
       font-size: clamp(10px, 1.2vw, 13px);
       max-width: 800px;
-      margin: 320px auto 0 auto;
       padding: 0 20px;
-      text-align: center !important;
+      text-align: center;
       line-height: 1.6;
     }
 
@@ -105,8 +97,7 @@ function injectStyles() {
       grid-template-rows: repeat(${WALL_ROWS}, ${POSTER_HEIGHT}px);
       gap: ${POSTER_GAP}px;
       transform-style: preserve-3d;
-      pointer-events: auto;
-      z-index: 5;
+      pointer-events: none;
     }
 
     /* Background poster - dimmed but clearly visible */
@@ -154,16 +145,25 @@ function injectStyles() {
 
     /* Featured poster - bright and prominent */
     .comps-poster.featured {
-      background: linear-gradient(180deg, rgba(45,45,70,0.95) 0%, rgba(22,22,38,0.98) 100%);
+      background: #111;
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 6px;
       opacity: 1;
     }
     .comps-poster.featured:hover {
       opacity: 1;
-      transform: scale(1.05) translateZ(20px);
+      transform: scale(1.05);
       border-color: rgba(255,255,255,0.25);
       box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 50px rgba(100,150,255,0.15);
+    }
+    .comps-poster.featured .poster-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 5px;
     }
     .comps-poster.featured .poster-title {
       font-family: 'montserrat', sans-serif;
@@ -182,9 +182,10 @@ function injectStyles() {
       bottom: 0;
       left: 0;
       right: 0;
-      padding: 14px 10px;
-      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+      padding: 20px 10px 14px;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
       text-align: center;
+      z-index: 1;
     }
     .comps-poster.featured .poster-data .budget,
     .comps-poster.featured .poster-data .box-office {
@@ -262,7 +263,7 @@ export function init(imgWorld, sections) {
       if (featured) {
         poster.classList.add('featured');
         poster.innerHTML = `
-          <span class="poster-title">${featured.title}</span>
+          <img class="poster-image" src="${featured.image}" alt="${featured.title}" />
           <div class="poster-data">
             <span class="budget">Budget: ${featured.budget}</span>
             <span class="box-office">Box Office: ${featured.boxOffice}</span>
@@ -284,51 +285,55 @@ export function init(imgWorld, sections) {
   console.log('[COMPS] Chapter initialized with', posterElements.length, 'posters');
 }
 
-// Update chapter based on scroll position
-export function update(cameraZ, mouse, leanAngle, elasticOffset, isolatedSection = null) {
+// Update chapter based on discrete section system (matching content.js)
+export function update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation) {
   if (sectionIndex < 0 || !wallContainer) return;
 
-  // If isolation mode is active and this isn't the isolated section, hide
-  if (isolatedSection !== null && isolatedSection !== sectionIndex) {
-    wallContainer.style.opacity = 0;
-    return;
-  }
+  const goingForward = targetSection > currentSection;
 
-  // Get section config for COMPS
-  const sectionConfig = getSectionConfig(sectionIndex);
-  const snapZ = sectionConfig.snapZ;
-  const approachDistance = sectionConfig.approachDistance;
-  const departDistance = sectionConfig.departDistance;
+  let wallZ = REST_Z;
+  let wallOpacity = 0;
+  let wallScale = 1;
 
-  // Calculate section progress based on camera Z
-  const contentStart = snapZ + approachDistance;
-  const totalRange = approachDistance + departDistance;
-
-  // t: 0 = content just starting, 1 = content passed
-  const t = totalRange > 0
-    ? Math.max(0, Math.min(1, (contentStart - cameraZ) / totalRange))
-    : 0;
-
-  // CSS Z position for the wall
-  const zPos = IMAGE_START_Z + (IMAGE_END_Z - IMAGE_START_Z) * t;
-
-  // Calculate opacity
-  let opacity = 0;
-  if (t > 0 && t < 1) {
-    // Fade in during first 15%
-    if (t < 0.15) {
-      opacity = t / 0.15;
-    } else if (t > 0.85) {
-      // Fade out in last 15%
-      opacity = 1 - ((t - 0.85) / 0.15);
-    } else {
-      opacity = 1;
+  if (isTransitioning) {
+    if (sectionIndex === currentSection) {
+      // COMPS is current section, animating away
+      if (goingForward) {
+        wallZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+        wallScale = 1 + transitionProgress * 0.5;
+        wallOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
+      } else {
+        wallZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
+        wallScale = 1 - transitionProgress * 0.3;
+        wallOpacity = 1 - transitionProgress;
+      }
+    } else if (sectionIndex === targetSection) {
+      // COMPS is target section, approaching
+      if (goingForward) {
+        wallZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+        wallScale = 0.7 + transitionProgress * 0.3;
+      } else {
+        wallZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
+        wallScale = 1.5 - transitionProgress * 0.5;
+      }
+      wallOpacity = transitionProgress;
     }
+  } else {
+    // At rest
+    if (sectionIndex === currentSection) {
+      wallZ = REST_Z + elasticOffset * 500;
+      wallOpacity = 1;
 
-    // Proximity fade when close to camera
-    if (zPos > 300) {
-      const proximityFade = 1 - ((zPos - 300) / 300);
-      opacity *= Math.max(0, proximityFade);
+      // Apply scroll anticipation
+      if (scrollAnticipation < 0) {
+        wallZ = REST_Z + Math.abs(scrollAnticipation) * 200;
+        wallScale = 1 + Math.abs(scrollAnticipation) * 0.2;
+        wallOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
+      } else if (scrollAnticipation > 0) {
+        wallZ = REST_Z - scrollAnticipation * 400;
+        wallScale = 1 - scrollAnticipation * 0.3;
+        wallOpacity = 1 - scrollAnticipation * 0.6;
+      }
     }
   }
 
@@ -337,8 +342,10 @@ export function update(cameraZ, mouse, leanAngle, elasticOffset, isolatedSection
   const panY = -mouse.y * 15;
 
   // Apply transform to wall container - centered
-  wallContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${zPos}px) rotate(${leanAngle}deg)`;
-  wallContainer.style.opacity = Math.max(0, Math.min(1, opacity));
+  wallContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${wallZ}px) rotate(${leanAngle}deg) scale(${wallScale})`;
+  wallContainer.style.opacity = Math.max(0, Math.min(1, wallOpacity));
+  // Only allow interactions when visible
+  wallContainer.style.pointerEvents = wallOpacity > 0.5 ? 'auto' : 'none';
 }
 
 // Cleanup chapter DOM

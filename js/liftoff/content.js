@@ -5,6 +5,8 @@
 
 import * as Parallax from './parallax.js';
 import * as Scroll from './scroll.js';
+import * as CompsChapter from './chapters/comps.js';
+import * as TargetMarketChapter from './chapters/target-market.js';
 
 // Section content data (simplified - no zRange needed)
 const SECTIONS = [
@@ -18,7 +20,7 @@ const SECTIONS = [
     title: 'LOGLINE',
     subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
     images: [
-      { x: -75, y: 0, width: 1920, height: 1080, scale: 0.38, label: 'Video', delay: 0, rotateY: 30, video: 'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4' },
+      { x: -180, y: 0, width: 1000, height: 1000, scale: 0.625, label: 'Logline', delay: 0, rotateY: 0, image: 'https://triglass-assets.s3.amazonaws.com/logline.png' },
     ]
   },
   {
@@ -26,7 +28,7 @@ const SECTIONS = [
     subtitle: '',
     trailerLayout: true,
     images: [
-      { x: 0, y: 0, width: 1280, height: 720, scale: 0.85, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/FakeTrailer_01-hd.mp4', playable: true },
+      { x: 0, y: 0, width: 1280, height: 720, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/FakeTrailer_01-hd.mp4', playable: true },
     ]
   },
   {
@@ -38,21 +40,21 @@ const SECTIONS = [
       {
         name: 'Selena',
         x: -85,
-        y: -30,
+        y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/selena-2.jpg',
         bio: "Selena (12) is a resourceful, intelligent natural leader. She's independent, stubborn, and emotionally ahead of her years. Growing up without a mother and with a father stretched beyond his limits, Selena has quietly become the emotional backbone of her family, acting as both protector and second parent to her younger brother.",
       },
       {
         name: 'Leo',
         x: 0,
-        y: -30,
+        y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/leo-2.jpg',
         bio: "Leo (8) is imaginative, sensitive, and deeply connected to the magical world his mother created for him. He struggles to process grief and instead retreats into fantasy, where he can still feel close to her. His innocence and wonder make him the heart of the story.",
       },
       {
         name: 'Dad',
         x: 85,
-        y: -30,
+        y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/dad-2.jpg',
         bio: "Dad (40s) is a grieving father drowning in responsibility. Once warm and present, he's now emotionally distant, working overtime to keep the family afloat while struggling with his own unprocessed loss. His journey is learning to be present again before it's too late.",
       },
@@ -61,16 +63,19 @@ const SECTIONS = [
   {
     title: 'THE STORY',
     subtitle: 'Begin The Adventure',
+    storyLayout: true,
     images: []
   },
   {
     title: 'COMPS',
-    subtitle: 'Comparable Films',
+    subtitle: 'Films like E.T., Jumanji, Bridge to Terabithia, and Sketch succeed because they tap into a universal childhood truth: when children face experiences too big to understand—loss, fear, isolation, change—imagination becomes their survival tool.',
+    compsLayout: true,
     images: []
   },
   {
     title: 'TARGET MARKET',
-    subtitle: 'Our Audience',
+    subtitle: 'The film is designed to reach three distinct audiences, with a shared overlap that allows us to engage all three at once and maximize both reach and long-term value.',
+    targetMarketLayout: true,
     images: []
   },
   {
@@ -100,10 +105,10 @@ const SECTIONS = [
   }
 ];
 
-// Fly-through Z positions - larger range = more dramatic distance feel
-const REST_Z = 200;           // Where content sits when active (slightly toward camera)
-const APPROACH_Z = -1400;     // Where content starts when approaching (farther back)
-const DEPART_Z = 1600;        // Where content goes when departing (farther past camera)
+// Fly-through Z positions
+const REST_Z = 200;           // Where content sits when active
+const APPROACH_Z = -1400;     // Where content starts when approaching
+const DEPART_Z = 800;         // Where content goes when departing (must be < perspective 1000px)
 
 // Easing function: snappy ease-out (quadratic) - scroll.js already has exponential ease
 function easeOutQuad(t) {
@@ -135,6 +140,13 @@ let selectedCharacterIndex = -1; // -1 = none selected
 let bioContainer = null;
 let bioTextEl = null;
 let characterBioMode = false; // True when showing a character bio
+
+// Character animation state (for smooth lerping)
+const characterAnimState = []; // {x, y, opacity, nameOpacity} for each character
+const CHAR_LERP_SPEED = 0.15; // How fast characters animate (0-1, higher = faster)
+
+// Earth element for Story section
+let earthElement = null;
 
 // Toggle character bio view
 function toggleCharacterBio(charIndex) {
@@ -170,22 +182,10 @@ function openCharacterBio(charIndex) {
   if (textContainer) {
     textContainer.classList.add('bio-active');
   }
-
-  // Enable smooth transitions on character elements
-  characterElements.forEach(({ portrait, name }) => {
-    portrait.classList.add('bio-transitioning');
-    name.classList.add('bio-transitioning');
-  });
 }
 
 // Close character bio
 function closeCharacterBio() {
-  // Enable transitions for smooth return animation
-  characterElements.forEach(({ portrait, name }) => {
-    portrait.classList.add('bio-transitioning');
-    name.classList.add('bio-transitioning');
-  });
-
   selectedCharacterIndex = -1;
   characterBioMode = false;
 
@@ -203,14 +203,6 @@ function closeCharacterBio() {
   if (textContainer) {
     textContainer.classList.remove('bio-active');
   }
-
-  // Remove transition class after animation completes
-  setTimeout(() => {
-    characterElements.forEach(({ portrait, name }) => {
-      portrait.classList.remove('bio-transitioning');
-      name.classList.remove('bio-transitioning');
-    });
-  }, 300); // Slightly longer than the 0.25s transition
 }
 
 // Click-outside handler to close bio
@@ -277,10 +269,10 @@ function injectStyles() {
     .liftoff-text h1 {
       font-family: montserrat, sans-serif;
       font-size: clamp(32px, 6vw, 64px);
-      font-weight: 500;
+      font-weight: 700;
       margin: 0 0 12px 0;
       text-transform: uppercase;
-      color: #fff;
+      color: #d4d4d4;
       line-height: 1.1;
     }
     /* Larger title for intro section - uses Gin font */
@@ -344,22 +336,23 @@ function injectStyles() {
       letter-spacing: 0.15em;
     }
 
-    /* Logline section - 25% smaller text */
+    /* Logline section */
     .liftoff-text.logline h1 {
-      font-size: clamp(24px, 4.5vw, 48px);
+      font-size: clamp(32px, 6vw, 64px);
     }
     .liftoff-text.logline p {
-      font-size: clamp(8px, 0.85vw, 10px);
-      max-width: 448px;
+      font-size: clamp(10px, 1vw, 13px);
+      max-width: 800px;
       margin: 0 auto;
+      padding: 0 20px;
     }
 
-    /* Trailer section - smaller title positioned above video */
+    /* Trailer section - large title positioned above video */
     .liftoff-text.trailer {
-      top: 18%;
+      top: 28%;
     }
     .liftoff-text.trailer h1 {
-      font-size: clamp(18px, 3vw, 32px);
+      font-size: clamp(36px, 6vw, 72px);
     }
 
     /* Preview container for backward scroll anticipation */
@@ -379,10 +372,10 @@ function injectStyles() {
     .liftoff-preview h1 {
       font-family: montserrat, sans-serif;
       font-size: clamp(32px, 6vw, 64px);
-      font-weight: 500;
+      font-weight: 700;
       margin: 0 0 12px 0;
       text-transform: uppercase;
-      color: #fff;
+      color: #d4d4d4;
       line-height: 1.1;
     }
     .liftoff-preview p {
@@ -394,14 +387,15 @@ function injectStyles() {
       margin: 0;
       letter-spacing: 0.02em;
     }
-    /* Preview uses smaller/subtler styling */
+    /* Preview logline styling - matches main logline */
     .liftoff-preview.preview-logline h1 {
-      font-size: clamp(24px, 4.5vw, 48px);
+      font-size: clamp(32px, 6vw, 64px);
     }
     .liftoff-preview.preview-logline p {
-      font-size: clamp(8px, 0.85vw, 10px);
-      max-width: 448px;
+      font-size: clamp(10px, 1vw, 13px);
+      max-width: 800px;
       margin: 0 auto;
+      padding: 0 20px;
     }
     .liftoff-preview.preview-intro h1 {
       font-family: gin, serif;
@@ -422,24 +416,33 @@ function injectStyles() {
       font-size: clamp(14px, 2vw, 20px);
     }
     .liftoff-preview.preview-trailer {
-      top: 18%;
+      top: 28%;
     }
     .liftoff-preview.preview-trailer h1 {
-      font-size: clamp(18px, 3vw, 32px);
+      font-size: clamp(36px, 6vw, 72px);
     }
     .liftoff-preview.preview-characters {
-      top: 25%;
+      top: calc(36% - 50px);
     }
     .liftoff-preview.preview-characters h1 {
-      font-size: clamp(24px, 4vw, 40px);
+      font-size: clamp(32px, 6vw, 64px);
     }
     .liftoff-preview.preview-characters p {
       position: absolute;
-      top: 340px;
+      top: 380px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(10px, 1.2vw, 14px);
+      font-size: clamp(12px, 1.3vw, 16px);
       white-space: nowrap;
+    }
+    .liftoff-preview.preview-story {
+      top: 30%;
+    }
+    .liftoff-preview.preview-story h1 {
+      font-size: clamp(36px, 6vw, 60px);
+    }
+    .liftoff-preview.preview-story p {
+      font-size: clamp(10px, 1.2vw, 14px);
     }
 
     /* 3D world for image placeholders */
@@ -469,15 +472,16 @@ function injectStyles() {
       overflow: hidden;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      z-index: 10;
     }
 
     /* Character portrait styling - ALL styles in one block */
     .liftoff-character {
       position: absolute;
-      width: 180px;
-      height: 180px;
+      width: 207px;
+      height: 207px;
       border-radius: 50%;
-      overflow: hidden;
+      overflow: visible;
       backface-visibility: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       border: 2px solid rgba(255,255,255,0.2);
@@ -485,19 +489,28 @@ function injectStyles() {
       pointer-events: none; /* Controlled via JavaScript */
       transition: none !important;
     }
+    /* Backdrop circle behind portrait */
+    .liftoff-character::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 276px;
+      height: 276px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 60%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
     .liftoff-character img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      border-radius: 50%;
     }
     .liftoff-character:hover {
       box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(254, 208, 3, 0.3);
-    }
-    /* Enable smooth transitions ONLY during bio mode - fast and snappy */
-    .liftoff-character.bio-transitioning {
-      transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1),
-                  opacity 0.2s ease-out,
-                  box-shadow 0.2s ease-out !important;
     }
     .liftoff-character-name {
       position: absolute;
@@ -511,11 +524,6 @@ function injectStyles() {
       letter-spacing: 2px;
       white-space: nowrap;
       pointer-events: none;
-      transition: none !important;
-    }
-    .liftoff-character-name.bio-transitioning {
-      transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1),
-                  opacity 0.2s ease-out !important;
     }
 
     /* Bio container - slides in from right of character */
@@ -561,18 +569,43 @@ function injectStyles() {
 
     /* Characters section - title above, subtitle below */
     .liftoff-text.characters {
-      top: 25%;
+      top: calc(36% - 50px);
     }
     .liftoff-text.characters h1 {
-      font-size: clamp(24px, 4vw, 40px);
+      font-size: clamp(32px, 6vw, 64px);
     }
     .liftoff-text.characters p {
       position: absolute;
-      top: 400px;
+      top: 380px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(10px, 1.2vw, 14px);
+      font-size: clamp(12px, 1.3vw, 16px);
       white-space: nowrap;
+    }
+
+    /* Story section - text moved up 20% */
+    .liftoff-text.story {
+      top: 30%;
+    }
+    .liftoff-text.story h1 {
+      font-size: clamp(36px, 6vw, 60px);
+    }
+    .liftoff-text.story p {
+      font-size: clamp(10px, 1.2vw, 14px);
+    }
+
+    /* Earth image for Story section */
+    .liftoff-earth {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      backface-visibility: hidden;
+      pointer-events: none;
+    }
+    .liftoff-earth img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     .liftoff-image span {
       display: inline-block;
@@ -599,6 +632,22 @@ function injectStyles() {
       -webkit-transform-style: preserve-3d;
       border: none;
     }
+    /* Static images */
+    .liftoff-image.has-image {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      will-change: transform;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      border: none;
+    }
+    .liftoff-image.has-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
     /* Playable video (trailer) - no mask, with play button */
     .liftoff-image.playable-video video {
       mask-image: none;
@@ -608,6 +657,7 @@ function injectStyles() {
     .liftoff-image.playable-video {
       cursor: pointer;
       pointer-events: auto;
+      overflow: visible;
     }
     .liftoff-play-button {
       position: absolute;
@@ -641,6 +691,38 @@ function injectStyles() {
     }
     .liftoff-image.playable-video:hover .liftoff-play-button {
       opacity: 1;
+    }
+    .liftoff-fullscreen-button {
+      position: absolute;
+      bottom: -70px;
+      right: 0;
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, opacity 0.3s ease;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      cursor: pointer;
+    }
+    .liftoff-fullscreen-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: scale(1.08);
+    }
+    .liftoff-fullscreen-button svg {
+      width: 28px;
+      height: 28px;
+      fill: white;
+    }
+    .liftoff-image.playable-video.playing .liftoff-fullscreen-button {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     /* Contact button - top right */
@@ -687,6 +769,10 @@ function injectStyles() {
 
 // Initialize content elements
 function init() {
+  // Immediately set black background to prevent white flash
+  document.documentElement.style.backgroundColor = '#000';
+  document.body.style.backgroundColor = '#000';
+
   injectStyles();
 
   // Create viewport
@@ -745,6 +831,24 @@ function init() {
           playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
           img.appendChild(playBtn);
 
+          // Add fullscreen button overlay
+          const fullscreenBtn = document.createElement('div');
+          fullscreenBtn.className = 'liftoff-fullscreen-button';
+          fullscreenBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>`;
+          img.appendChild(fullscreenBtn);
+
+          // Fullscreen click handler
+          fullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (video.requestFullscreen) {
+              video.requestFullscreen();
+            } else if (video.webkitRequestFullscreen) {
+              video.webkitRequestFullscreen();
+            } else if (video.webkitEnterFullscreen) {
+              video.webkitEnterFullscreen();
+            }
+          });
+
           // Click to play/pause
           img.addEventListener('click', () => {
             if (video.paused) {
@@ -769,6 +873,13 @@ function init() {
 
         img.appendChild(video);
         img.dataset.hasVideo = 'true';
+      } else if (imgConfig.image) {
+        // Static image
+        img.classList.add('has-image');
+        const imgEl = document.createElement('img');
+        imgEl.src = imgConfig.image;
+        imgEl.alt = imgConfig.label || '';
+        img.appendChild(imgEl);
       } else {
         img.innerHTML += `<span>${imgConfig.label}</span>`;
       }
@@ -832,6 +943,16 @@ function init() {
       bioContainer.appendChild(bioTextEl);
       imageWorld.appendChild(bioContainer);
     }
+
+    // Create Earth element for Story section
+    if (sectionData.storyLayout) {
+      earthElement = document.createElement('div');
+      earthElement.className = 'liftoff-earth';
+      earthElement.innerHTML = `<img src="https://triglass-assets.s3.amazonaws.com/earth-1.png" alt="Earth">`;
+      earthElement.dataset.section = sectionIndex;
+      earthElement.style.opacity = 0;
+      imageWorld.appendChild(earthElement);
+    }
   });
 
   document.body.appendChild(viewport);
@@ -860,6 +981,10 @@ function init() {
   // Click-outside handler for closing character bios
   document.addEventListener('click', onDocumentClick);
 
+  // Initialize chapter modules
+  CompsChapter.init(imageWorld, SECTIONS);
+  TargetMarketChapter.init(imageWorld, SECTIONS);
+
   // Set initial text for intro
   setTextContent(0);
 
@@ -880,7 +1005,7 @@ function setTextContent(sectionIndex) {
   subtitleEl.textContent = section.subtitle;
 
   // Update CSS classes for styling
-  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'outro');
+  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'story', 'comps-layout', 'outro');
   if (sectionIndex === 0) {
     textContainer.classList.add('intro');
   } else if (sectionIndex === 1) {
@@ -889,6 +1014,10 @@ function setTextContent(sectionIndex) {
     textContainer.classList.add('trailer');
   } else if (sectionIndex === 3) {
     textContainer.classList.add('characters');
+  } else if (sectionIndex === 4) {
+    textContainer.classList.add('story');
+  } else if (section.compsLayout) {
+    textContainer.classList.add('comps-layout');
   } else if (sectionIndex === SECTIONS.length - 1) {
     textContainer.classList.add('outro');
   }
@@ -949,7 +1078,7 @@ function update() {
       }
       previewSubtitleEl.textContent = targetData.subtitle;
 
-      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters');
+      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story');
       if (targetSection === 0) {
         previewContainer.classList.add('preview-intro');
         // Ensure main container will be revealed when we land on intro
@@ -958,13 +1087,14 @@ function update() {
       else if (targetSection === 1) previewContainer.classList.add('preview-logline');
       else if (targetSection === 2) previewContainer.classList.add('preview-trailer');
       else if (targetSection === 3) previewContainer.classList.add('preview-characters');
+      else if (targetSection === 4) previewContainer.classList.add('preview-story');
     }
 
     if (goingForward) {
       // FORWARD TRANSITION:
-      // Current section flies TOWARD camera (REST_Z → DEPART_Z), gets bigger, fades out
+      // Current section flies TOWARD camera (REST_Z → DEPART_Z), gets bigger, fades out fast
       textZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
-      textOpacity = 1 - transitionProgress;
+      textOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
       textScale = 1 + transitionProgress * 0.5; // Gets bigger as it approaches
 
       // Target section approaches FROM BEHIND (APPROACH_Z → REST_Z), fades in, slides up
@@ -1013,7 +1143,7 @@ function update() {
           }
           previewSubtitleEl.textContent = prevSection.subtitle;
 
-          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters');
+          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story');
           if (currentSection - 1 === 0) {
             previewContainer.classList.add('preview-intro');
             // Ensure main container will be revealed when we land on intro
@@ -1022,6 +1152,7 @@ function update() {
           else if (currentSection - 1 === 1) previewContainer.classList.add('preview-logline');
           else if (currentSection - 1 === 2) previewContainer.classList.add('preview-trailer');
           else if (currentSection - 1 === 3) previewContainer.classList.add('preview-characters');
+          else if (currentSection - 1 === 4) previewContainer.classList.add('preview-story');
 
           // Preview comes from DEPART_Z back toward REST_Z
           previewZ = DEPART_Z - scrollAnticipation * (DEPART_Z - REST_Z);
@@ -1069,15 +1200,16 @@ function update() {
       if (imgSection === currentSection) {
         // Current section's images animate away
         if (goingForward) {
-          // FORWARD: fly toward camera (REST_Z → DEPART_Z), get bigger
+          // FORWARD: fly toward camera (REST_Z → DEPART_Z), get bigger, fade out fast
           imgZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
           imgScale = baseScale * (1 + transitionProgress * 0.5);
+          imgOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
         } else {
           // BACKWARD: zoom out/away (REST_Z → APPROACH_Z), get smaller
           imgZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
           imgScale = baseScale * (1 - transitionProgress * 0.3);
+          imgOpacity = 1 - transitionProgress;
         }
-        imgOpacity = 1 - transitionProgress;
       } else if (imgSection === targetSection) {
         // Target section's images approach
         if (goingForward) {
@@ -1122,6 +1254,11 @@ function update() {
     img.style.transform = `translate(calc(-50% + ${imgOffsetX}px), calc(-50% + ${imgOffsetY}px)) translateZ(${imgZ}px) rotateY(${baseRotateY}deg) rotate(${imgLean}deg) scale(${imgScale})`;
     img.style.opacity = Math.max(0, Math.min(1, imgOpacity));
 
+    // Disable pointer-events when not visible (prevents blocking other sections)
+    if (isPlayable) {
+      img.style.pointerEvents = imgOpacity > 0.5 ? 'auto' : 'none';
+    }
+
     // Handle videos
     if (img.dataset.hasVideo === 'true') {
       const video = img.querySelector('video');
@@ -1149,7 +1286,7 @@ function update() {
   // Update character portraits - same fly-through logic
   // First slot position (where all characters move to in bio mode)
   const FIRST_SLOT_X = -85;
-  const FIRST_SLOT_Y = -30;
+  const FIRST_SLOT_Y = -12;
 
   characterElements.forEach(({ portrait, name }) => {
     const charSection = parseInt(portrait.dataset.section);
@@ -1196,11 +1333,12 @@ function update() {
         if (goingForward) {
           charZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
           charScale = 1 + transitionProgress * 0.5;
+          charOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
         } else {
           charZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
           charScale = 1 - transitionProgress * 0.3;
+          charOpacity = 1 - transitionProgress;
         }
-        charOpacity = 1 - transitionProgress;
         nameOpacity = charOpacity;
       } else if (charSection === targetSection) {
         // Target section's characters approach
@@ -1236,19 +1374,37 @@ function update() {
       }
     }
 
-    // Apply parallax (negative mouse.y so content follows mouse direction)
-    const charOffsetX = targetX * 3 + mouse.x * 6;
-    const charOffsetY = targetY * 3 - mouse.y * 5;
-    const nameOffsetX = targetX * 3 + mouse.x * 6;
-    const nameOffsetY = targetNameY * 3 - mouse.y * 5;
+    // Initialize animation state if needed
+    if (!characterAnimState[charIndex]) {
+      characterAnimState[charIndex] = {
+        x: targetX,
+        y: targetY,
+        nameY: targetNameY,
+        opacity: charOpacity,
+        nameOpacity: nameOpacity
+      };
+    }
+
+    // Lerp animation state toward target
+    const state = characterAnimState[charIndex];
+    state.x += (targetX - state.x) * CHAR_LERP_SPEED;
+    state.y += (targetY - state.y) * CHAR_LERP_SPEED;
+    state.nameY += (targetNameY - state.nameY) * CHAR_LERP_SPEED;
+    state.opacity += (charOpacity - state.opacity) * CHAR_LERP_SPEED;
+    state.nameOpacity += (nameOpacity - state.nameOpacity) * CHAR_LERP_SPEED;
+
+    // Apply parallax using lerped positions
+    const charOffsetX = state.x * 3 + mouse.x * 6;
+    const charOffsetY = state.y * 3 - mouse.y * 5;
+    const nameOffsetX = state.x * 3 + mouse.x * 6;
+    const nameOffsetY = state.nameY * 3 - mouse.y * 5;
 
     portrait.style.transform = `translate(calc(-50% + ${charOffsetX}px), calc(-50% + ${charOffsetY}px)) translateZ(${charZ}px) scale(${charScale})`;
-    portrait.style.opacity = Math.max(0, Math.min(1, charOpacity));
-    // Only allow clicks when character is visible on current section
-    portrait.style.pointerEvents = (charSection === currentSection && charOpacity > 0.5) ? 'auto' : 'none';
+    portrait.style.opacity = Math.max(0, Math.min(1, state.opacity));
+    portrait.style.pointerEvents = (charSection === currentSection && state.opacity > 0.5) ? 'auto' : 'none';
 
     name.style.transform = `translate(calc(-50% + ${nameOffsetX}px), calc(-50% + ${nameOffsetY}px)) translateZ(${charZ}px) scale(${charScale})`;
-    name.style.opacity = Math.max(0, Math.min(1, nameOpacity));
+    name.style.opacity = Math.max(0, Math.min(1, state.nameOpacity));
   });
 
   // Update bio container position (follows character position with parallax)
@@ -1258,6 +1414,67 @@ function update() {
     // Position bio to the right of the character portrait
     bioContainer.style.transform = `translate(calc(-50% + ${bioOffsetX + 280}px), calc(-50% + ${bioOffsetY}px)) translateZ(${REST_Z}px)`;
   }
+
+  // Update Earth element for Story section (section index 4)
+  if (earthElement) {
+    const earthSection = 4; // Story section
+    let earthZ = REST_Z;
+    let earthOpacity = 0;
+    let earthScale = 1;
+
+    if (isTransitioning) {
+      if (earthSection === currentSection) {
+        // Current section's Earth animates away
+        if (goingForward) {
+          earthZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+          earthScale = 1 + transitionProgress * 0.5;
+          earthOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
+        } else {
+          earthZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
+          earthScale = 1 - transitionProgress * 0.3;
+          earthOpacity = 1 - transitionProgress;
+        }
+      } else if (earthSection === targetSection) {
+        // Earth approaches with target section
+        if (goingForward) {
+          earthZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+          earthScale = 0.7 + transitionProgress * 0.3;
+        } else {
+          earthZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
+          earthScale = 1.5 - transitionProgress * 0.5;
+        }
+        earthOpacity = transitionProgress;
+      }
+    } else {
+      // At rest
+      if (earthSection === currentSection) {
+        earthZ = REST_Z + elasticOffset * 500;
+        earthOpacity = 1;
+
+        // Apply scroll anticipation
+        if (scrollAnticipation < 0) {
+          earthZ = REST_Z + Math.abs(scrollAnticipation) * 200;
+          earthScale = 1 + Math.abs(scrollAnticipation) * 0.2;
+          earthOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
+        } else if (scrollAnticipation > 0) {
+          earthZ = REST_Z - scrollAnticipation * 400;
+          earthScale = 1 - scrollAnticipation * 0.3;
+          earthOpacity = 1 - scrollAnticipation * 0.6;
+        }
+      }
+    }
+
+    // Position Earth below the text (y offset positive = below center)
+    const earthOffsetX = mouse.x * 6;
+    const earthOffsetY = 140 - mouse.y * 5; // Below center
+
+    earthElement.style.transform = `translate(calc(-50% + ${earthOffsetX}px), calc(-50% + ${earthOffsetY}px)) translateZ(${earthZ}px) scale(${earthScale})`;
+    earthElement.style.opacity = Math.max(0, Math.min(1, earthOpacity));
+  }
+
+  // Update chapter modules
+  CompsChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
+  TargetMarketChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
 }
 
 // Reveal intro animation (called after preloader hides)
@@ -1279,6 +1496,8 @@ function jumpToSection(sectionIndex) {
 // Cleanup
 function destroy() {
   document.removeEventListener('click', onDocumentClick);
+  CompsChapter.destroy();
+  TargetMarketChapter.destroy();
   if (viewport) viewport.remove();
   if (scrollSpacer) scrollSpacer.remove();
   if (contactBtn) contactBtn.remove();
@@ -1296,10 +1515,12 @@ function destroy() {
   copyrightEl = null;
   bioContainer = null;
   bioTextEl = null;
+  earthElement = null;
   selectedCharacterIndex = -1;
   characterBioMode = false;
   imageElements.length = 0;
   characterElements.length = 0;
+  characterAnimState.length = 0;
   lastSectionIndex = -1;
 }
 

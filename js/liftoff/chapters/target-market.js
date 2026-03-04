@@ -3,7 +3,7 @@
    Venn diagram showing three overlapping audience segments
    ========================================================================== */
 
-import { getSectionConfig } from '../config.js';
+// Uses discrete section system from content.js
 
 // Chapter configuration
 export const config = {
@@ -58,9 +58,10 @@ const AUDIENCE_SEGMENTS = [
 let vennContainer = null;
 let sectionIndex = -1;
 
-// Z range for content (matching content.js)
-const IMAGE_START_Z = -800;
-const IMAGE_END_Z = 600;
+// Z positions matching content.js fly-through system
+const REST_Z = 200;
+const APPROACH_Z = -1400;
+const DEPART_Z = 800;  // Must be < perspective 1000px
 
 // Inject chapter-specific styles
 function injectStyles() {
@@ -105,7 +106,7 @@ function injectStyles() {
       width: ${DIAGRAM_SIZE}px;
       height: ${DIAGRAM_SIZE}px;
       transform-style: preserve-3d;
-      pointer-events: auto;
+      pointer-events: none;
     }
 
     /* Individual circle - light fill with visible stroke */
@@ -251,45 +252,55 @@ export function init(imgWorld, sections) {
   console.log('[TARGET-MARKET] Chapter initialized with Venn diagram');
 }
 
-// Update chapter based on scroll position
-export function update(cameraZ, mouse, leanAngle, elasticOffset) {
+// Update chapter based on discrete section system (matching content.js)
+export function update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation) {
   if (sectionIndex < 0 || !vennContainer) return;
 
-  // Get section config for TARGET MARKET
-  const sectionConfig = getSectionConfig(sectionIndex);
-  const snapZ = sectionConfig.snapZ;
-  const approachDistance = sectionConfig.approachDistance;
-  const departDistance = sectionConfig.departDistance;
+  const goingForward = targetSection > currentSection;
 
-  // Calculate section progress based on camera Z
-  const contentStart = snapZ + approachDistance;
-  const totalRange = approachDistance + departDistance;
+  let vennZ = REST_Z;
+  let vennOpacity = 0;
+  let vennScale = 1;
 
-  // t: 0 = content just starting, 1 = content passed
-  const t = totalRange > 0
-    ? Math.max(0, Math.min(1, (contentStart - cameraZ) / totalRange))
-    : 0;
-
-  // CSS Z position for the diagram
-  const zPos = IMAGE_START_Z + (IMAGE_END_Z - IMAGE_START_Z) * t;
-
-  // Calculate opacity
-  let opacity = 0;
-  if (t > 0 && t < 1) {
-    // Fade in during first 15%
-    if (t < 0.15) {
-      opacity = t / 0.15;
-    } else if (t > 0.85) {
-      // Fade out in last 15%
-      opacity = 1 - ((t - 0.85) / 0.15);
-    } else {
-      opacity = 1;
+  if (isTransitioning) {
+    if (sectionIndex === currentSection) {
+      // TARGET MARKET is current section, animating away
+      if (goingForward) {
+        vennZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+        vennScale = 1 + transitionProgress * 0.5;
+        vennOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
+      } else {
+        vennZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
+        vennScale = 1 - transitionProgress * 0.3;
+        vennOpacity = 1 - transitionProgress;
+      }
+    } else if (sectionIndex === targetSection) {
+      // TARGET MARKET is target section, approaching
+      if (goingForward) {
+        vennZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+        vennScale = 0.7 + transitionProgress * 0.3;
+      } else {
+        vennZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
+        vennScale = 1.5 - transitionProgress * 0.5;
+      }
+      vennOpacity = transitionProgress;
     }
+  } else {
+    // At rest
+    if (sectionIndex === currentSection) {
+      vennZ = REST_Z + elasticOffset * 500;
+      vennOpacity = 1;
 
-    // Proximity fade when close to camera
-    if (zPos > 300) {
-      const proximityFade = 1 - ((zPos - 300) / 300);
-      opacity *= Math.max(0, proximityFade);
+      // Apply scroll anticipation
+      if (scrollAnticipation < 0) {
+        vennZ = REST_Z + Math.abs(scrollAnticipation) * 200;
+        vennScale = 1 + Math.abs(scrollAnticipation) * 0.2;
+        vennOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
+      } else if (scrollAnticipation > 0) {
+        vennZ = REST_Z - scrollAnticipation * 400;
+        vennScale = 1 - scrollAnticipation * 0.3;
+        vennOpacity = 1 - scrollAnticipation * 0.6;
+      }
     }
   }
 
@@ -298,8 +309,10 @@ export function update(cameraZ, mouse, leanAngle, elasticOffset) {
   const panY = -mouse.y * 15;
 
   // Apply transform to Venn container
-  vennContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${zPos}px) rotate(${leanAngle}deg)`;
-  vennContainer.style.opacity = Math.max(0, Math.min(1, opacity));
+  vennContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${vennZ}px) rotate(${leanAngle}deg) scale(${vennScale})`;
+  vennContainer.style.opacity = Math.max(0, Math.min(1, vennOpacity));
+  // Only allow interactions when visible
+  vennContainer.style.pointerEvents = vennOpacity > 0.5 ? 'auto' : 'none';
 }
 
 // Cleanup chapter DOM

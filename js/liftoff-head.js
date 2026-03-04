@@ -5,6 +5,9 @@
 (function() {
   'use strict';
 
+  // Immediately set black background to prevent white flash
+  document.documentElement.style.backgroundColor = '#000';
+
   console.log('%c[LIFTOFF] Head script starting...', 'color: #6b7cff; font-weight: bold');
 
   // Inject minimal CSS

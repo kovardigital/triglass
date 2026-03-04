@@ -98,6 +98,10 @@ function preloadAssets() {
 
 // Initialize preloader (show immediately)
 function init() {
+  // Immediately set black background to prevent white flash
+  document.documentElement.style.backgroundColor = '#000';
+  document.body.style.backgroundColor = '#000';
+
   preloaderEl = document.createElement('div');
   preloaderEl.className = 'liftoff-preloader';
   preloaderEl.innerHTML = `
