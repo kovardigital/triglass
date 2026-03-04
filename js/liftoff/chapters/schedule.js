@@ -49,12 +49,12 @@ const PRODUCTION_PHASES = [
   },
   {
     id: 'pickups',
-    name: 'Wrap & Pick-ups',
+    name: 'Wrap',
     description: 'Additional shots, insert photography, and production wrap.',
     color: 'rgba(160, 90, 200, 0.8)',
     glowColor: 'rgba(160, 90, 200, 0.4)',
     startMonth: 8,    // September
-    endMonth: 9       // September
+    endMonth: 10      // October
   }
 ];
 

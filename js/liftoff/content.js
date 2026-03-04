@@ -43,7 +43,7 @@ const SECTIONS = [
     characters: [
       {
         name: 'Selena',
-        x: -85,
+        x: -105,
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/selena-2.jpg',
         bio: "Selena (12) is a resourceful, intelligent natural leader. She's independent, stubborn, and emotionally ahead of her years. Growing up without a mother and with a father stretched beyond his limits, Selena has quietly become the emotional backbone of her family, acting as both protector and second parent to her younger brother.",
@@ -57,7 +57,7 @@ const SECTIONS = [
       },
       {
         name: 'Dad',
-        x: 85,
+        x: 105,
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/dad-2.jpg',
         bio: "Dad (40s) is a grieving father drowning in responsibility. Once warm and present, he's now emotionally distant, working overtime to keep the family afloat while struggling with his own unprocessed loss. His journey is learning to be present again before it's too late.",
@@ -107,6 +107,14 @@ const SECTIONS = [
     images: []
   },
   {
+    title: 'THE FILM',
+    subtitle: '',
+    trailerLayout: true,
+    images: [
+      { x: 0, y: 0, width: 1280, height: 720, scale: 0.49, label: 'Film', delay: 0, rotateY: 0 },
+    ]
+  },
+  {
     title: 'COMING SOON',
     subtitle: '2026',
     images: []
@@ -134,6 +142,7 @@ let contactBtn = null;
 let copyrightEl = null;
 const imageElements = [];
 const characterElements = [];
+const characterBackdrops = []; // Blur backdrops appended directly to imgWorld for proper backdrop-filter
 
 // Track which section's text is currently displayed
 let lastSectionIndex = -1;
@@ -213,19 +222,32 @@ function closeCharacterBio() {
   }
 }
 
-// Click-outside handler to close bio
+// Click-outside handler to close bio or deselect segment
 function onDocumentClick(e) {
-  if (!characterBioMode) return;
+  // Handle character bio mode
+  if (characterBioMode) {
+    // Check if click was on a character portrait
+    const clickedChar = e.target.closest('.liftoff-character');
+    if (clickedChar) return; // Let the character click handler deal with it
 
-  // Check if click was on a character portrait
-  const clickedChar = e.target.closest('.liftoff-character');
-  if (clickedChar) return; // Let the character click handler deal with it
+    // Check if click was on the bio itself
+    if (e.target.closest('.liftoff-bio')) return;
 
-  // Check if click was on the bio itself
-  if (e.target.closest('.liftoff-bio')) return;
+    // Otherwise close the bio
+    closeCharacterBio();
+    return;
+  }
 
-  // Otherwise close the bio
-  closeCharacterBio();
+  // Handle target market segment selection
+  if (TargetMarketChapter.isSegmentSelected()) {
+    // Check if click was on a venn circle or details panel
+    const clickedCircle = e.target.closest('.venn-circle');
+    const clickedDetails = e.target.closest('.segment-details');
+    if (clickedCircle || clickedDetails) return;
+
+    // Otherwise deselect the segment
+    TargetMarketChapter.deselectSegment();
+  }
 }
 
 // Inject CSS (same as before)
@@ -440,7 +462,7 @@ function injectStyles() {
       font-size: clamp(36px, 6vw, 72px);
     }
     .liftoff-preview.preview-characters {
-      top: calc(36% - 50px);
+      top: calc(36% - 70px);
     }
     .liftoff-preview.preview-characters h1 {
       font-size: clamp(32px, 6vw, 64px);
@@ -532,19 +554,29 @@ function injectStyles() {
       pointer-events: none; /* Controlled via JavaScript */
       transition: none !important;
     }
-    /* Backdrop circle behind portrait */
-    .liftoff-character::before {
+    /* Blur backdrop circle - separate element for proper backdrop-filter during transitions */
+    .liftoff-character-backdrop {
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      pointer-events: none;
+    }
+    .liftoff-character-backdrop::before {
       content: '';
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 276px;
-      height: 276px;
-      transform: translate(-50%, -50%);
+      inset: 0;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 60%, transparent 70%);
+      padding: 1px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.4) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
       pointer-events: none;
-      z-index: -1;
     }
     .liftoff-character img {
       width: 100%;
@@ -553,7 +585,16 @@ function injectStyles() {
       border-radius: 50%;
     }
     .liftoff-character:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(254, 208, 3, 0.3);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    }
+    .liftoff-character[data-char-index="0"]:hover {
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(0, 200, 200, 0.4);
+    }
+    .liftoff-character[data-char-index="1"]:hover {
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(220, 60, 60, 0.4);
+    }
+    .liftoff-character[data-char-index="2"]:hover {
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(160, 80, 200, 0.4);
     }
     .liftoff-character-name {
       position: absolute;
@@ -574,7 +615,7 @@ function injectStyles() {
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 320px;
+      width: 470px;
       opacity: 0;
       pointer-events: none;
       backface-visibility: hidden;
@@ -612,7 +653,7 @@ function injectStyles() {
 
     /* Characters section - title above, subtitle below */
     .liftoff-text.characters {
-      top: calc(36% - 50px);
+      top: calc(36% - 70px);
     }
     .liftoff-text.characters h1 {
       font-size: clamp(32px, 6vw, 64px);
@@ -942,6 +983,17 @@ function init() {
     // Create character portraits if this section has them
     if (sectionData.characters) {
       sectionData.characters.forEach((charConfig, charIndex) => {
+        // Create blur backdrop element (appended directly to imgWorld for proper backdrop-filter)
+        const backdropEl = document.createElement('div');
+        backdropEl.className = 'liftoff-character-backdrop';
+        backdropEl.dataset.section = sectionIndex;
+        backdropEl.dataset.charIndex = charIndex;
+        backdropEl.dataset.baseX = charConfig.x;
+        backdropEl.dataset.baseY = charConfig.y;
+        backdropEl.style.opacity = 0;
+        imageWorld.appendChild(backdropEl);
+        characterBackdrops.push(backdropEl);
+
         // Character portrait container
         const charEl = document.createElement('div');
         charEl.className = 'liftoff-character';
@@ -1057,7 +1109,7 @@ function setTextContent(sectionIndex) {
     textContainer.classList.add('intro');
   } else if (sectionIndex === 1) {
     textContainer.classList.add('logline');
-  } else if (sectionIndex === 2) {
+  } else if (sectionIndex === 2 || section.trailerLayout) {
     textContainer.classList.add('trailer');
   } else if (sectionIndex === 3) {
     textContainer.classList.add('characters');
@@ -1142,7 +1194,7 @@ function update() {
         textContainer.classList.add('revealed');
       }
       else if (targetSection === 1) previewContainer.classList.add('preview-logline');
-      else if (targetSection === 2) previewContainer.classList.add('preview-trailer');
+      else if (targetSection === 2 || SECTIONS[targetSection]?.trailerLayout) previewContainer.classList.add('preview-trailer');
       else if (targetSection === 3) previewContainer.classList.add('preview-characters');
       else if (targetSection === 4) previewContainer.classList.add('preview-story');
       else if (SECTIONS[targetSection]?.compsLayout) previewContainer.classList.add('preview-comps');
@@ -1214,7 +1266,7 @@ function update() {
             textContainer.classList.add('revealed');
           }
           else if (currentSection - 1 === 1) previewContainer.classList.add('preview-logline');
-          else if (currentSection - 1 === 2) previewContainer.classList.add('preview-trailer');
+          else if (currentSection - 1 === 2 || SECTIONS[currentSection - 1]?.trailerLayout) previewContainer.classList.add('preview-trailer');
           else if (currentSection - 1 === 3) previewContainer.classList.add('preview-characters');
           else if (currentSection - 1 === 4) previewContainer.classList.add('preview-story');
           else if (SECTIONS[currentSection - 1]?.compsLayout) previewContainer.classList.add('preview-comps');
@@ -1356,7 +1408,7 @@ function update() {
 
   // Update character portraits - same fly-through logic
   // First slot position (where all characters move to in bio mode)
-  const FIRST_SLOT_X = -85;
+  const FIRST_SLOT_X = -105;
   const FIRST_SLOT_Y = -12;
 
   characterElements.forEach(({ portrait, name }) => {
@@ -1476,6 +1528,13 @@ function update() {
 
     name.style.transform = `translate(calc(-50% + ${nameOffsetX}px), calc(-50% + ${nameOffsetY}px)) translateZ(${charZ}px) scale(${charScale})`;
     name.style.opacity = Math.max(0, Math.min(1, state.nameOpacity));
+
+    // Update blur backdrop with full transform including dynamic Z (for proper backdrop-filter during transitions)
+    const backdrop = characterBackdrops[charIndex];
+    if (backdrop) {
+      backdrop.style.transform = `translate(calc(-50% + ${charOffsetX}px), calc(-50% + ${charOffsetY}px)) translateZ(${charZ}px) scale(${charScale})`;
+      backdrop.style.opacity = Math.max(0, Math.min(1, state.opacity));
+    }
   });
 
   // Update bio container position (follows character position with parallax)
@@ -1483,7 +1542,7 @@ function update() {
     const bioOffsetX = FIRST_SLOT_X * 3 + mouse.x * 6;
     const bioOffsetY = FIRST_SLOT_Y * 3 - mouse.y * 5;
     // Position bio to the right of the character portrait
-    bioContainer.style.transform = `translate(calc(-50% + ${bioOffsetX + 280}px), calc(-50% + ${bioOffsetY}px)) translateZ(${REST_Z}px)`;
+    bioContainer.style.transform = `translate(calc(-50% + ${bioOffsetX + 390}px), calc(-50% + ${bioOffsetY}px)) translateZ(${REST_Z}px)`;
   }
 
   // Update Earth element for Story section (section index 4)
@@ -1599,6 +1658,8 @@ function destroy() {
   characterBioMode = false;
   imageElements.length = 0;
   characterElements.length = 0;
+  characterBackdrops.forEach(backdrop => backdrop.remove());
+  characterBackdrops.length = 0;
   characterAnimState.length = 0;
   lastSectionIndex = -1;
 }

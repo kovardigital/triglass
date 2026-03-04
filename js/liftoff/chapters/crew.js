@@ -20,15 +20,19 @@ const CREW_DATA = [
     role: 'Director',
     x: 0,
     y: -230,
-    image: 'PLACEHOLDER',
-    bio: 'Ryan Thielen is the visionary director behind Liftoff, bringing his passion for emotionally resonant storytelling to every frame.',
+    image: 'https://triglass-assets.s3.amazonaws.com/ryan.jpg',
+    bio: `The world through Ryan Thielen's eyes is big, bold, and filled with endless possibility. His work lives at the intersection of emotional story driven story and imaginative, fantastical worlds.
+
+Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</strong>, 8 Telly Awards, 2 IDEA Awards, and a Clio.`,
+    reel: 'https://triglass-assets.s3.amazonaws.com/RyanVid.png',
+    signature: 'https://triglass-assets.s3.amazonaws.com/signature.png',
   },
   {
     name: 'Charles Mulford',
     role: 'Producer',
     x: -230,
     y: -30,
-    image: 'PLACEHOLDER',
+    image: 'https://triglass-assets.s3.amazonaws.com/charles.jpg',
     bio: 'Charles Mulford produces Liftoff with a focus on bringing imaginative stories to life while maintaining creative integrity.',
   },
   {
@@ -36,7 +40,7 @@ const CREW_DATA = [
     role: 'AD',
     x: 230,
     y: -30,
-    image: 'PLACEHOLDER',
+    image: 'https://triglass-assets.s3.amazonaws.com/noelle.jpg',
     bio: 'Noelle Anderson serves as Assistant Director, coordinating the production with precision and creative insight.',
   },
   {
@@ -44,7 +48,7 @@ const CREW_DATA = [
     role: 'Art Director',
     x: -140,
     y: 175,
-    image: 'PLACEHOLDER',
+    image: 'https://triglass-assets.s3.amazonaws.com/kaleb.jpg',
     bio: 'Kaleb Lechowski brings the visual world of Liftoff to life as Art Director, crafting the magical aesthetic of the film.',
   },
   {
@@ -52,7 +56,7 @@ const CREW_DATA = [
     role: 'Line Producer',
     x: 140,
     y: 175,
-    image: 'PLACEHOLDER',
+    image: 'https://triglass-assets.s3.amazonaws.com/david.jpg',
     bio: 'David Vanderwarn manages the day-to-day production as Line Producer, ensuring everything runs smoothly.',
   },
 ];
@@ -63,12 +67,13 @@ const LOGO_DATA = {
   role: 'Production & Post House',
   x: 0,
   y: -30,
-  image: 'PLACEHOLDER',
+  image: 'https://triglass-assets.s3.amazonaws.com/triglass.png',
   isLogo: true,
 };
 
 // DOM elements
 let crewContainer = null;
+let imageWorld = null; // Reference to imgWorld for backdrop positioning
 let crewElements = [];
 let logoElement = null;
 let sectionIndex = -1;
@@ -130,6 +135,25 @@ function injectStyles() {
       cursor: pointer;
       pointer-events: none;
       transition: none !important;
+    }
+
+    /* Blur backdrop circle - separate element for proper backdrop-filter */
+    .crew-blur-backdrop {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      pointer-events: none;
+    }
+    .crew-blur-backdrop.portrait-size {
+      width: ${PORTRAIT_SIZE + 40}px;
+      height: ${PORTRAIT_SIZE + 40}px;
+    }
+    .crew-blur-backdrop.logo-size {
+      width: ${LOGO_SIZE + 40}px;
+      height: ${LOGO_SIZE + 40}px;
     }
 
 
@@ -207,7 +231,8 @@ function injectStyles() {
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 320px;
+      width: 520px;
+      max-height: 70vh;
       opacity: 0;
       pointer-events: none;
       backface-visibility: hidden;
@@ -218,14 +243,66 @@ function injectStyles() {
       opacity: 1;
       pointer-events: auto;
     }
-    .crew-bio p {
+
+    /* Scrollable content wrapper */
+    .crew-bio-scroll {
+      max-height: 70vh;
+      overflow: hidden;
+      position: relative;
+    }
+    .crew-bio-content {
+      transition: transform 0.3s ease-out;
+    }
+
+    .crew-bio-text {
       font-family: 'montserrat', sans-serif;
-      font-size: clamp(11px, 1.1vw, 14px);
+      font-size: clamp(12px, 1.1vw, 14px);
       font-weight: 300;
-      color: rgba(255,255,255,0.9);
-      line-height: 1.7;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.65;
       text-align: left;
-      margin: 0;
+      margin: 0 0 20px 0;
+      white-space: pre-line;
+    }
+    .crew-bio-text strong {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Reel image in bio */
+    .crew-bio-reel {
+      position: relative;
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 16px;
+    }
+    .crew-bio-reel img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+
+    /* Signature in bio */
+    .crew-bio-signature {
+      position: relative;
+      width: 180px;
+      height: auto;
+      opacity: 0.9;
+      pointer-events: none;
+      margin-top: 20px;
+      margin-left: auto;
+    }
+    .crew-bio-signature img {
+      width: 100%;
+      height: auto;
+    }
+
+    /* Larger portrait when in bio mode */
+    .crew-portrait.bio-active {
+      width: 180px !important;
+      height: 180px !important;
     }
 
     /* Title changes when showing bio */
@@ -258,9 +335,34 @@ function openCrewBio(crewIndex) {
     titleEl.textContent = crewData.name.toUpperCase();
   }
 
-  // Update bio text
+  // Update bio text (use innerHTML for rich text support)
   if (bioTextEl && bioContainer) {
-    bioTextEl.textContent = crewData.bio;
+    bioTextEl.innerHTML = crewData.bio;
+
+    // Update reel image
+    const reelContainer = document.getElementById('crew-bio-reel');
+    if (reelContainer) {
+      if (crewData.reel) {
+        reelContainer.innerHTML = `<img src="${crewData.reel}" alt="Reel">`;
+        reelContainer.style.display = 'block';
+      } else {
+        reelContainer.innerHTML = '';
+        reelContainer.style.display = 'none';
+      }
+    }
+
+    // Update signature
+    const signatureContainer = document.getElementById('crew-bio-signature');
+    if (signatureContainer) {
+      if (crewData.signature) {
+        signatureContainer.innerHTML = `<img src="${crewData.signature}" alt="Signature">`;
+        signatureContainer.style.display = 'block';
+      } else {
+        signatureContainer.innerHTML = '';
+        signatureContainer.style.display = 'none';
+      }
+    }
+
     bioContainer.classList.add('visible');
   }
 
@@ -306,6 +408,34 @@ function onDocumentClick(e) {
   closeCrewBio();
 }
 
+// Mouse move handler for auto-scrolling bio content
+function onMouseMoveForScroll(e) {
+  if (!crewBioMode) return;
+
+  const bioContent = document.getElementById('crew-bio-content');
+  const bioScroll = document.getElementById('crew-bio-scroll');
+  if (!bioContent || !bioScroll) return;
+
+  // Get content height vs visible height
+  const contentHeight = bioContent.offsetHeight;
+  const visibleHeight = bioScroll.offsetHeight;
+  const scrollableAmount = Math.max(0, contentHeight - visibleHeight);
+
+  if (scrollableAmount <= 0) return; // No need to scroll
+
+  // Calculate scroll based on mouse Y position (0 = top, 1 = bottom of viewport)
+  const viewportHeight = window.innerHeight;
+  const mouseYRatio = e.clientY / viewportHeight;
+
+  // Only start scrolling when mouse is in bottom 60% of screen
+  // Map 0.4-1.0 range to 0-1 scroll range
+  const scrollRatio = Math.max(0, Math.min(1, (mouseYRatio - 0.4) / 0.6));
+
+  // Apply scroll offset
+  const scrollOffset = -scrollRatio * scrollableAmount;
+  bioContent.style.transform = `translateY(${scrollOffset}px)`;
+}
+
 // Initialize chapter DOM elements
 export function init(imgWorld, sections) {
   injectStyles();
@@ -316,28 +446,70 @@ export function init(imgWorld, sections) {
     return;
   }
 
+  // Store reference to imgWorld for backdrop positioning
+  imageWorld = imgWorld;
+
   // Create container
   crewContainer = document.createElement('div');
   crewContainer.className = 'crew-container';
 
   // Create logo element (center)
   logoElement = createPortraitElement(LOGO_DATA, -1, true);
-  crewContainer.appendChild(logoElement.portrait);
-  crewContainer.appendChild(logoElement.label);
 
   // Create crew member elements
   CREW_DATA.forEach((member, index) => {
     const elements = createPortraitElement(member, index, false);
     crewElements.push(elements);
+  });
+
+  // Append blur backdrops directly to imgWorld (not crewContainer) for proper backdrop-filter
+  imgWorld.appendChild(logoElement.backdrop);
+  crewElements.forEach(elements => {
+    imgWorld.appendChild(elements.backdrop);
+  });
+
+  // Then append portraits and labels to crewContainer
+  crewContainer.appendChild(logoElement.portrait);
+  crewContainer.appendChild(logoElement.label);
+  crewElements.forEach(elements => {
     crewContainer.appendChild(elements.portrait);
     crewContainer.appendChild(elements.label);
   });
 
-  // Create bio container
+  // Create bio container with scrollable content
   bioContainer = document.createElement('div');
   bioContainer.className = 'crew-bio';
-  bioTextEl = document.createElement('p');
-  bioContainer.appendChild(bioTextEl);
+
+  // Scroll wrapper
+  const bioScroll = document.createElement('div');
+  bioScroll.className = 'crew-bio-scroll';
+  bioScroll.id = 'crew-bio-scroll';
+
+  // Content wrapper (this gets translated for scroll effect)
+  const bioContent = document.createElement('div');
+  bioContent.className = 'crew-bio-content';
+  bioContent.id = 'crew-bio-content';
+
+  bioTextEl = document.createElement('div');
+  bioTextEl.className = 'crew-bio-text';
+  bioContent.appendChild(bioTextEl);
+
+  // Reel image container
+  const bioReelContainer = document.createElement('div');
+  bioReelContainer.className = 'crew-bio-reel';
+  bioReelContainer.id = 'crew-bio-reel';
+  bioContent.appendChild(bioReelContainer);
+
+  // Signature container
+  const bioSignature = document.createElement('div');
+  bioSignature.className = 'crew-bio-signature';
+  bioSignature.id = 'crew-bio-signature';
+  bioContent.appendChild(bioSignature);
+
+  // Assemble scroll structure
+  bioScroll.appendChild(bioContent);
+  bioContainer.appendChild(bioScroll);
+
   crewContainer.appendChild(bioContainer);
 
   crewContainer.style.opacity = 0;
@@ -346,11 +518,21 @@ export function init(imgWorld, sections) {
   // Add document click listener
   document.addEventListener('click', onDocumentClick);
 
+  // Add mouse move listener for auto-scroll
+  document.addEventListener('mousemove', onMouseMoveForScroll);
+
   console.log('[CREW] Chapter initialized with', CREW_DATA.length, 'crew members');
 }
 
-// Create a portrait element with its label
+// Create a portrait element with its label and blur backdrop
 function createPortraitElement(data, index, isLogo) {
+  // Create blur backdrop element
+  const backdrop = document.createElement('div');
+  backdrop.className = 'crew-blur-backdrop ' + (isLogo ? 'logo-size' : 'portrait-size');
+  backdrop.dataset.baseX = data.x;
+  backdrop.dataset.baseY = data.y;
+  backdrop.dataset.index = index;
+
   const portrait = document.createElement('div');
   portrait.className = 'crew-portrait' + (isLogo ? ' logo' : '');
 
@@ -390,7 +572,7 @@ function createPortraitElement(data, index, isLogo) {
     <span class="crew-label-role">${data.role}</span>
   `;
 
-  return { portrait, label };
+  return { portrait, label, backdrop };
 }
 
 // Update chapter based on discrete section system
@@ -455,8 +637,8 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   crewContainer.style.opacity = Math.max(0, Math.min(1, containerOpacity));
 
   // Update individual elements for bio mode animation
-  const bioTargetX = -120; // Position when showing bio
-  const bioTargetY = -20;
+  const bioTargetX = -310; // Position when showing bio (further left for larger portrait)
+  const bioTargetY = 20; // Slightly lower to center with expanded bio
 
   // Update logo
   if (logoElement) {
@@ -471,6 +653,9 @@ export function update(currentSection, targetSection, transitionProgress, isTran
       opacity = 0;
     }
 
+    // Backdrop gets full transform like trailer images (needed for backdrop-filter during transitions)
+    logoElement.backdrop.style.transform = `translate(calc(-50% + ${logoX + panX}px), calc(-50% + ${logoY + panY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
+    logoElement.backdrop.style.opacity = opacity;
     logoElement.portrait.style.transform = `translate(calc(-50% + ${logoX}px), calc(-50% + ${logoY}px))`;
     logoElement.portrait.style.opacity = opacity;
     logoElement.label.style.transform = `translate(calc(-50% + ${labelX}px), calc(-50% + ${labelY}px))`;
@@ -490,14 +675,16 @@ export function update(currentSection, targetSection, transitionProgress, isTran
     let targetLabelY = labelBaseY;
     let opacity = containerOpacity;
     let labelOpacity = containerOpacity;
+    let targetScale = 1;
 
     if (crewBioMode && sectionIndex === currentSection) {
       if (index === selectedCrewIndex) {
         targetX = bioTargetX;
         targetY = bioTargetY;
         targetLabelX = bioTargetX;
-        targetLabelY = bioTargetY + 80;
-        labelOpacity = 0; // Hide name when showing bio (it's in the title)
+        targetLabelY = bioTargetY + 120; // Adjusted for larger portrait
+        targetScale = 1.5; // Scale up portrait in bio mode
+        // Keep label visible in bio mode (shows name + role under portrait)
       } else {
         opacity = 0;
         labelOpacity = 0;
@@ -506,7 +693,7 @@ export function update(currentSection, targetSection, transitionProgress, isTran
 
     // Initialize animation state
     if (!crewAnimState[index]) {
-      crewAnimState[index] = { x: targetX, y: targetY, labelX: targetLabelX, labelY: targetLabelY, opacity, labelOpacity };
+      crewAnimState[index] = { x: targetX, y: targetY, labelX: targetLabelX, labelY: targetLabelY, opacity, labelOpacity, scale: targetScale };
     }
 
     // Lerp to target
@@ -517,8 +704,12 @@ export function update(currentSection, targetSection, transitionProgress, isTran
     state.labelY += (targetLabelY - state.labelY) * LERP_SPEED;
     state.opacity += (opacity - state.opacity) * LERP_SPEED;
     state.labelOpacity += (labelOpacity - state.labelOpacity) * LERP_SPEED;
+    state.scale += (targetScale - state.scale) * LERP_SPEED;
 
-    elements.portrait.style.transform = `translate(calc(-50% + ${state.x}px), calc(-50% + ${state.y}px))`;
+    // Backdrop gets full transform like trailer images (needed for backdrop-filter during transitions)
+    elements.backdrop.style.transform = `translate(calc(-50% + ${state.x + panX}px), calc(-50% + ${state.y + panY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale * state.scale})`;
+    elements.backdrop.style.opacity = Math.max(0, Math.min(1, state.opacity));
+    elements.portrait.style.transform = `translate(calc(-50% + ${state.x}px), calc(-50% + ${state.y}px)) scale(${state.scale})`;
     elements.portrait.style.opacity = Math.max(0, Math.min(1, state.opacity));
     // Only allow interactions when this is the active section and not transitioning
     elements.portrait.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && state.opacity > 0.5) ? 'auto' : 'none';
@@ -527,10 +718,10 @@ export function update(currentSection, targetSection, transitionProgress, isTran
     elements.label.style.opacity = Math.max(0, Math.min(1, state.labelOpacity));
   });
 
-  // Update bio position
+  // Update bio position - align top with top of portrait
   if (bioContainer) {
-    const bioX = bioTargetX + 180; // To the right of the portrait
-    const bioY = bioTargetY - 20;
+    const bioX = bioTargetX + 400; // To the right of the larger portrait (180px + gap)
+    const bioY = bioTargetY + 60; // Position well below the title
     bioContainer.style.transform = `translate(calc(-50% + ${bioX}px), calc(-50% + ${bioY}px))`;
   }
 }
@@ -538,12 +729,24 @@ export function update(currentSection, targetSection, transitionProgress, isTran
 // Cleanup chapter DOM
 export function destroy() {
   document.removeEventListener('click', onDocumentClick);
+  document.removeEventListener('mousemove', onMouseMoveForScroll);
+
+  // Remove backdrops (they're in imgWorld, not crewContainer)
+  if (logoElement && logoElement.backdrop) {
+    logoElement.backdrop.remove();
+  }
+  crewElements.forEach(elements => {
+    if (elements.backdrop) {
+      elements.backdrop.remove();
+    }
+  });
 
   if (crewContainer) {
     crewContainer.remove();
     crewContainer = null;
   }
 
+  imageWorld = null;
   crewElements = [];
   logoElement = null;
   bioContainer = null;

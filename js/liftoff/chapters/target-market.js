@@ -1,6 +1,7 @@
 /* ==========================================================================
    Liftoff - TARGET MARKET Chapter
    Venn diagram showing three overlapping audience segments
+   Uses image with clickable hotspots
    ========================================================================== */
 
 // Uses discrete section system from content.js
@@ -13,56 +14,49 @@ export const config = {
   images: []
 };
 
-// Venn diagram dimensions
-const CIRCLE_RADIUS = 130;
-const DIAGRAM_SIZE = 420;
+// Venn diagram image
+const VENN_IMAGE_URL = 'https://triglass-assets.s3.amazonaws.com/venn.png';
+const DIAGRAM_WIDTH = 500;
+const DIAGRAM_HEIGHT = 500;
 
-// Target audience segments - muted accent colors for subtle differentiation
+// Target audience segments with detailed descriptions and hotspot positions
 const AUDIENCE_SEGMENTS = [
   {
     id: 'kids',
     title: 'Kids & Teens',
     ageRange: '8–16',
-    // Position: top-left of center
-    offsetX: -65,
-    offsetY: -55,
-    // Label offset from circle center (push towards outer edge)
-    labelOffsetX: -45,
-    labelOffsetY: -40,
-    // Bright blue (matching reference)
+    description: 'Young viewers drawn to adventure, humor, and relatable coming-of-age themes. They connect with the journey of discovery and the wonder of space exploration.',
+    // Hotspot position (percentage from top-left of image)
+    hotspot: { x: 22, y: 28, radius: 22 },
     color: 'rgb(55 140 200)'
   },
   {
     id: 'parents',
-    title: 'Adults',
-    subtitle: 'with Kids',
-    // Position: top-right of center
-    offsetX: 65,
-    offsetY: -55,
-    // Label offset from circle center
-    labelOffsetX: 45,
-    labelOffsetY: -40,
-    // Orange/amber (matching reference)
+    title: 'Adults with Kids',
+    ageRange: '30–50',
+    description: 'Parents looking for quality family entertainment with heart. They appreciate films that spark imagination and create shared experiences with their children.',
+    // Hotspot position
+    hotspot: { x: 78, y: 28, radius: 22 },
     color: 'rgb(220 160 40)'
   },
   {
     id: 'nostalgia',
-    title: 'Nostalgia-Seeking',
-    subtitle: 'Adults',
-    // Position: bottom-center
-    offsetX: 0,
-    offsetY: 65,
-    // Label offset from circle center
-    labelOffsetX: 0,
-    labelOffsetY: 50,
-    // Bright green (matching reference)
+    title: 'Nostalgia-Seeking Adults',
+    ageRange: '25–45',
+    description: 'Adults who grew up with classic animated adventures and sci-fi. They seek films that recapture that sense of wonder while offering sophisticated storytelling.',
+    // Hotspot position
+    hotspot: { x: 50, y: 72, radius: 22 },
     color: 'rgb(65 155 85)'
   }
 ];
 
 // DOM elements
 let vennContainer = null;
+let vennImage = null;
+let detailsPanel = null;
+let hotspotElements = [];
 let sectionIndex = -1;
+let selectedSegmentIndex = -1;
 
 // Z positions matching content.js fly-through system
 const REST_Z = 200;
@@ -81,6 +75,11 @@ function injectStyles() {
       top: calc(28% - 50px);
       max-width: none;
       width: 100vw;
+      transition: opacity 0.4s ease-out;
+    }
+    .liftoff-text.target-market-layout.segment-selected {
+      opacity: 0;
+      pointer-events: none;
     }
     .liftoff-text.target-market-layout h1 {
       font-size: clamp(32px, 5vw, 56px);
@@ -101,93 +100,183 @@ function injectStyles() {
     /* Venn diagram container */
     .target-market-venn {
       position: absolute;
-      width: ${DIAGRAM_SIZE}px;
-      height: ${DIAGRAM_SIZE}px;
+      width: ${DIAGRAM_WIDTH}px;
+      height: ${DIAGRAM_HEIGHT}px;
       transform-style: preserve-3d;
       pointer-events: none;
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .target-market-venn.segment-selected {
+      transform: translate(calc(-50% - 150px), -50%) translateZ(200px) scale(0.85) !important;
     }
 
-    /* Individual circle - colored fill with multiply blend for overlaps */
-    .venn-circle {
+    /* Venn diagram image */
+    .venn-image {
       position: absolute;
-      width: ${CIRCLE_RADIUS * 2}px;
-      height: ${CIRCLE_RADIUS * 2}px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* Clickable hotspots over each segment */
+    .venn-hotspot {
+      position: absolute;
       border-radius: 50%;
-      background: rgb(100 150 200);
-      border: none;
-      mix-blend-mode: multiply;
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+      /* Debug: uncomment to see hotspots */
+      /* background: rgba(255, 0, 0, 0.2); */
     }
-    .venn-circle:hover {
-      transform: scale(1.02) translateZ(10px);
-      z-index: 10;
+    .venn-hotspot:hover {
+      transform: scale(1.05);
     }
-
-    /* Circle label container - positioned away from center overlap */
-    .venn-circle .circle-label {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
+    .target-market-venn.segment-selected .venn-hotspot {
+      opacity: 0.3;
     }
-    .venn-circle .circle-title {
-      font-family: 'montserrat', sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.85);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      line-height: 1.3;
-    }
-    .venn-circle .circle-subtitle {
-      font-family: 'montserrat', sans-serif;
-      font-size: 12px;
-      font-weight: 400;
-      color: rgba(255,255,255,0.7);
-    }
-    .venn-circle .circle-age {
-      font-family: 'montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.5);
-      margin-top: 6px;
+    .target-market-venn.segment-selected .venn-hotspot.selected {
+      opacity: 1;
     }
 
-    /* Center overlap area - always on top, isolated from blend modes */
-    .venn-center {
+    /* Segment details panel */
+    .segment-details {
       position: absolute;
       top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 100;
+      right: -320px;
+      transform: translateY(-50%);
+      width: 280px;
+      padding: 30px;
+      background: rgba(15, 20, 35, 0.95);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      opacity: 0;
       pointer-events: none;
-      width: 110px;
-      height: 110px;
+      transition: opacity 0.4s ease-out, right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .target-market-venn.segment-selected .segment-details {
+      opacity: 1;
+      right: -350px;
+      pointer-events: auto;
+    }
+    .segment-details .segment-title {
+      font-family: 'montserrat', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .segment-details .segment-age {
+      font-family: 'montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.6);
+      margin: 0 0 20px 0;
+    }
+    .segment-details .segment-description {
+      font-family: 'montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.7;
+      margin: 0;
+    }
+    .segment-details .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: rgba(255,255,255,0.1);
       border-radius: 50%;
-      background: rgb(20, 30, 50);
-      border: 2px solid rgba(255, 215, 0, 0.6);
+      color: rgba(255,255,255,0.7);
+      font-size: 18px;
+      cursor: pointer;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      isolation: isolate;
-      mix-blend-mode: normal;
+      transition: background 0.2s ease-out, color 0.2s ease-out;
     }
-    .venn-center .center-rocket {
-      font-size: 16px;
-    }
-    .venn-center .center-logo {
-      font-family: 'gin', serif;
-      font-size: 16px;
-      font-weight: 400;
-      color: #FED003;
-      text-shadow: 0 0 15px rgba(254,208,3,0.4);
-      letter-spacing: 0.05em;
+    .segment-details .close-btn:hover {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
     }
   `;
   document.head.appendChild(style);
+}
+
+// Handle hotspot click
+function onHotspotClick(index, event) {
+  event.stopPropagation();
+
+  if (selectedSegmentIndex === index) {
+    // Clicking same hotspot - deselect
+    deselectSegment();
+  } else {
+    // Select this segment
+    selectSegment(index);
+  }
+}
+
+// Select a segment
+function selectSegment(index) {
+  selectedSegmentIndex = index;
+  const segment = AUDIENCE_SEGMENTS[index];
+
+  // Add selected class to container
+  vennContainer.classList.add('segment-selected');
+
+  // Update hotspot states
+  hotspotElements.forEach((hotspot, i) => {
+    hotspot.classList.toggle('selected', i === index);
+  });
+
+  // Update details panel
+  if (detailsPanel) {
+    detailsPanel.querySelector('.segment-title').textContent = segment.title;
+    detailsPanel.querySelector('.segment-age').textContent = `Ages ${segment.ageRange}`;
+    detailsPanel.querySelector('.segment-description').textContent = segment.description;
+    // Set accent color on border
+    detailsPanel.style.borderColor = segment.color;
+  }
+
+  // Hide main title/subtitle
+  const textContainer = document.querySelector('.liftoff-text.target-market-layout');
+  if (textContainer) {
+    textContainer.classList.add('segment-selected');
+  }
+}
+
+// Deselect segment (exported for click-outside handling)
+export function deselectSegment() {
+  if (selectedSegmentIndex < 0) return;
+
+  selectedSegmentIndex = -1;
+
+  // Remove selected class from container
+  if (vennContainer) {
+    vennContainer.classList.remove('segment-selected');
+  }
+
+  // Clear hotspot states
+  hotspotElements.forEach(hotspot => {
+    hotspot.classList.remove('selected');
+  });
+
+  // Show main title/subtitle
+  const textContainer = document.querySelector('.liftoff-text.target-market-layout');
+  if (textContainer) {
+    textContainer.classList.remove('segment-selected');
+  }
+}
+
+// Check if a segment is selected
+export function isSegmentSelected() {
+  return selectedSegmentIndex >= 0;
 }
 
 // Initialize chapter DOM elements
@@ -204,59 +293,53 @@ export function init(imgWorld, sections) {
   vennContainer = document.createElement('div');
   vennContainer.className = 'target-market-venn';
 
-  // Create circles
-  const centerX = DIAGRAM_SIZE / 2;
-  const centerY = DIAGRAM_SIZE / 2;
+  // Create the Venn diagram image
+  vennImage = document.createElement('img');
+  vennImage.className = 'venn-image';
+  vennImage.src = VENN_IMAGE_URL;
+  vennImage.alt = 'Target Market Venn Diagram';
+  vennContainer.appendChild(vennImage);
 
-  AUDIENCE_SEGMENTS.forEach(segment => {
-    const circle = document.createElement('div');
-    circle.className = 'venn-circle';
+  // Create clickable hotspots for each segment
+  hotspotElements = [];
+  AUDIENCE_SEGMENTS.forEach((segment, index) => {
+    const hotspot = document.createElement('div');
+    hotspot.className = 'venn-hotspot';
+    hotspot.dataset.segmentIndex = index;
 
-    // Position circle
-    const x = centerX + segment.offsetX - CIRCLE_RADIUS;
-    const y = centerY + segment.offsetY - CIRCLE_RADIUS;
-    circle.style.left = `${x}px`;
-    circle.style.top = `${y}px`;
+    // Position and size the hotspot based on percentage coordinates
+    const size = segment.hotspot.radius * 2;
+    hotspot.style.width = `${size}%`;
+    hotspot.style.height = `${size}%`;
+    hotspot.style.left = `${segment.hotspot.x - segment.hotspot.radius}%`;
+    hotspot.style.top = `${segment.hotspot.y - segment.hotspot.radius}%`;
 
-    // Apply segment color
-    if (segment.color) {
-      circle.style.background = segment.color;
-    }
+    // Add click handler
+    hotspot.addEventListener('click', (e) => onHotspotClick(index, e));
 
-    // Create label container positioned towards outer edge
-    const labelContainer = document.createElement('div');
-    labelContainer.className = 'circle-label';
-    // Position label: center of circle + label offset
-    const labelX = CIRCLE_RADIUS + (segment.labelOffsetX || 0);
-    const labelY = CIRCLE_RADIUS + (segment.labelOffsetY || 0);
-    labelContainer.style.left = `${labelX}px`;
-    labelContainer.style.top = `${labelY}px`;
-    labelContainer.style.transform = 'translate(-50%, -50%)';
-
-    // Build label HTML
-    let labelHTML = `<span class="circle-title">${segment.title}</span>`;
-    if (segment.subtitle) {
-      labelHTML += `<span class="circle-subtitle">${segment.subtitle}</span>`;
-    }
-    if (segment.ageRange) {
-      labelHTML += `<span class="circle-age">${segment.ageRange}</span>`;
-    }
-
-    labelContainer.innerHTML = labelHTML;
-    circle.appendChild(labelContainer);
-    vennContainer.appendChild(circle);
+    vennContainer.appendChild(hotspot);
+    hotspotElements.push(hotspot);
   });
 
-  // Create center label (LIFTOFF with rocket)
-  const centerLabel = document.createElement('div');
-  centerLabel.className = 'venn-center';
-  centerLabel.innerHTML = `<span class="center-rocket">🚀</span><span class="center-logo">LIFTOFF</span>`;
-  vennContainer.appendChild(centerLabel);
+  // Create details panel
+  detailsPanel = document.createElement('div');
+  detailsPanel.className = 'segment-details';
+  detailsPanel.innerHTML = `
+    <button class="close-btn">×</button>
+    <h3 class="segment-title"></h3>
+    <p class="segment-age"></p>
+    <p class="segment-description"></p>
+  `;
+  detailsPanel.querySelector('.close-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    deselectSegment();
+  });
+  vennContainer.appendChild(detailsPanel);
 
   vennContainer.style.opacity = 0;
   imgWorld.appendChild(vennContainer);
 
-  console.log('[TARGET-MARKET] Chapter initialized with Venn diagram');
+  console.log('[TARGET-MARKET] Chapter initialized with Venn diagram image');
 }
 
 // Update chapter based on discrete section system (matching content.js)
@@ -270,6 +353,11 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   let vennScale = 1;
 
   if (isTransitioning) {
+    // Deselect when transitioning away
+    if (selectedSegmentIndex >= 0) {
+      deselectSegment();
+    }
+
     if (sectionIndex === currentSection) {
       // TARGET MARKET is current section, animating away
       if (goingForward) {
@@ -311,12 +399,15 @@ export function update(currentSection, targetSection, transitionProgress, isTran
     }
   }
 
-  // Subtle parallax with mouse
-  const panX = mouse.x * 25;
-  const panY = -mouse.y * 15;
+  // Subtle parallax with mouse (reduced when segment selected)
+  const parallaxFactor = selectedSegmentIndex >= 0 ? 0.3 : 1;
+  const panX = mouse.x * 25 * parallaxFactor;
+  const panY = -mouse.y * 15 * parallaxFactor;
 
-  // Apply transform to Venn container
-  vennContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${vennZ}px) rotate(${leanAngle}deg) scale(${vennScale})`;
+  // Apply transform to Venn container (CSS handles segment-selected offset)
+  if (selectedSegmentIndex < 0) {
+    vennContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${vennZ}px) rotate(${leanAngle}deg) scale(${vennScale})`;
+  }
   vennContainer.style.opacity = Math.max(0, Math.min(1, vennOpacity));
   // Only allow interactions when this is the active section and not transitioning
   vennContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && vennOpacity > 0.5) ? 'auto' : 'none';
@@ -328,7 +419,11 @@ export function destroy() {
     vennContainer.remove();
     vennContainer = null;
   }
+  vennImage = null;
+  detailsPanel = null;
+  hotspotElements = [];
   sectionIndex = -1;
+  selectedSegmentIndex = -1;
 
   const styles = document.getElementById('target-market-chapter-styles');
   if (styles) styles.remove();

@@ -15,18 +15,32 @@ export const config = {
 
 // Progress bar configuration
 const COMPLETION_PERCENT = 23; // Current completion percentage
+const BUDGET_RAISED = 250000; // Amount raised
+const BUDGET_NEEDED = 1500000; // Total budget needed
+const BUDGET_PERCENT = (BUDGET_RAISED / BUDGET_NEEDED) * 100;
 const BAR_WIDTH = 560;
 const BAR_HEIGHT = 44;
+const BAR_OFFSET_Y = -32; // Offset from center (shared by bar track and blur backdrop)
+const BUDGET_OFFSET_Y = BAR_OFFSET_Y + BAR_HEIGHT + 60; // Budget bar below completion bar
 
 // DOM elements
 let progressContainer = null;
 let progressBar = null;
 let percentLabel = null;
 let statusText = null;
+let blurBackdrop = null;
+let budgetBar = null;
+let budgetRaisedLabel = null;
+let budgetNeededLabel = null;
+let budgetBlurBackdrop = null;
+let imageWorld = null;
 let sectionIndex = -1;
 let hasAnimated = false;
+let hasBudgetAnimated = false;
 let currentPercent = 0;
+let currentBudgetPercent = 0;
 let animationStartTime = null;
+let budgetAnimationStartTime = null;
 
 // Z positions matching content.js fly-through system
 const REST_Z = 200;
@@ -75,10 +89,36 @@ function injectStyles() {
       position: absolute;
       transform-style: preserve-3d;
       pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
+    }
+
+    /* Bar track positioned at BAR_OFFSET_Y from center */
+    .completion-bar-wrapper {
+      position: absolute;
+      left: 0;
+      top: ${BAR_OFFSET_Y}px;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Status text positioned below bar */
+    .completion-status-wrapper {
+      position: absolute;
+      left: 0;
+      top: ${BAR_OFFSET_Y + BAR_HEIGHT / 2 + 20}px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    /* Blur backdrop - separate element for proper backdrop-filter during transitions */
+    .completion-blur-backdrop {
+      position: absolute;
+      width: ${BAR_WIDTH}px;
+      height: ${BAR_HEIGHT}px;
+      border-radius: ${BAR_HEIGHT / 2}px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      pointer-events: none;
     }
 
     /* Progress bar track */
@@ -86,13 +126,8 @@ function injectStyles() {
       position: relative;
       width: ${BAR_WIDTH}px;
       height: ${BAR_HEIGHT}px;
-      background: rgba(20, 30, 45, 0.8);
       border-radius: ${BAR_HEIGHT / 2}px;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow:
-        inset 0 2px 8px rgba(0, 0, 0, 0.4),
-        0 2px 12px rgba(0, 0, 0, 0.3);
     }
 
     /* Gradient border effect */
@@ -118,13 +153,10 @@ function injectStyles() {
       height: calc(100% - 8px);
       width: 0px;
       background: linear-gradient(90deg,
-        rgba(40, 180, 200, 0.9) 0%,
-        rgba(60, 200, 220, 1) 50%,
-        rgba(80, 220, 240, 0.9) 100%);
+        rgba(40, 180, 200, 0.7) 0%,
+        rgba(60, 200, 220, 0.7) 50%,
+        rgba(80, 220, 240, 0.7) 100%);
       border-radius: ${(BAR_HEIGHT - 8) / 2}px;
-      box-shadow:
-        0 0 20px rgba(60, 200, 220, 0.5),
-        0 0 40px rgba(60, 200, 220, 0.3);
     }
 
     /* Percent labels container */
@@ -158,7 +190,7 @@ function injectStyles() {
       font-family: 'montserrat', sans-serif;
       font-size: 14px;
       font-weight: 400;
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba(255, 255, 255, 0.7);
       letter-spacing: 0.05em;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -181,6 +213,78 @@ function injectStyles() {
       font-weight: 600;
       color: rgba(255, 255, 255, 0.95);
     }
+
+    /* Budget bar wrapper */
+    .budget-bar-wrapper {
+      position: absolute;
+      left: 0;
+      top: ${BUDGET_OFFSET_Y}px;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+    }
+
+    /* Budget blur backdrop */
+    .budget-blur-backdrop {
+      position: absolute;
+      width: ${BAR_WIDTH}px;
+      height: ${BAR_HEIGHT}px;
+      border-radius: ${BAR_HEIGHT / 2}px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      pointer-events: none;
+    }
+
+    /* Budget bar fill - blue */
+    .budget-bar-fill {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      height: calc(100% - 8px);
+      width: 0px;
+      background: linear-gradient(90deg,
+        rgba(80, 120, 200, 0.7) 0%,
+        rgba(100, 140, 220, 0.7) 50%,
+        rgba(120, 160, 240, 0.7) 100%);
+      border-radius: ${(BAR_HEIGHT - 8) / 2}px;
+    }
+
+    /* Budget labels */
+    .budget-labels {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+      pointer-events: none;
+    }
+
+    .budget-raised {
+      font-family: 'montserrat', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 0 10px rgba(100, 140, 220, 0.5);
+      letter-spacing: 0.05em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      backface-visibility: hidden;
+    }
+
+    .budget-needed {
+      font-family: 'montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.05em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      backface-visibility: hidden;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -188,6 +292,16 @@ function injectStyles() {
 // Easing function for smooth animation
 function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
+}
+
+// Format currency (e.g., 1500000 -> "1.5M", 250000 -> "250K")
+function formatCurrency(amount) {
+  if (amount >= 1000000) {
+    return '$' + (amount / 1000000).toFixed(1) + 'M';
+  } else if (amount >= 1000) {
+    return '$' + Math.round(amount / 1000) + 'K';
+  }
+  return '$' + amount;
 }
 
 // Initialize chapter DOM elements
@@ -200,9 +314,22 @@ export function init(imgWorld, sections) {
     return;
   }
 
+  // Store reference to imgWorld for backdrop positioning
+  imageWorld = imgWorld;
+
+  // Create blur backdrop element (appended directly to imgWorld for proper backdrop-filter)
+  blurBackdrop = document.createElement('div');
+  blurBackdrop.className = 'completion-blur-backdrop';
+  blurBackdrop.style.opacity = 0;
+  imgWorld.appendChild(blurBackdrop);
+
   // Create progress container
   progressContainer = document.createElement('div');
   progressContainer.className = 'completion-progress';
+
+  // Create bar wrapper (positioned at BAR_OFFSET_Y)
+  const barWrapper = document.createElement('div');
+  barWrapper.className = 'completion-bar-wrapper';
 
   // Create progress bar track
   const barTrack = document.createElement('div');
@@ -230,13 +357,58 @@ export function init(imgWorld, sections) {
   labelsContainer.appendChild(maxLabel);
 
   barTrack.appendChild(labelsContainer);
-  progressContainer.appendChild(barTrack);
+  barWrapper.appendChild(barTrack);
+  progressContainer.appendChild(barWrapper);
+
+  // Create status wrapper (positioned below bar)
+  const statusWrapper = document.createElement('div');
+  statusWrapper.className = 'completion-status-wrapper';
 
   // Status text
   statusText = document.createElement('p');
   statusText.className = 'completion-status';
   statusText.innerHTML = `Liftoff is currently <strong>${COMPLETION_PERCENT}% complete</strong> in production & post.`;
-  progressContainer.appendChild(statusText);
+  statusWrapper.appendChild(statusText);
+  progressContainer.appendChild(statusWrapper);
+
+  // Create budget blur backdrop (appended directly to imgWorld)
+  budgetBlurBackdrop = document.createElement('div');
+  budgetBlurBackdrop.className = 'budget-blur-backdrop';
+  budgetBlurBackdrop.style.opacity = 0;
+  imgWorld.appendChild(budgetBlurBackdrop);
+
+  // Create budget bar wrapper
+  const budgetWrapper = document.createElement('div');
+  budgetWrapper.className = 'budget-bar-wrapper';
+
+  // Create budget bar track (reuse completion-bar-track class)
+  const budgetTrack = document.createElement('div');
+  budgetTrack.className = 'completion-bar-track';
+
+  // Create budget bar fill
+  budgetBar = document.createElement('div');
+  budgetBar.className = 'budget-bar-fill';
+  budgetTrack.appendChild(budgetBar);
+
+  // Create budget labels container
+  const budgetLabelsContainer = document.createElement('div');
+  budgetLabelsContainer.className = 'budget-labels';
+
+  // Raised label
+  budgetRaisedLabel = document.createElement('span');
+  budgetRaisedLabel.className = 'budget-raised';
+  budgetRaisedLabel.textContent = '$0';
+  budgetLabelsContainer.appendChild(budgetRaisedLabel);
+
+  // Needed label
+  budgetNeededLabel = document.createElement('span');
+  budgetNeededLabel.className = 'budget-needed';
+  budgetNeededLabel.textContent = formatCurrency(BUDGET_NEEDED) + ' Needed';
+  budgetLabelsContainer.appendChild(budgetNeededLabel);
+
+  budgetTrack.appendChild(budgetLabelsContainer);
+  budgetWrapper.appendChild(budgetTrack);
+  progressContainer.appendChild(budgetWrapper);
 
   progressContainer.style.opacity = 0;
   imgWorld.appendChild(progressContainer);
@@ -274,19 +446,81 @@ function animateProgress(timestamp) {
 
   if (progress < 1) {
     requestAnimationFrame(animateProgress);
+  } else if (!hasBudgetAnimated) {
+    // Start budget animation after completion finishes
+    hasBudgetAnimated = true;
+    requestAnimationFrame(animateBudget);
+  }
+}
+
+// Animate the budget bar
+function animateBudget(timestamp) {
+  if (!budgetAnimationStartTime) {
+    budgetAnimationStartTime = timestamp;
+    // Fade in the budget bar wrapper
+    const budgetWrapper = document.querySelector('.budget-bar-wrapper');
+    if (budgetWrapper) {
+      budgetWrapper.style.transition = 'opacity 0.5s ease-out';
+      budgetWrapper.style.opacity = 1;
+    }
+  }
+
+  const elapsed = timestamp - budgetAnimationStartTime - 300; // Small delay after fade in
+
+  if (elapsed < 0) {
+    requestAnimationFrame(animateBudget);
+    return;
+  }
+
+  const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+  const easedProgress = easeOutCubic(progress);
+  const currentRaised = Math.round(easedProgress * BUDGET_RAISED);
+  currentBudgetPercent = easedProgress * BUDGET_PERCENT;
+
+  // Calculate fill width
+  const fillableWidth = BAR_WIDTH - 8;
+  const fillWidth = (currentBudgetPercent / 100) * fillableWidth;
+
+  // Update budget bar fill
+  if (budgetBar) {
+    budgetBar.style.width = `${fillWidth}px`;
+  }
+
+  // Update raised label
+  if (budgetRaisedLabel) {
+    budgetRaisedLabel.textContent = formatCurrency(currentRaised) + ' Raised';
+  }
+
+  if (progress < 1) {
+    requestAnimationFrame(animateBudget);
   }
 }
 
 // Reset animation state
 function resetAnimation() {
   hasAnimated = false;
+  hasBudgetAnimated = false;
   animationStartTime = null;
+  budgetAnimationStartTime = null;
   currentPercent = 0;
+  currentBudgetPercent = 0;
   if (progressBar) {
     progressBar.style.width = '0px';
   }
   if (percentLabel) {
     percentLabel.textContent = '0%';
+  }
+  if (budgetBar) {
+    budgetBar.style.width = '0px';
+  }
+  if (budgetRaisedLabel) {
+    budgetRaisedLabel.textContent = '$0';
+  }
+  // Reset budget wrapper opacity
+  const budgetWrapper = document.querySelector('.budget-bar-wrapper');
+  if (budgetWrapper) {
+    budgetWrapper.style.transition = 'none';
+    budgetWrapper.style.opacity = 0;
   }
 }
 
@@ -362,6 +596,21 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   const offsetX = mouse.x * 8;
   const offsetY = -mouse.y * 2;
 
+  // Apply transform to blur backdrop (directly in imgWorld with full transform for proper backdrop-filter)
+  // Uses BAR_OFFSET_Y to stay aligned with bar track
+  if (blurBackdrop) {
+    blurBackdrop.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY + BAR_OFFSET_Y}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
+    blurBackdrop.style.opacity = Math.max(0, Math.min(1, containerOpacity));
+  }
+
+  // Apply transform to budget blur backdrop
+  if (budgetBlurBackdrop) {
+    // Only show budget backdrop after budget animation starts
+    const budgetOpacity = hasBudgetAnimated ? containerOpacity : 0;
+    budgetBlurBackdrop.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY + BUDGET_OFFSET_Y}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
+    budgetBlurBackdrop.style.opacity = Math.max(0, Math.min(1, budgetOpacity));
+  }
+
   // Apply transform to container - positioned at center (title is 100px above center)
   progressContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
   progressContainer.style.opacity = Math.max(0, Math.min(1, containerOpacity));
@@ -372,17 +621,34 @@ export function update(currentSection, targetSection, transitionProgress, isTran
 
 // Cleanup chapter DOM
 export function destroy() {
+  // Remove blur backdrops (they're in imgWorld, not progressContainer)
+  if (blurBackdrop) {
+    blurBackdrop.remove();
+    blurBackdrop = null;
+  }
+  if (budgetBlurBackdrop) {
+    budgetBlurBackdrop.remove();
+    budgetBlurBackdrop = null;
+  }
+
   if (progressContainer) {
     progressContainer.remove();
     progressContainer = null;
   }
+  imageWorld = null;
   progressBar = null;
   percentLabel = null;
   statusText = null;
+  budgetBar = null;
+  budgetRaisedLabel = null;
+  budgetNeededLabel = null;
   sectionIndex = -1;
   hasAnimated = false;
+  hasBudgetAnimated = false;
   animationStartTime = null;
+  budgetAnimationStartTime = null;
   currentPercent = 0;
+  currentBudgetPercent = 0;
 
   const styles = document.getElementById('completion-chapter-styles');
   if (styles) styles.remove();
