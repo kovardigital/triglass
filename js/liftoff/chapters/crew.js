@@ -11,7 +11,6 @@ const DEPART_Z = 800;
 
 // Portrait sizing
 const PORTRAIT_SIZE = 120;
-const LOGO_SIZE = 140;
 
 // Crew member data - positions are relative offsets from center (in pixels)
 const CREW_DATA = [
@@ -69,6 +68,9 @@ const LOGO_DATA = {
   y: -30,
   image: 'https://triglass-assets.s3.amazonaws.com/triglass.png',
   isLogo: true,
+  bio: `Triglass Productions is an award-winning production and post-production house specializing in bringing imaginative stories to life.
+
+With expertise spanning commercial production, narrative filmmaking, and cutting-edge visual effects, Triglass delivers cinematic quality across all formats.`,
 };
 
 // DOM elements
@@ -100,7 +102,7 @@ function injectStyles() {
       top: 18%;
     }
     .liftoff-text.crew-layout h1 {
-      font-size: clamp(32px, 6vw, 64px);
+      font-size: clamp(26px, 4.8vw, 51px);
     }
     .liftoff-text.crew-layout p {
       display: none; /* Subtitle hidden - we show role under each name */
@@ -111,7 +113,7 @@ function injectStyles() {
       top: 18%;
     }
     .liftoff-preview.preview-crew h1 {
-      font-size: clamp(32px, 6vw, 64px);
+      font-size: clamp(26px, 4.8vw, 51px);
     }
     .liftoff-preview.preview-crew p {
       display: none;
@@ -142,20 +144,56 @@ function injectStyles() {
       position: absolute;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       pointer-events: none;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease-out;
     }
     .crew-blur-backdrop.portrait-size {
-      width: ${PORTRAIT_SIZE + 40}px;
-      height: ${PORTRAIT_SIZE + 40}px;
+      width: ${PORTRAIT_SIZE + 24}px;
+      height: ${PORTRAIT_SIZE + 24}px;
     }
-    .crew-blur-backdrop.logo-size {
-      width: ${LOGO_SIZE + 40}px;
-      height: ${LOGO_SIZE + 40}px;
+    /* Linear gradient stroke - matching character styling */
+    .crew-blur-backdrop::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      padding: 1px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.4) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
     }
-
+    /* Subtle glint animation */
+    @keyframes crew-glint {
+      0% { left: -60%; opacity: 0; }
+      5% { opacity: 1; }
+      20% { left: 110%; opacity: 0; }
+      100% { left: 110%; opacity: 0; }
+    }
+    .crew-blur-backdrop::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 55%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      transform: skewX(-20deg);
+      animation: crew-glint 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    /* Stagger the glint timing per crew member */
+    .crew-blur-backdrop[data-crew-index="-1"]::after { animation-delay: 0s; }
+    .crew-blur-backdrop[data-crew-index="0"]::after { animation-delay: 0.5s; }
+    .crew-blur-backdrop[data-crew-index="1"]::after { animation-delay: 1s; }
+    .crew-blur-backdrop[data-crew-index="2"]::after { animation-delay: 1.5s; }
+    .crew-blur-backdrop[data-crew-index="3"]::after { animation-delay: 2s; }
+    .crew-blur-backdrop[data-crew-index="4"]::after { animation-delay: 2.5s; }
 
     .crew-portrait-inner {
       width: 100%;
@@ -165,6 +203,7 @@ function injectStyles() {
       border: 2px solid rgba(255,255,255,0.2);
       box-shadow: 0 6px 24px rgba(0,0,0,0.4);
       background: linear-gradient(135deg, #2a2a3a 0%, #1a1a2a 100%);
+      transition: box-shadow 0.2s ease-out, border-color 0.2s ease-out;
     }
 
     .crew-portrait img {
@@ -173,9 +212,48 @@ function injectStyles() {
       object-fit: cover;
     }
 
-    .crew-portrait:hover .crew-portrait-inner {
-      border-color: rgba(255,255,255,0.35);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    /* Unique glow colors for each crew member - projecting from portrait onto backdrop */
+    /* Ryan Thielen - Orange */
+    .crew-portrait[data-crew-index="0"] .crew-portrait-inner {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(255, 150, 50, 0.6);
+    }
+    .crew-portrait[data-crew-index="0"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 24px rgba(255, 150, 50, 0.95);
+    }
+    /* Charles Mulford - Pink/Magenta */
+    .crew-portrait[data-crew-index="1"] .crew-portrait-inner {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(255, 80, 150, 0.6);
+    }
+    .crew-portrait[data-crew-index="1"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 24px rgba(255, 80, 150, 0.95);
+    }
+    /* Noelle Anderson - Green */
+    .crew-portrait[data-crew-index="2"] .crew-portrait-inner {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(80, 220, 120, 0.6);
+    }
+    .crew-portrait[data-crew-index="2"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 24px rgba(80, 220, 120, 0.95);
+    }
+    /* Kaleb Lechowski - Pink/Magenta */
+    .crew-portrait[data-crew-index="3"] .crew-portrait-inner {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(255, 80, 150, 0.6);
+    }
+    .crew-portrait[data-crew-index="3"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 24px rgba(255, 80, 150, 0.95);
+    }
+    /* David Vanderwarn - Cyan/Teal */
+    .crew-portrait[data-crew-index="4"] .crew-portrait-inner {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(50, 200, 200, 0.6);
+    }
+    .crew-portrait[data-crew-index="4"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 24px rgba(50, 200, 200, 0.95);
+    }
+    /* Triglass - Purple */
+    .crew-portrait[data-crew-index="-1"] .crew-portrait-inner {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(160, 80, 200, 0.6);
+    }
+    .crew-portrait[data-crew-index="-1"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 24px rgba(160, 80, 200, 0.95);
     }
 
     /* Crew name and role labels */
@@ -207,11 +285,12 @@ function injectStyles() {
       display: block;
     }
 
-    /* Logo portrait (Triglass) - slightly different styling */
+    /* Logo portrait (Triglass) - same size as other portraits */
     .crew-portrait.logo {
-      width: ${LOGO_SIZE}px;
-      height: ${LOGO_SIZE}px;
-      cursor: default;
+      width: ${PORTRAIT_SIZE}px;
+      height: ${PORTRAIT_SIZE}px;
+      cursor: pointer;
+      pointer-events: auto !important;
     }
     .crew-portrait.logo .crew-portrait-inner {
       background: linear-gradient(135deg, #1a1a2a 0%, #0a0a15 100%);
@@ -327,7 +406,8 @@ function openCrewBio(crewIndex) {
   selectedCrewIndex = crewIndex;
   crewBioMode = true;
 
-  const crewData = CREW_DATA[crewIndex];
+  // Handle logo (index -1) vs regular crew members
+  const crewData = crewIndex === -1 ? LOGO_DATA : CREW_DATA[crewIndex];
 
   // Update title to crew member name
   const titleEl = document.querySelector('.liftoff-text.crew-layout h1');
@@ -469,12 +549,13 @@ export function init(imgWorld, sections) {
   });
 
   // Then append portraits and labels to crewContainer
-  crewContainer.appendChild(logoElement.portrait);
-  crewContainer.appendChild(logoElement.label);
+  // Append crew members first, then logo last so logo is on top (clickable)
   crewElements.forEach(elements => {
     crewContainer.appendChild(elements.portrait);
     crewContainer.appendChild(elements.label);
   });
+  crewContainer.appendChild(logoElement.portrait);
+  crewContainer.appendChild(logoElement.label);
 
   // Create bio container with scrollable content
   bioContainer = document.createElement('div');
@@ -526,12 +607,13 @@ export function init(imgWorld, sections) {
 
 // Create a portrait element with its label and blur backdrop
 function createPortraitElement(data, index, isLogo) {
-  // Create blur backdrop element
+  // Create blur backdrop element - all same size now
   const backdrop = document.createElement('div');
-  backdrop.className = 'crew-blur-backdrop ' + (isLogo ? 'logo-size' : 'portrait-size');
+  backdrop.className = 'crew-blur-backdrop portrait-size';
   backdrop.dataset.baseX = data.x;
   backdrop.dataset.baseY = data.y;
   backdrop.dataset.index = index;
+  backdrop.dataset.crewIndex = index; // For CSS glow color targeting
 
   const portrait = document.createElement('div');
   portrait.className = 'crew-portrait' + (isLogo ? ' logo' : '');
@@ -539,6 +621,7 @@ function createPortraitElement(data, index, isLogo) {
   portrait.dataset.baseX = data.x;
   portrait.dataset.baseY = data.y;
   portrait.dataset.index = index;
+  portrait.dataset.crewIndex = index; // For CSS glow color targeting
 
   const inner = document.createElement('div');
   inner.className = 'crew-portrait-inner';
@@ -552,16 +635,14 @@ function createPortraitElement(data, index, isLogo) {
 
   portrait.appendChild(inner);
 
-  // Click handler for non-logo portraits
-  if (!isLogo) {
-    portrait.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleCrewBio(index);
-    });
-  }
+  // Click handler for all portraits including logo
+  portrait.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleCrewBio(index);
+  });
 
   // Label element - positioned below portrait
-  const labelOffsetY = isLogo ? 95 : 80; // Distance below portrait center
+  const labelOffsetY = 80; // Distance below portrait center
   const label = document.createElement('div');
   label.className = 'crew-label';
   label.dataset.baseX = data.x;
@@ -640,26 +721,59 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   const bioTargetX = -310; // Position when showing bio (further left for larger portrait)
   const bioTargetY = 20; // Slightly lower to center with expanded bio
 
-  // Update logo
+  // Update logo - now supports bio mode like other crew members
   if (logoElement) {
-    const logoX = parseFloat(logoElement.portrait.dataset.baseX);
-    const logoY = parseFloat(logoElement.portrait.dataset.baseY);
-    const labelX = parseFloat(logoElement.label.dataset.baseX);
-    const labelY = parseFloat(logoElement.label.dataset.baseY);
+    const logoBaseX = parseFloat(logoElement.portrait.dataset.baseX);
+    const logoBaseY = parseFloat(logoElement.portrait.dataset.baseY);
+    const logoLabelBaseX = parseFloat(logoElement.label.dataset.baseX);
+    const logoLabelBaseY = parseFloat(logoElement.label.dataset.baseY);
 
-    // In bio mode, fade out logo
-    let opacity = containerOpacity;
-    if (crewBioMode) {
-      opacity = 0;
+    let logoTargetX = logoBaseX;
+    let logoTargetY = logoBaseY;
+    let logoTargetLabelX = logoLabelBaseX;
+    let logoTargetLabelY = logoLabelBaseY;
+    let logoOpacity = containerOpacity;
+    let logoLabelOpacity = containerOpacity;
+    let logoTargetScale = 1;
+
+    if (crewBioMode && sectionIndex === currentSection) {
+      if (selectedCrewIndex === -1) {
+        // Logo is selected - animate to bio position
+        logoTargetX = bioTargetX;
+        logoTargetY = bioTargetY;
+        logoTargetLabelX = bioTargetX;
+        logoTargetLabelY = bioTargetY + 120;
+        logoTargetScale = 1.5;
+      } else {
+        // Another crew member is selected - fade out logo
+        logoOpacity = 0;
+        logoLabelOpacity = 0;
+      }
     }
 
+    // Initialize logo animation state
+    if (!crewAnimState[-1]) {
+      crewAnimState[-1] = { x: logoTargetX, y: logoTargetY, labelX: logoTargetLabelX, labelY: logoTargetLabelY, opacity: logoOpacity, labelOpacity: logoLabelOpacity, scale: logoTargetScale };
+    }
+
+    // Lerp logo to target
+    const logoState = crewAnimState[-1];
+    logoState.x += (logoTargetX - logoState.x) * LERP_SPEED;
+    logoState.y += (logoTargetY - logoState.y) * LERP_SPEED;
+    logoState.labelX += (logoTargetLabelX - logoState.labelX) * LERP_SPEED;
+    logoState.labelY += (logoTargetLabelY - logoState.labelY) * LERP_SPEED;
+    logoState.opacity += (logoOpacity - logoState.opacity) * LERP_SPEED;
+    logoState.labelOpacity += (logoLabelOpacity - logoState.labelOpacity) * LERP_SPEED;
+    logoState.scale += (logoTargetScale - logoState.scale) * LERP_SPEED;
+
     // Backdrop gets full transform like trailer images (needed for backdrop-filter during transitions)
-    logoElement.backdrop.style.transform = `translate(calc(-50% + ${logoX + panX}px), calc(-50% + ${logoY + panY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
-    logoElement.backdrop.style.opacity = opacity;
-    logoElement.portrait.style.transform = `translate(calc(-50% + ${logoX}px), calc(-50% + ${logoY}px))`;
-    logoElement.portrait.style.opacity = opacity;
-    logoElement.label.style.transform = `translate(calc(-50% + ${labelX}px), calc(-50% + ${labelY}px))`;
-    logoElement.label.style.opacity = opacity;
+    logoElement.backdrop.style.transform = `translate(calc(-50% + ${logoState.x + panX}px), calc(-50% + ${logoState.y + panY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale * logoState.scale})`;
+    logoElement.backdrop.style.opacity = Math.max(0, Math.min(1, logoState.opacity));
+    logoElement.portrait.style.transform = `translate(calc(-50% + ${logoState.x}px), calc(-50% + ${logoState.y}px)) scale(${logoState.scale})`;
+    logoElement.portrait.style.opacity = Math.max(0, Math.min(1, logoState.opacity));
+    // pointer-events handled by CSS for .crew-portrait.logo
+    logoElement.label.style.transform = `translate(calc(-50% + ${logoState.labelX}px), calc(-50% + ${logoState.labelY}px))`;
+    logoElement.label.style.opacity = Math.max(0, Math.min(1, logoState.labelOpacity));
   }
 
   // Update crew portraits

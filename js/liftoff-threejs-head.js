@@ -14,6 +14,25 @@
 
   console.log('%c[LIFTOFF-3D] Head script starting...', 'color: #6b7cff; font-weight: bold');
 
+  // Preconnect to Google Fonts for faster loading
+  const preconnect1 = document.createElement('link');
+  preconnect1.rel = 'preconnect';
+  preconnect1.href = 'https://fonts.googleapis.com';
+  document.head.appendChild(preconnect1);
+
+  const preconnect2 = document.createElement('link');
+  preconnect2.rel = 'preconnect';
+  preconnect2.href = 'https://fonts.gstatic.com';
+  preconnect2.crossOrigin = 'anonymous';
+  document.head.appendChild(preconnect2);
+
+  // Load Montserrat font (300, 500, 600, 700 weights)
+  const fontLink = document.createElement('link');
+  fontLink.rel = 'stylesheet';
+  fontLink.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;700&display=swap';
+  document.head.appendChild(fontLink);
+  console.log('%c[LIFTOFF-3D] Google Fonts (Montserrat) injected', 'color: #10b981');
+
   // Inject importmap for ES modules
   const importmap = document.createElement('script');
   importmap.type = 'importmap';

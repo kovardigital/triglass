@@ -80,7 +80,7 @@ function injectStyles() {
       top: -280px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(36px, 6vw, 72px);
+      font-size: clamp(29px, 4.8vw, 58px);
       width: 100%;
       text-align: center;
       white-space: nowrap;

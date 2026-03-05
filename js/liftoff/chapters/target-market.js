@@ -82,7 +82,7 @@ function injectStyles() {
       pointer-events: none;
     }
     .liftoff-text.target-market-layout h1 {
-      font-size: clamp(32px, 5vw, 56px);
+      font-size: clamp(26px, 4vw, 45px);
     }
     .liftoff-text.target-market-layout p {
       position: absolute;

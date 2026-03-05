@@ -130,7 +130,7 @@ function injectStyles() {
       width: 100vw;
     }
     .liftoff-text.schedule-layout h1 {
-      font-size: clamp(32px, 5vw, 56px);
+      font-size: clamp(26px, 4vw, 45px);
     }
     .liftoff-text.schedule-layout p {
       display: none;
@@ -143,7 +143,7 @@ function injectStyles() {
       width: 100vw;
     }
     .liftoff-preview.preview-schedule h1 {
-      font-size: clamp(32px, 5vw, 56px);
+      font-size: clamp(26px, 4vw, 45px);
     }
     .liftoff-preview.preview-schedule p {
       display: none;

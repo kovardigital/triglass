@@ -65,7 +65,7 @@ function injectStyles() {
       width: 100vw;
     }
     .liftoff-text.completion-layout h1 {
-      font-size: clamp(36px, 6vw, 72px);
+      font-size: clamp(29px, 4.8vw, 58px);
     }
     .liftoff-text.completion-layout p {
       display: none;
@@ -78,7 +78,7 @@ function injectStyles() {
       width: 100vw;
     }
     .liftoff-preview.preview-completion h1 {
-      font-size: clamp(36px, 6vw, 72px);
+      font-size: clamp(29px, 4.8vw, 58px);
     }
     .liftoff-preview.preview-completion p {
       display: none;
@@ -223,8 +223,8 @@ function injectStyles() {
       opacity: 0;
     }
 
-    /* Budget blur backdrop */
-    .budget-blur-backdrop {
+    /* Budget blur backdrop for completion section (different from budget chapter's backdrop) */
+    .completion-budget-backdrop {
       position: absolute;
       width: ${BAR_WIDTH}px;
       height: ${BAR_HEIGHT}px;
@@ -373,8 +373,9 @@ export function init(imgWorld, sections) {
 
   // Create budget blur backdrop (appended directly to imgWorld)
   budgetBlurBackdrop = document.createElement('div');
-  budgetBlurBackdrop.className = 'budget-blur-backdrop';
+  budgetBlurBackdrop.className = 'completion-budget-backdrop';
   budgetBlurBackdrop.style.opacity = 0;
+  budgetBlurBackdrop.style.visibility = 'hidden';
   imgWorld.appendChild(budgetBlurBackdrop);
 
   // Create budget bar wrapper
@@ -601,6 +602,7 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   if (blurBackdrop) {
     blurBackdrop.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY + BAR_OFFSET_Y}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
     blurBackdrop.style.opacity = Math.max(0, Math.min(1, containerOpacity));
+    blurBackdrop.style.visibility = containerOpacity > 0.01 ? 'visible' : 'hidden';
   }
 
   // Apply transform to budget blur backdrop
@@ -609,6 +611,7 @@ export function update(currentSection, targetSection, transitionProgress, isTran
     const budgetOpacity = hasBudgetAnimated ? containerOpacity : 0;
     budgetBlurBackdrop.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY + BUDGET_OFFSET_Y}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
     budgetBlurBackdrop.style.opacity = Math.max(0, Math.min(1, budgetOpacity));
+    budgetBlurBackdrop.style.visibility = budgetOpacity > 0.01 ? 'visible' : 'hidden';
   }
 
   // Apply transform to container - positioned at center (title is 100px above center)

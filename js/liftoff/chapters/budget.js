@@ -13,11 +13,15 @@ export const config = {
   images: []
 };
 
-// Pie chart dimensions
-const PIE_RADIUS = 180;
-const PIE_CENTER_RADIUS = 60; // Inner circle for total/back button
+// Pie chart dimensions - donut style
+const PIE_OUTER_RADIUS = 200;
+const PIE_INNER_RADIUS = 130; // Inner radius for donut hole
+const PIE_CENTER_RADIUS = 100; // Center circle for total/back button
+const BACKDROP_PADDING = 24; // Extra padding around pie for blur backdrop
+const SEGMENT_GAP = 2; // Gap in degrees between segments
 
 // Main budget categories (percentages should sum to 100)
+// Vibrant colors inspired by modern donut chart aesthetic
 const BUDGET_DATA = {
   total: 2500000, // $2.5M total budget
   categories: [
@@ -25,48 +29,48 @@ const BUDGET_DATA = {
       id: 'production',
       label: 'Production',
       percent: 45,
-      color: '#3498db',
+      color: '#4ECDC4', // Teal
       description: 'Principal photography, locations, equipment, and production staff',
       subcategories: [
-        { label: 'Cast', percent: 25, color: '#5dade2' },
-        { label: 'Crew', percent: 30, color: '#3498db' },
-        { label: 'Equipment', percent: 20, color: '#2980b9' },
-        { label: 'Locations', percent: 15, color: '#1f618d' },
-        { label: 'Production Office', percent: 10, color: '#154360' }
+        { label: 'Cast', percent: 25, color: '#5ED4CB' },
+        { label: 'Crew', percent: 30, color: '#4ECDC4' },
+        { label: 'Equipment', percent: 20, color: '#3DBDB5' },
+        { label: 'Locations', percent: 15, color: '#2CADA5' },
+        { label: 'Production Office', percent: 10, color: '#1C9D95' }
       ]
     },
     {
       id: 'post',
       label: 'Post Production',
       percent: 30,
-      color: '#9b59b6',
+      color: '#FF6B6B', // Coral/Red
       description: 'Editing, VFX, sound design, color grading, and music',
       subcategories: [
-        { label: 'VFX', percent: 40, color: '#af7ac5' },
-        { label: 'Editing', percent: 20, color: '#9b59b6' },
-        { label: 'Sound Design', percent: 20, color: '#8e44ad' },
-        { label: 'Music', percent: 15, color: '#7d3c98' },
-        { label: 'Color', percent: 5, color: '#6c3483' }
+        { label: 'VFX', percent: 40, color: '#FF7B7B' },
+        { label: 'Editing', percent: 20, color: '#FF6B6B' },
+        { label: 'Sound Design', percent: 20, color: '#FF5B5B' },
+        { label: 'Music', percent: 15, color: '#FF4B4B' },
+        { label: 'Color', percent: 5, color: '#FF3B3B' }
       ]
     },
     {
       id: 'preproduction',
       label: 'Pre-Production',
       percent: 15,
-      color: '#e67e22',
+      color: '#2C3E50', // Dark navy/slate
       description: 'Script development, casting, location scouting, and planning',
       subcategories: [
-        { label: 'Development', percent: 35, color: '#f39c12' },
-        { label: 'Casting', percent: 25, color: '#e67e22' },
-        { label: 'Location Scout', percent: 20, color: '#d35400' },
-        { label: 'Storyboards', percent: 20, color: '#ba4a00' }
+        { label: 'Development', percent: 35, color: '#3C4E60' },
+        { label: 'Casting', percent: 25, color: '#2C3E50' },
+        { label: 'Location Scout', percent: 20, color: '#1C2E40' },
+        { label: 'Storyboards', percent: 20, color: '#0C1E30' }
       ]
     },
     {
       id: 'contingency',
       label: 'Contingency',
       percent: 10,
-      color: '#27ae60',
+      color: '#F4D03F', // Golden yellow
       description: 'Reserve fund for unexpected costs and overages',
       subcategories: []
     }
@@ -77,11 +81,11 @@ const BUDGET_DATA = {
 let budgetContainer = null;
 let svgElement = null;
 let infoPanelElement = null;
+let blurBackdropElement = null;
 let sectionIndex = -1;
 
 // State
 let currentView = 'main'; // 'main' or category id
-let hoveredSegment = null;
 
 // Z positions matching content.js fly-through system
 const REST_Z = 200;
@@ -124,8 +128,8 @@ function injectStyles() {
     /* Budget title */
     .budget-title {
       font-family: 'montserrat', sans-serif;
-      font-size: clamp(32px, 5vw, 56px);
-      font-weight: 700;
+      font-size: clamp(26px, 4vw, 45px);
+      font-weight: 600;
       color: #d4d4d4;
       text-transform: uppercase;
       margin-bottom: 16px;
@@ -173,71 +177,134 @@ function injectStyles() {
       font-style: italic;
     }
 
-    /* SVG pie chart */
-    .budget-pie-svg {
-      overflow: visible;
-      filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));
+    /* Blur backdrop circle - matching crew/character styling */
+    /* Appended directly to imgWorld for proper backdrop-filter during 3D transforms */
+    .budget-blur-backdrop {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      pointer-events: none;
+      overflow: hidden;
+      width: ${(PIE_OUTER_RADIUS + BACKDROP_PADDING) * 2}px;
+      height: ${(PIE_OUTER_RADIUS + BACKDROP_PADDING) * 2}px;
+    }
+    /* Linear gradient stroke - matching character styling */
+    .budget-blur-backdrop::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      padding: 1px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.4) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    /* Subtle glint animation */
+    @keyframes budget-glint {
+      0% { left: -60%; opacity: 0; }
+      5% { opacity: 1; }
+      20% { left: 110%; opacity: 0; }
+      100% { left: 110%; opacity: 0; }
+    }
+    .budget-blur-backdrop::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 55%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      transform: skewX(-20deg);
+      animation: budget-glint 6s ease-in-out infinite;
+      pointer-events: none;
     }
 
-    /* Pie segments */
+    /* Pie wrapper for relative positioning */
+    .budget-pie-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SVG pie chart - pointer-events controlled by JS based on section visibility */
+    .budget-pie-svg {
+      overflow: visible;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Pie segments - full opacity, glow only on hover */
     .pie-segment {
       cursor: pointer;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  filter 0.3s ease;
+      pointer-events: auto;
+      opacity: 1;
+      transition: filter 0.3s ease,
+                  transform 0.2s ease;
       transform-origin: center;
     }
     .pie-segment:hover {
-      filter: brightness(1.2);
+      transform: scale(1.02);
     }
     .pie-segment.active {
-      filter: brightness(1.3);
+      transform: scale(1.02);
     }
 
     /* Segment labels */
     .pie-label {
       font-family: 'montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 500;
-      fill: rgba(255,255,255,0.9);
+      font-size: 13px;
+      font-weight: 600;
+      fill: rgba(255,255,255,0.95);
       text-anchor: middle;
       pointer-events: none;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      text-shadow: 0 1px 1px rgba(0,0,0,0.5), 0 2px 2px rgba(0,0,0,0.5);
     }
     .pie-label-percent {
       font-family: 'montserrat', sans-serif;
-      font-size: 10px;
-      font-weight: 400;
-      fill: rgba(255,255,255,0.7);
+      font-size: 12px;
+      font-weight: 700;
+      fill: rgba(255,255,255,0.9);
       text-anchor: middle;
       pointer-events: none;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.5), 0 2px 2px rgba(0,0,0,0.5);
     }
 
-    /* Center circle */
+    /* Center circle - dark hole with subtle border */
     .pie-center {
-      fill: rgba(20, 25, 40, 0.9);
-      stroke: rgba(255,255,255,0.2);
-      stroke-width: 1;
+      fill: rgba(15, 20, 30, 0.95);
+      stroke: rgba(255,255,255,0.15);
+      stroke-width: 2;
       cursor: default;
+      pointer-events: auto;
     }
     .pie-center.clickable {
       cursor: pointer;
     }
+    .pie-center.clickable:hover {
+      fill: rgba(25, 30, 45, 0.95);
+    }
     .pie-center-text {
       font-family: 'montserrat', sans-serif;
-      font-size: 12px;
+      font-size: 24px;
       font-weight: 600;
-      fill: rgba(255,255,255,0.9);
+      fill: #4ECDC4;
       text-anchor: middle;
       pointer-events: none;
     }
     .pie-center-label {
       font-family: 'montserrat', sans-serif;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 400;
       fill: rgba(255,255,255,0.5);
       text-anchor: middle;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.15em;
       pointer-events: none;
     }
 
@@ -267,16 +334,19 @@ function formatCurrency(amount) {
   return '$' + amount.toFixed(0);
 }
 
-// Calculate segment path
-function describeArc(cx, cy, radius, startAngle, endAngle) {
-  const start = polarToCartesian(cx, cy, radius, endAngle);
-  const end = polarToCartesian(cx, cy, radius, startAngle);
+// Calculate donut segment path (arc between inner and outer radius)
+function describeArc(cx, cy, outerRadius, innerRadius, startAngle, endAngle) {
+  const outerStart = polarToCartesian(cx, cy, outerRadius, endAngle);
+  const outerEnd = polarToCartesian(cx, cy, outerRadius, startAngle);
+  const innerStart = polarToCartesian(cx, cy, innerRadius, startAngle);
+  const innerEnd = polarToCartesian(cx, cy, innerRadius, endAngle);
   const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
 
   return [
-    "M", cx, cy,
-    "L", start.x, start.y,
-    "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+    "M", outerStart.x, outerStart.y,
+    "A", outerRadius, outerRadius, 0, largeArcFlag, 0, outerEnd.x, outerEnd.y,
+    "L", innerStart.x, innerStart.y,
+    "A", innerRadius, innerRadius, 0, largeArcFlag, 1, innerEnd.x, innerEnd.y,
     "Z"
   ].join(" ");
 }
@@ -289,16 +359,16 @@ function polarToCartesian(cx, cy, radius, angleInDegrees) {
   };
 }
 
-// Get label position
-function getLabelPosition(cx, cy, radius, startAngle, endAngle) {
+// Get label position (middle of donut ring)
+function getLabelPosition(cx, cy, outerRadius, innerRadius, startAngle, endAngle) {
   const midAngle = (startAngle + endAngle) / 2;
-  const labelRadius = radius * 0.65;
+  const labelRadius = (outerRadius + innerRadius) / 2;
   return polarToCartesian(cx, cy, labelRadius, midAngle);
 }
 
 // Build pie chart SVG
 function buildPieChart() {
-  const size = PIE_RADIUS * 2 + 40;
+  const size = PIE_OUTER_RADIUS * 2 + 40;
   const cx = size / 2;
   const cy = size / 2;
 
@@ -331,37 +401,46 @@ function buildPieChart() {
     const segmentAngle = (segment.percent / 100) * 360;
     const endAngle = currentAngle + segmentAngle;
 
-    // Create path
+    // Apply gap: add half gap to start, subtract half gap from end
+    const gapStart = currentAngle + SEGMENT_GAP / 2;
+    const gapEnd = endAngle - SEGMENT_GAP / 2;
+
+    // Create donut segment path
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', describeArc(cx, cy, PIE_RADIUS, currentAngle, endAngle));
+    path.setAttribute('d', describeArc(cx, cy, PIE_OUTER_RADIUS, PIE_INNER_RADIUS, gapStart, gapEnd));
     path.setAttribute('fill', segment.color);
     path.setAttribute('class', 'pie-segment');
     path.dataset.index = index;
     path.dataset.id = segment.id || segment.label;
+    path.dataset.color = segment.color;
 
-    // Event handlers
-    path.addEventListener('mouseenter', () => handleSegmentHover(segment, totalForView));
-    path.addEventListener('mouseleave', () => handleSegmentLeave());
+    // Event handlers - no glow, just update info panel
+    path.addEventListener('mouseenter', () => {
+      handleSegmentHover(segment, totalForView);
+    });
+    path.addEventListener('mouseleave', () => {
+      handleSegmentLeave();
+    });
     path.addEventListener('click', () => handleSegmentClick(segment));
 
     svgElement.appendChild(path);
 
-    // Add label if segment is large enough
+    // Add label if segment is large enough (in the middle of the donut ring)
     if (segmentAngle > 25) {
-      const labelPos = getLabelPosition(cx, cy, PIE_RADIUS, currentAngle, endAngle);
+      const labelPos = getLabelPosition(cx, cy, PIE_OUTER_RADIUS, PIE_INNER_RADIUS, currentAngle, endAngle);
 
-      // Label text
+      // Label text (category name)
       const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       labelText.setAttribute('x', labelPos.x);
-      labelText.setAttribute('y', labelPos.y - 6);
+      labelText.setAttribute('y', labelPos.y - 4);
       labelText.setAttribute('class', 'pie-label');
       labelText.textContent = segment.label;
       svgElement.appendChild(labelText);
 
-      // Percent text
+      // Percent text below
       const percentText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       percentText.setAttribute('x', labelPos.x);
-      percentText.setAttribute('y', labelPos.y + 8);
+      percentText.setAttribute('y', labelPos.y + 10);
       percentText.setAttribute('class', 'pie-label-percent');
       percentText.textContent = segment.percent + '%';
       svgElement.appendChild(percentText);
@@ -388,32 +467,33 @@ function buildPieChart() {
 
   // Center text
   if (currentView === 'main') {
-    // Show total budget
+    // Show "Total" label above
+    const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    labelText.setAttribute('x', cx);
+    labelText.setAttribute('y', cy - 10);
+    labelText.setAttribute('class', 'pie-center-label');
+    labelText.textContent = 'Total';
+    svgElement.appendChild(labelText);
+
+    // Show total budget amount below
     const totalText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     totalText.setAttribute('x', cx);
-    totalText.setAttribute('y', cy + 4);
+    totalText.setAttribute('y', cy + 18);
     totalText.setAttribute('class', 'pie-center-text');
     totalText.textContent = formatCurrency(BUDGET_DATA.total);
     svgElement.appendChild(totalText);
-
-    const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    labelText.setAttribute('x', cx);
-    labelText.setAttribute('y', cy - 12);
-    labelText.setAttribute('class', 'pie-center-label');
-    labelText.textContent = 'TOTAL';
-    svgElement.appendChild(labelText);
   } else {
-    // Show back arrow
+    // Show back arrow and label
     const backArrow = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     backArrow.setAttribute('x', cx);
-    backArrow.setAttribute('y', cy + 6);
+    backArrow.setAttribute('y', cy + 4);
     backArrow.setAttribute('class', 'pie-back-arrow');
-    backArrow.textContent = '\u2190'; // Left arrow
+    backArrow.textContent = '←';
     svgElement.appendChild(backArrow);
 
     const backLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     backLabel.setAttribute('x', cx);
-    backLabel.setAttribute('y', cy + 22);
+    backLabel.setAttribute('y', cy + 24);
     backLabel.setAttribute('class', 'pie-center-label');
     backLabel.textContent = 'BACK';
     svgElement.appendChild(backLabel);
@@ -422,13 +502,11 @@ function buildPieChart() {
 
 // Handle segment hover - update info panel
 function handleSegmentHover(segment, totalForView) {
-  hoveredSegment = segment;
   updateInfoPanel(segment, totalForView);
 }
 
 // Handle segment leave - show default info
 function handleSegmentLeave() {
-  hoveredSegment = null;
   showDefaultInfo();
 }
 
@@ -478,14 +556,28 @@ export function init(imgWorld, sections) {
     return;
   }
 
+  // Create blur backdrop circle - appended directly to imgWorld for proper backdrop-filter
+  blurBackdropElement = document.createElement('div');
+  blurBackdropElement.className = 'budget-blur-backdrop';
+  // Start hidden - update() will show it when budget section is active
+  blurBackdropElement.style.opacity = '0';
+  blurBackdropElement.style.visibility = 'hidden';
+  imgWorld.appendChild(blurBackdropElement);
+
   // Create budget container (holds everything in horizontal layout)
   budgetContainer = document.createElement('div');
   budgetContainer.className = 'budget-container';
 
+  // Create pie wrapper (holds SVG)
+  const pieWrapper = document.createElement('div');
+  pieWrapper.className = 'budget-pie-wrapper';
+
   // Create SVG element for pie chart (LEFT side)
   svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svgElement.setAttribute('class', 'budget-pie-svg');
-  budgetContainer.appendChild(svgElement);
+  pieWrapper.appendChild(svgElement);
+
+  budgetContainer.appendChild(pieWrapper);
 
   // Create text content wrapper (RIGHT side)
   const textContent = document.createElement('div');
@@ -578,24 +670,51 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   const offsetX = mouse.x * 8;
   const offsetY = -mouse.y * 2;
 
+  // Calculate pie chart offset from container center (pie is on left side)
+  // The container uses flex with gap:60px, so pie center is offset left
+  const pieOffsetX = -190; // Approximate offset to align backdrop with pie center
+
+  // Determine if budget section should be visible at all
+  const shouldBeVisible = sectionIndex === currentSection || sectionIndex === targetSection;
+
+  // Update blur backdrop - needs full 3D transform for backdrop-filter to work during transitions
+  // Also control visibility to prevent blocking other sections
+  if (blurBackdropElement) {
+    blurBackdropElement.style.transform = `translate(calc(-50% + ${offsetX + pieOffsetX}px), calc(-50% + ${offsetY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
+    blurBackdropElement.style.opacity = Math.max(0, Math.min(1, containerOpacity));
+    blurBackdropElement.style.visibility = shouldBeVisible && containerOpacity > 0.01 ? 'visible' : 'hidden';
+  }
+
   // Apply transform to container
   budgetContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
   budgetContainer.style.opacity = Math.max(0, Math.min(1, containerOpacity));
-  // Only allow interactions when this is the active section and not transitioning
-  budgetContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && containerOpacity > 0.5) ? 'auto' : 'none';
+  // Hide container completely when not visible to prevent blocking other sections
+  budgetContainer.style.visibility = shouldBeVisible && containerOpacity > 0.01 ? 'visible' : 'hidden';
+
+  // Control pointer-events on SVG based on section visibility
+  const isActive = sectionIndex === currentSection && !isTransitioning && containerOpacity > 0.5;
+  if (svgElement) {
+    svgElement.style.pointerEvents = isActive ? 'auto' : 'none';
+  }
 }
 
 // Cleanup chapter DOM
 export function destroy() {
+  // Remove backdrop (it's in imgWorld, not budgetContainer)
+  if (blurBackdropElement) {
+    blurBackdropElement.remove();
+    blurBackdropElement = null;
+  }
+
   if (budgetContainer) {
     budgetContainer.remove();
     budgetContainer = null;
   }
+
   svgElement = null;
   infoPanelElement = null;
   sectionIndex = -1;
   currentView = 'main';
-  hoveredSegment = null;
 
   const styles = document.getElementById('budget-chapter-styles');
   if (styles) styles.remove();

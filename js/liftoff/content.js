@@ -47,6 +47,9 @@ const SECTIONS = [
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/selena-2.jpg',
         bio: "Selena (12) is a resourceful, intelligent natural leader. She's independent, stubborn, and emotionally ahead of her years. Growing up without a mother and with a father stretched beyond his limits, Selena has quietly become the emotional backbone of her family, acting as both protector and second parent to her younger brother.",
+        castName: 'Emma Collins',
+        castImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=face',
+        castBio: "Emma Collins is a rising young talent known for her emotional depth and natural screen presence. With training at the Young Actors Studio and appearances in several award-winning short films, Emma brings both heart and authenticity to every role she takes on.",
       },
       {
         name: 'Leo',
@@ -54,6 +57,9 @@ const SECTIONS = [
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/leo-2.jpg',
         bio: "Leo (8) is imaginative, sensitive, and deeply connected to the magical world his mother created for him. He struggles to process grief and instead retreats into fantasy, where he can still feel close to her. His innocence and wonder make him the heart of the story.",
+        castName: 'Oliver Reed',
+        castImage: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=400&h=400&fit=crop&crop=face',
+        castBio: "Oliver Reed discovered his love for acting at age 5 and has since captivated audiences with his remarkable ability to convey complex emotions. His natural curiosity and boundless imagination make him perfect for roles that require wonder and vulnerability.",
       },
       {
         name: 'Dad',
@@ -61,6 +67,9 @@ const SECTIONS = [
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/dad-2.jpg',
         bio: "Dad (40s) is a grieving father drowning in responsibility. Once warm and present, he's now emotionally distant, working overtime to keep the family afloat while struggling with his own unprocessed loss. His journey is learning to be present again before it's too late.",
+        castName: 'Michael Torres',
+        castImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+        castBio: "Michael Torres is a veteran actor with over 15 years of experience in film and television. Known for his powerful dramatic performances, Michael brings gravitas and emotional authenticity to complex characters navigating difficult life circumstances.",
       },
     ]
   },
@@ -157,6 +166,8 @@ let selectedCharacterIndex = -1; // -1 = none selected
 let bioContainer = null;
 let bioTextEl = null;
 let characterBioMode = false; // True when showing a character bio
+let showingCastBio = false; // True when flipped to show cast/actor bio
+let meetCastButton = null; // "Meet the cast" button element
 
 // Character animation state (for smooth lerping)
 const characterAnimState = []; // {x, y, opacity, nameOpacity} for each character
@@ -180,6 +191,7 @@ function toggleCharacterBio(charIndex) {
 function openCharacterBio(charIndex) {
   selectedCharacterIndex = charIndex;
   characterBioMode = true;
+  showingCastBio = false; // Always start with character bio
 
   // Get character data
   const charData = SECTIONS[3].characters[charIndex]; // Characters are in section 3
@@ -199,10 +211,38 @@ function openCharacterBio(charIndex) {
   if (textContainer) {
     textContainer.classList.add('bio-active');
   }
+
+  // Show "Meet the cast" button
+  if (meetCastButton) {
+    meetCastButton.textContent = 'Meet the Cast';
+    meetCastButton.classList.add('visible');
+  }
+
+  // Reset flip state on portrait (ensure character image is shown)
+  const portrait = characterElements[charIndex]?.portrait;
+  if (portrait) {
+    portrait.classList.remove('flipping');
+    const img = portrait.querySelector('img');
+    if (img) {
+      img.src = charData.image;
+    }
+  }
 }
 
 // Close character bio
 function closeCharacterBio() {
+  // Reset portrait to character image if we were showing cast
+  if (showingCastBio && selectedCharacterIndex >= 0) {
+    const charData = SECTIONS[3].characters[selectedCharacterIndex];
+    const portrait = characterElements[selectedCharacterIndex]?.portrait;
+    if (portrait) {
+      const img = portrait.querySelector('img');
+      if (img) {
+        img.src = charData.image;
+      }
+    }
+  }
+
   selectedCharacterIndex = -1;
   characterBioMode = false;
 
@@ -220,6 +260,110 @@ function closeCharacterBio() {
   if (textContainer) {
     textContainer.classList.remove('bio-active');
   }
+
+  // Reset cast bio state
+  showingCastBio = false;
+
+  // Hide meet cast button
+  if (meetCastButton) {
+    meetCastButton.classList.remove('visible');
+  }
+}
+
+// Flip to show cast bio
+function showCastBio() {
+  if (selectedCharacterIndex < 0) return;
+
+  showingCastBio = true;
+  const charData = SECTIONS[3].characters[selectedCharacterIndex];
+
+  // Update title to actor name
+  if (titleEl) {
+    titleEl.textContent = charData.castName.toUpperCase();
+  }
+
+  // Update bio text to actor bio
+  if (bioTextEl) {
+    bioTextEl.textContent = charData.castBio;
+  }
+
+  // Flip animation - swap image at midpoint
+  const portrait = characterElements[selectedCharacterIndex]?.portrait;
+  if (portrait) {
+    portrait.classList.add('flipping');
+    const img = portrait.querySelector('img');
+    // Swap image at midpoint of animation (250ms)
+    setTimeout(() => {
+      if (img) img.src = charData.castImage;
+    }, 250);
+    // Remove animation class after complete
+    setTimeout(() => {
+      portrait.classList.remove('flipping');
+    }, 500);
+  }
+
+  // Update button text
+  if (meetCastButton) {
+    meetCastButton.textContent = '← Back to Character';
+    meetCastButton.classList.add('visible');
+  }
+}
+
+// Flip back to character bio
+function showCharacterBioFromCast() {
+  if (selectedCharacterIndex < 0) return;
+
+  showingCastBio = false;
+  const charData = SECTIONS[3].characters[selectedCharacterIndex];
+
+  // Update title back to character name
+  if (titleEl) {
+    titleEl.textContent = charData.name.toUpperCase();
+  }
+
+  // Update bio text back to character bio
+  if (bioTextEl) {
+    bioTextEl.textContent = charData.bio;
+  }
+
+  // Flip animation back - swap image at midpoint
+  const portrait = characterElements[selectedCharacterIndex]?.portrait;
+  if (portrait) {
+    portrait.classList.add('flipping');
+    const img = portrait.querySelector('img');
+    // Swap image at midpoint of animation (250ms)
+    setTimeout(() => {
+      if (img) img.src = charData.image;
+    }, 250);
+    // Remove animation class after complete
+    setTimeout(() => {
+      portrait.classList.remove('flipping');
+    }, 500);
+  }
+
+  // Update button text
+  if (meetCastButton) {
+    meetCastButton.textContent = 'Meet the Cast';
+    meetCastButton.classList.add('visible');
+  }
+}
+
+// Toggle between character and cast bio
+function toggleCastBio() {
+  if (showingCastBio) {
+    showCharacterBioFromCast();
+  } else {
+    showCastBio();
+  }
+}
+
+// Wheel handler to close bio on scroll attempt
+function onWheelCloseBio(e) {
+  if (characterBioMode) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeCharacterBio();
+  }
 }
 
 // Click-outside handler to close bio or deselect segment
@@ -232,6 +376,9 @@ function onDocumentClick(e) {
 
     // Check if click was on the bio itself
     if (e.target.closest('.liftoff-bio')) return;
+
+    // Check if click was on the Meet Cast button
+    if (e.target.closest('.liftoff-meet-cast-btn')) return;
 
     // Otherwise close the bio
     closeCharacterBio();
@@ -302,8 +449,8 @@ function injectStyles() {
     }
     .liftoff-text h1 {
       font-family: montserrat, sans-serif;
-      font-size: clamp(32px, 6vw, 64px);
-      font-weight: 700;
+      font-size: clamp(26px, 4.8vw, 51px);
+      font-weight: 600;
       margin: 0 0 12px 0;
       text-transform: uppercase;
       color: #d4d4d4;
@@ -367,13 +514,13 @@ function injectStyles() {
 
     /* Outro section (COMING SOON) - smaller title */
     .liftoff-text.outro h1 {
-      font-size: clamp(12px, 2.5vw, 24px);
+      font-size: clamp(10px, 2vw, 19px);
       letter-spacing: 0.15em;
     }
 
     /* Logline section */
     .liftoff-text.logline h1 {
-      font-size: clamp(32px, 6vw, 64px);
+      font-size: clamp(26px, 4.8vw, 51px);
     }
     .liftoff-text.logline p {
       font-size: clamp(10px, 1vw, 13px);
@@ -387,7 +534,7 @@ function injectStyles() {
       top: 28%;
     }
     .liftoff-text.trailer h1 {
-      font-size: clamp(36px, 6vw, 72px);
+      font-size: clamp(29px, 4.8vw, 58px);
     }
 
     /* Preview container for backward scroll anticipation */
@@ -410,8 +557,8 @@ function injectStyles() {
     }
     .liftoff-preview h1 {
       font-family: montserrat, sans-serif;
-      font-size: clamp(32px, 6vw, 64px);
-      font-weight: 700;
+      font-size: clamp(26px, 4.8vw, 51px);
+      font-weight: 600;
       margin: 0 0 12px 0;
       text-transform: uppercase;
       color: #d4d4d4;
@@ -429,7 +576,7 @@ function injectStyles() {
     }
     /* Preview logline styling - matches main logline */
     .liftoff-preview.preview-logline h1 {
-      font-size: clamp(32px, 6vw, 64px);
+      font-size: clamp(26px, 4.8vw, 51px);
     }
     .liftoff-preview.preview-logline p {
       font-size: clamp(10px, 1vw, 13px);
@@ -459,13 +606,13 @@ function injectStyles() {
       top: 28%;
     }
     .liftoff-preview.preview-trailer h1 {
-      font-size: clamp(36px, 6vw, 72px);
+      font-size: clamp(29px, 4.8vw, 58px);
     }
     .liftoff-preview.preview-characters {
       top: calc(36% - 70px);
     }
     .liftoff-preview.preview-characters h1 {
-      font-size: clamp(32px, 6vw, 64px);
+      font-size: clamp(26px, 4.8vw, 51px);
     }
     .liftoff-preview.preview-characters p {
       position: absolute;
@@ -479,7 +626,7 @@ function injectStyles() {
       top: 30%;
     }
     .liftoff-preview.preview-story h1 {
-      font-size: clamp(36px, 6vw, 60px);
+      font-size: clamp(29px, 4.8vw, 48px);
     }
     .liftoff-preview.preview-story p {
       font-size: clamp(10px, 1.2vw, 14px);
@@ -490,7 +637,7 @@ function injectStyles() {
       width: 100vw;
     }
     .liftoff-preview.preview-target-market h1 {
-      font-size: clamp(32px, 5vw, 56px);
+      font-size: clamp(26px, 4vw, 45px);
     }
     .liftoff-preview.preview-target-market p {
       position: absolute;
@@ -506,7 +653,7 @@ function injectStyles() {
     }
     /* Preview outro styling - matches main outro (COMING SOON) */
     .liftoff-preview.preview-outro h1 {
-      font-size: clamp(12px, 2.5vw, 24px);
+      font-size: clamp(10px, 2vw, 19px);
       letter-spacing: 0.15em;
     }
 
@@ -552,7 +699,17 @@ function injectStyles() {
       border: 2px solid rgba(255,255,255,0.2);
       cursor: pointer;
       pointer-events: none; /* Controlled via JavaScript */
-      transition: none !important;
+      transition: box-shadow 0.2s ease-out;
+    }
+    /* Default glow */
+    .liftoff-character[data-char-index="0"] {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 30px rgba(0, 200, 200, 0.3);
+    }
+    .liftoff-character[data-char-index="1"] {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 30px rgba(220, 60, 60, 0.3);
+    }
+    .liftoff-character[data-char-index="2"] {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 30px rgba(160, 80, 200, 0.3);
     }
     /* Blur backdrop circle - separate element for proper backdrop-filter during transitions */
     .liftoff-character-backdrop {
@@ -564,6 +721,7 @@ function injectStyles() {
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       pointer-events: none;
+      overflow: hidden;
     }
     .liftoff-character-backdrop::before {
       content: '';
@@ -578,6 +736,35 @@ function injectStyles() {
       mask-composite: exclude;
       pointer-events: none;
     }
+    /* Subtle glint animation */
+    @keyframes character-glint {
+      0% { left: -60%; opacity: 0; }
+      5% { opacity: 1; }
+      20% { left: 110%; opacity: 0; }
+      100% { left: 110%; opacity: 0; }
+    }
+    .liftoff-character-backdrop::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 55%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      transform: skewX(-20deg);
+      animation: character-glint 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    /* Stagger the glint timing per character */
+    .liftoff-character-backdrop[data-char-index="0"]::after {
+      animation-delay: 0.5s;
+    }
+    .liftoff-character-backdrop[data-char-index="1"]::after {
+      animation-delay: 1.5s;
+    }
+    .liftoff-character-backdrop[data-char-index="2"]::after {
+      animation-delay: 2.5s;
+    }
     .liftoff-character img {
       width: 100%;
       height: 100%;
@@ -587,14 +774,15 @@ function injectStyles() {
     .liftoff-character:hover {
       box-shadow: 0 12px 48px rgba(0,0,0,0.6);
     }
+    /* Hover glow */
     .liftoff-character[data-char-index="0"]:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(0, 200, 200, 0.4);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(0, 200, 200, 0.75);
     }
     .liftoff-character[data-char-index="1"]:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(220, 60, 60, 0.4);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(220, 60, 60, 0.75);
     }
     .liftoff-character[data-char-index="2"]:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(160, 80, 200, 0.4);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(160, 80, 200, 0.75);
     }
     .liftoff-character-name {
       position: absolute;
@@ -636,6 +824,51 @@ function injectStyles() {
       margin: 0;
     }
 
+    /* Meet the Cast button */
+    .liftoff-meet-cast-btn {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      font-family: 'montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 10px 20px;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, background 0.2s ease, border-color 0.2s ease;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .liftoff-meet-cast-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .liftoff-meet-cast-btn:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    /* Character portrait flip animation */
+    .liftoff-character img {
+      backface-visibility: hidden;
+    }
+    .liftoff-character.flipping img {
+      animation: character-flip 0.5s ease-out forwards;
+    }
+    @keyframes character-flip {
+      0% { transform: rotateY(0deg); }
+      50% { transform: rotateY(90deg); }
+      100% { transform: rotateY(0deg); }
+    }
+
     /* Title and subtitle transitions when showing character bio */
     .liftoff-text.characters h1 {
       transition: opacity 0.3s ease;
@@ -656,7 +889,7 @@ function injectStyles() {
       top: calc(36% - 70px);
     }
     .liftoff-text.characters h1 {
-      font-size: clamp(32px, 6vw, 64px);
+      font-size: clamp(26px, 4.8vw, 51px);
     }
     .liftoff-text.characters p {
       position: absolute;
@@ -672,7 +905,7 @@ function injectStyles() {
       top: 30%;
     }
     .liftoff-text.story h1 {
-      font-size: clamp(36px, 6vw, 60px);
+      font-size: clamp(29px, 4.8vw, 48px);
     }
     .liftoff-text.story p {
       font-size: clamp(10px, 1.2vw, 14px);
@@ -1037,6 +1270,16 @@ function init() {
       bioTextEl = document.createElement('p');
       bioContainer.appendChild(bioTextEl);
       imageWorld.appendChild(bioContainer);
+
+      // Create "Meet the cast" button (positioned below character portrait)
+      meetCastButton = document.createElement('button');
+      meetCastButton.className = 'liftoff-meet-cast-btn';
+      meetCastButton.textContent = 'Meet the Cast';
+      meetCastButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCastBio();
+      });
+      imageWorld.appendChild(meetCastButton);
     }
 
     // Create Earth element for Story section
@@ -1075,6 +1318,9 @@ function init() {
 
   // Click-outside handler for closing character bios
   document.addEventListener('click', onDocumentClick);
+
+  // Wheel handler to close bio before scrolling (capture phase to intercept first)
+  window.addEventListener('wheel', onWheelCloseBio, { capture: true });
 
   // Initialize chapter modules
   CompsChapter.init(imageWorld, SECTIONS);
@@ -1545,6 +1791,14 @@ function update() {
     bioContainer.style.transform = `translate(calc(-50% + ${bioOffsetX + 390}px), calc(-50% + ${bioOffsetY}px)) translateZ(${REST_Z}px)`;
   }
 
+  // Update Meet Cast button position (below character portrait)
+  if (meetCastButton) {
+    const btnOffsetX = FIRST_SLOT_X * 3 + mouse.x * 6;
+    const btnOffsetY = FIRST_SLOT_Y * 3 - mouse.y * 5;
+    // Position button below the character portrait (portrait is ~207px, offset by ~140px from center)
+    meetCastButton.style.transform = `translate(calc(-50% + ${btnOffsetX}px), calc(-50% + ${btnOffsetY + 165}px)) translateZ(${REST_Z}px)`;
+  }
+
   // Update Earth element for Story section (section index 4)
   if (earthElement) {
     const earthSection = 4; // Story section
@@ -1630,6 +1884,7 @@ function jumpToSection(sectionIndex) {
 // Cleanup
 function destroy() {
   document.removeEventListener('click', onDocumentClick);
+  window.removeEventListener('wheel', onWheelCloseBio, { capture: true });
   CompsChapter.destroy();
   TargetMarketChapter.destroy();
   CrewChapter.destroy();
@@ -1653,9 +1908,11 @@ function destroy() {
   copyrightEl = null;
   bioContainer = null;
   bioTextEl = null;
+  meetCastButton = null;
   earthElement = null;
   selectedCharacterIndex = -1;
   characterBioMode = false;
+  showingCastBio = false;
   imageElements.length = 0;
   characterElements.length = 0;
   characterBackdrops.forEach(backdrop => backdrop.remove());
