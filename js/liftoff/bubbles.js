@@ -372,7 +372,7 @@ function injectStyles() {
       position: absolute;
       font-family: 'montserrat', sans-serif;
       font-size: clamp(10px, 1.2vw, 13px);
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255,255,255,0.7);
       text-align: center;
       letter-spacing: 0.02em;
@@ -415,7 +415,7 @@ function injectStyles() {
     .crew-detail-description {
       font-family: 'montserrat', sans-serif;
       font-size: clamp(7px, 0.7vw, 8px);
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255,255,255,0.85);
       line-height: 1.6;
       letter-spacing: 0.01em;

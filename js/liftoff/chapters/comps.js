@@ -8,7 +8,7 @@
 // Chapter configuration
 export const config = {
   title: 'COMPS',
-  subtitle: 'Films like E.T., Jumanji, Bridge to Terabithia, and Sketch succeed because they tap into a universal childhood truth: when children face experiences too big to understand—loss, fear, isolation, change—imagination becomes their survival tool.',
+  subtitle: "Children's movies have a proven track record of working across decades...",
   compsLayout: true,
   images: []
 };
@@ -49,6 +49,11 @@ const FEATURED_DATA = [
   { title: 'Sketch', budget: '~$3M', boxOffice: '~$10.8M', year: '2025', image: 'https://triglass-assets.s3.amazonaws.com/movie-4.jpg' },
 ];
 
+// Background poster images (movie-5 through movie-18)
+const BACKGROUND_IMAGES = Array.from({ length: 14 }, (_, i) =>
+  `https://triglass-assets.s3.amazonaws.com/movie-${i + 5}.jpg`
+);
+
 // DOM elements
 let wallContainer = null;
 let posterElements = [];
@@ -80,7 +85,7 @@ function injectStyles() {
       top: -280px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(29px, 4.8vw, 58px);
+      font-size: clamp(26px, 4.2vw, 52px);
       width: 100%;
       text-align: center;
       white-space: nowrap;
@@ -92,6 +97,7 @@ function injectStyles() {
       left: 50%;
       transform: translateX(-50%);
       font-size: clamp(11px, 1.3vw, 15px);
+      font-weight: 500;
       max-width: 1400px;
       padding: 0 20px;
       text-align: center;
@@ -122,7 +128,7 @@ function injectStyles() {
       justify-content: center;
       position: relative;
       overflow: hidden;
-      opacity: 0.5;
+      opacity: 0.25;
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                   opacity 0.3s ease-out;
     }
@@ -135,21 +141,32 @@ function injectStyles() {
       letter-spacing: 0.1em;
     }
     .comps-poster:hover {
-      opacity: 0.65;
+      opacity: 0.35;
       transform: scale(1.03);
     }
 
     /* Very dim poster - in title/subtitle areas */
     .comps-poster.very-dim {
-      opacity: 0.5;
+      opacity: 0.15;
       background: linear-gradient(180deg, rgba(40,40,60,0.9) 0%, rgba(25,25,40,0.9) 100%);
       border-color: rgba(255,255,255,0.06);
     }
     .comps-poster.very-dim:hover {
-      opacity: 0.55;
+      opacity: 0.2;
     }
     .comps-poster.very-dim .poster-label {
       color: rgba(255,255,255,0.12);
+    }
+
+    /* Background poster with image */
+    .comps-poster .bg-poster-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 3px;
     }
 
     /* Featured poster - bright and prominent */
@@ -253,13 +270,16 @@ export function init(imgWorld, sections) {
   wallContainer.style.height = `${wallHeight}px`;
 
   // Create posters in grid
+  let bgImageIndex = 0;
   for (let row = 0; row < WALL_ROWS; row++) {
     for (let col = 0; col < WALL_COLS; col++) {
       // Very dim posters in title/subtitle areas
       if (isHiddenPosition(col, row)) {
+        const bgImage = BACKGROUND_IMAGES[bgImageIndex % BACKGROUND_IMAGES.length];
+        bgImageIndex++;
         const dimPoster = document.createElement('div');
         dimPoster.className = 'comps-poster very-dim';
-        dimPoster.innerHTML = `<span class="poster-label">Poster</span>`;
+        dimPoster.innerHTML = `<img class="bg-poster-image" src="${bgImage}" alt="" />`;
         wallContainer.appendChild(dimPoster);
         posterElements.push(dimPoster);
         continue;
@@ -280,7 +300,9 @@ export function init(imgWorld, sections) {
           </div>
         `;
       } else {
-        poster.innerHTML = `<span class="poster-label">Poster</span>`;
+        const bgImage = BACKGROUND_IMAGES[bgImageIndex % BACKGROUND_IMAGES.length];
+        bgImageIndex++;
+        poster.innerHTML = `<img class="bg-poster-image" src="${bgImage}" alt="" />`;
       }
 
       wallContainer.appendChild(poster);

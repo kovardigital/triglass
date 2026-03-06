@@ -24,7 +24,7 @@ const SECTIONS = [
     title: 'LOGLINE',
     subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
     images: [
-      { x: -180, y: 0, width: 1000, height: 1000, scale: 0.625, label: 'Logline', delay: 0, rotateY: 0, image: 'https://triglass-assets.s3.amazonaws.com/logline.png' },
+      { x: -120, y: -20, width: 1000, height: 1000, scale: 0.85, label: 'Logline', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', autoplay: true },
     ]
   },
   {
@@ -43,13 +43,13 @@ const SECTIONS = [
     characters: [
       {
         name: 'Selena',
-        x: -105,
+        x: -115,
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/selena-2.jpg',
         bio: "Selena (12) is a resourceful, intelligent natural leader. She's independent, stubborn, and emotionally ahead of her years. Growing up without a mother and with a father stretched beyond his limits, Selena has quietly become the emotional backbone of her family, acting as both protector and second parent to her younger brother.",
-        castName: 'Emma Collins',
-        castImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=face',
-        castBio: "Emma Collins is a rising young talent known for her emotional depth and natural screen presence. With training at the Young Actors Studio and appearances in several award-winning short films, Emma brings both heart and authenticity to every role she takes on.",
+        castName: 'Genevieve Jane',
+        castImage: 'https://triglass-assets.s3.amazonaws.com/genevieve.jpg',
+        castBio: "Genevieve Jane is an on-camera and theater actor based in Chicago known for her natural screen presence and comedic timing. Theater highlights include Young Elsa in Paramount Aurora's regional premiere of Frozen, Brigitta in Sound of Music, and Shonelle in School of Rock. She has featured in commercials for Pizza Hut and Hansons.",
       },
       {
         name: 'Leo',
@@ -57,19 +57,19 @@ const SECTIONS = [
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/leo-2.jpg',
         bio: "Leo (8) is imaginative, sensitive, and deeply connected to the magical world his mother created for him. He struggles to process grief and instead retreats into fantasy, where he can still feel close to her. His innocence and wonder make him the heart of the story.",
-        castName: 'Oliver Reed',
-        castImage: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=400&h=400&fit=crop&crop=face',
-        castBio: "Oliver Reed discovered his love for acting at age 5 and has since captivated audiences with his remarkable ability to convey complex emotions. His natural curiosity and boundless imagination make him perfect for roles that require wonder and vulnerability.",
+        castName: 'Seamus Kidwell',
+        castImage: 'https://triglass-assets.s3.amazonaws.com/seamus.jpg',
+        castBio: "Seamus most recently had supporting roles in the feature films \"Buddy\" (Sundance and SXSW 2026), Stephen Cone's \"System of Colors,\" and \"A Cherry Pie Christmas.\" Outside of acting, Seamus loves to read, play piano, code, draw, and play board games with his family. Represented by Gray Talent Group.",
       },
       {
         name: 'Dad',
-        x: 105,
+        x: 115,
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/dad-2.jpg',
         bio: "Dad (40s) is a grieving father drowning in responsibility. Once warm and present, he's now emotionally distant, working overtime to keep the family afloat while struggling with his own unprocessed loss. His journey is learning to be present again before it's too late.",
-        castName: 'Michael Torres',
-        castImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
-        castBio: "Michael Torres is a veteran actor with over 15 years of experience in film and television. Known for his powerful dramatic performances, Michael brings gravitas and emotional authenticity to complex characters navigating difficult life circumstances.",
+        castName: 'Erik Stolhanske',
+        castImage: 'https://triglass-assets.s3.amazonaws.com/erik.jpg',
+        castBio: "Erik Stolhanske is an American actor, writer, and producer, and one of the members of the Broken Lizard comedy group. Best known as \"Officer Rabbit\" from the cult-classic Super Troopers, he has starred in Beerfest, The Slammin' Salmon, and Club Dread. He has also appeared on HBO's Curb Your Enthusiasm and Six Feet Under.",
       },
     ]
   },
@@ -87,7 +87,7 @@ const SECTIONS = [
   },
   {
     title: 'TARGET MARKET',
-    subtitle: 'The film is designed to reach three distinct audiences, with a shared overlap that allows us to engage all three at once and maximize both reach and long-term value.',
+    subtitle: 'Family films and Sci-Fi consistently dominate the $100M+ box office. Our film sits at the intersection of the two fastest-growing genres.',
     targetMarketLayout: true,
     images: []
   },
@@ -125,7 +125,7 @@ const SECTIONS = [
   },
   {
     title: 'COMING SOON',
-    subtitle: '2026',
+    subtitle: '2027',
     images: []
   }
 ];
@@ -221,25 +221,17 @@ function openCharacterBio(charIndex) {
   // Reset flip state on portrait (ensure character image is shown)
   const portrait = characterElements[charIndex]?.portrait;
   if (portrait) {
-    portrait.classList.remove('flipping');
-    const img = portrait.querySelector('img');
-    if (img) {
-      img.src = charData.image;
-    }
+    portrait.classList.remove('flipped');
   }
 }
 
 // Close character bio
 function closeCharacterBio() {
-  // Reset portrait to character image if we were showing cast
-  if (showingCastBio && selectedCharacterIndex >= 0) {
-    const charData = SECTIONS[3].characters[selectedCharacterIndex];
+  // Reset portrait flip state if we were showing cast
+  if (selectedCharacterIndex >= 0) {
     const portrait = characterElements[selectedCharacterIndex]?.portrait;
     if (portrait) {
-      const img = portrait.querySelector('img');
-      if (img) {
-        img.src = charData.image;
-      }
+      portrait.classList.remove('flipped');
     }
   }
 
@@ -287,19 +279,10 @@ function showCastBio() {
     bioTextEl.textContent = charData.castBio;
   }
 
-  // Flip animation - swap image at midpoint
+  // Flip to show cast image (add flipped class)
   const portrait = characterElements[selectedCharacterIndex]?.portrait;
   if (portrait) {
-    portrait.classList.add('flipping');
-    const img = portrait.querySelector('img');
-    // Swap image at midpoint of animation (250ms)
-    setTimeout(() => {
-      if (img) img.src = charData.castImage;
-    }, 250);
-    // Remove animation class after complete
-    setTimeout(() => {
-      portrait.classList.remove('flipping');
-    }, 500);
+    portrait.classList.add('flipped');
   }
 
   // Update button text
@@ -326,19 +309,10 @@ function showCharacterBioFromCast() {
     bioTextEl.textContent = charData.bio;
   }
 
-  // Flip animation back - swap image at midpoint
+  // Flip back to character image (remove flipped class)
   const portrait = characterElements[selectedCharacterIndex]?.portrait;
   if (portrait) {
-    portrait.classList.add('flipping');
-    const img = portrait.querySelector('img');
-    // Swap image at midpoint of animation (250ms)
-    setTimeout(() => {
-      if (img) img.src = charData.image;
-    }, 250);
-    // Remove animation class after complete
-    setTimeout(() => {
-      portrait.classList.remove('flipping');
-    }, 500);
+    portrait.classList.remove('flipped');
   }
 
   // Update button text
@@ -448,11 +422,12 @@ function injectStyles() {
       backface-visibility: hidden;
     }
     .liftoff-text h1 {
-      font-family: montserrat, sans-serif;
-      font-size: clamp(26px, 4.8vw, 51px);
-      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(24px, 4.2vw, 46px);
+      font-weight: 400;
       margin: 0 0 12px 0;
       text-transform: uppercase;
+      letter-spacing: 0.14em;
       color: #d4d4d4;
       line-height: 1.1;
       backface-visibility: hidden;
@@ -480,7 +455,7 @@ function injectStyles() {
     .liftoff-text p {
       font-family: 'montserrat', sans-serif;
       font-size: clamp(12px, 1.5vw, 16px);
-      font-weight: 300;
+      font-weight: 500;
       line-height: 1.6;
       color: rgba(255,255,255,0.7);
       margin: 0;
@@ -520,11 +495,11 @@ function injectStyles() {
 
     /* Logline section */
     .liftoff-text.logline h1 {
-      font-size: clamp(26px, 4.8vw, 51px);
+      font-size: clamp(24px, 4.2vw, 46px);
     }
     .liftoff-text.logline p {
       font-size: clamp(10px, 1vw, 13px);
-      max-width: 800px;
+      max-width: 600px;
       margin: 0 auto;
       padding: 0 20px;
     }
@@ -534,7 +509,7 @@ function injectStyles() {
       top: 28%;
     }
     .liftoff-text.trailer h1 {
-      font-size: clamp(29px, 4.8vw, 58px);
+      font-size: clamp(26px, 4.2vw, 52px);
     }
 
     /* Preview container for backward scroll anticipation */
@@ -556,11 +531,12 @@ function injectStyles() {
       backface-visibility: hidden;
     }
     .liftoff-preview h1 {
-      font-family: montserrat, sans-serif;
-      font-size: clamp(26px, 4.8vw, 51px);
-      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(24px, 4.2vw, 46px);
+      font-weight: 400;
       margin: 0 0 12px 0;
       text-transform: uppercase;
+      letter-spacing: 0.14em;
       color: #d4d4d4;
       line-height: 1.1;
       backface-visibility: hidden;
@@ -568,7 +544,7 @@ function injectStyles() {
     .liftoff-preview p {
       font-family: 'montserrat', sans-serif;
       font-size: clamp(12px, 1.5vw, 16px);
-      font-weight: 300;
+      font-weight: 500;
       line-height: 1.6;
       color: rgba(255,255,255,0.7);
       margin: 0;
@@ -576,11 +552,11 @@ function injectStyles() {
     }
     /* Preview logline styling - matches main logline */
     .liftoff-preview.preview-logline h1 {
-      font-size: clamp(26px, 4.8vw, 51px);
+      font-size: clamp(24px, 4.2vw, 46px);
     }
     .liftoff-preview.preview-logline p {
       font-size: clamp(10px, 1vw, 13px);
-      max-width: 800px;
+      max-width: 600px;
       margin: 0 auto;
       padding: 0 20px;
     }
@@ -606,13 +582,13 @@ function injectStyles() {
       top: 28%;
     }
     .liftoff-preview.preview-trailer h1 {
-      font-size: clamp(29px, 4.8vw, 58px);
+      font-size: clamp(26px, 4.2vw, 52px);
     }
     .liftoff-preview.preview-characters {
       top: calc(36% - 70px);
     }
     .liftoff-preview.preview-characters h1 {
-      font-size: clamp(26px, 4.8vw, 51px);
+      font-size: clamp(24px, 4.2vw, 46px);
     }
     .liftoff-preview.preview-characters p {
       position: absolute;
@@ -626,26 +602,26 @@ function injectStyles() {
       top: 30%;
     }
     .liftoff-preview.preview-story h1 {
-      font-size: clamp(29px, 4.8vw, 48px);
+      font-size: clamp(26px, 4.2vw, 44px);
     }
     .liftoff-preview.preview-story p {
       font-size: clamp(10px, 1.2vw, 14px);
     }
     .liftoff-preview.preview-target-market {
-      top: calc(28% - 50px);
+      top: calc(12% - 20px);
       max-width: none;
       width: 100vw;
     }
     .liftoff-preview.preview-target-market h1 {
-      font-size: clamp(26px, 4vw, 45px);
+      font-size: clamp(24px, 3.6vw, 42px);
     }
     .liftoff-preview.preview-target-market p {
       position: absolute;
-      top: 550px;
+      top: 580px;
       left: 50%;
       transform: translateX(-50%);
       font-size: clamp(11px, 1.3vw, 15px);
-      max-width: 900px;
+      max-width: 800px;
       width: 90vw;
       padding: 0 20px;
       text-align: center;
@@ -696,20 +672,46 @@ function injectStyles() {
       overflow: visible;
       backface-visibility: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      border: 2px solid rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.25);
       cursor: pointer;
       pointer-events: none; /* Controlled via JavaScript */
-      transition: box-shadow 0.2s ease-out;
+      transition: box-shadow 0.3s ease-out, border-color 0.3s ease-out;
     }
-    /* Default glow */
+    /* Default glow - Selena (cyan/teal) */
     .liftoff-character[data-char-index="0"] {
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 30px rgba(0, 200, 200, 0.3);
+      border-color: rgba(0, 200, 220, 0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
+                  0 0 25px rgba(0, 200, 220, 0.45),
+                  0 0 50px rgba(0, 200, 220, 0.25);
     }
+    /* Leo (pink/magenta) */
     .liftoff-character[data-char-index="1"] {
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 30px rgba(220, 60, 60, 0.3);
+      border-color: rgba(220, 80, 120, 0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
+                  0 0 25px rgba(220, 80, 120, 0.45),
+                  0 0 50px rgba(220, 80, 120, 0.25);
     }
+    /* Dad (purple) */
     .liftoff-character[data-char-index="2"] {
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 30px rgba(160, 80, 200, 0.3);
+      border-color: rgba(160, 100, 220, 0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
+                  0 0 25px rgba(160, 100, 220, 0.45),
+                  0 0 50px rgba(160, 100, 220, 0.25);
+    }
+    /* Gradient stroke on character portrait - white top fading to transparent bottom */
+    .liftoff-character::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 30%, rgba(255,255,255,0.05) 70%, transparent 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 10;
     }
     /* Blur backdrop circle - separate element for proper backdrop-filter during transitions */
     .liftoff-character-backdrop {
@@ -717,26 +719,41 @@ function injectStyles() {
       width: 240px;
       height: 240px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.06);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       pointer-events: none;
       overflow: hidden;
     }
+    /* Colored ring glow per character on backdrop */
+    .liftoff-character-backdrop[data-char-index="0"] {
+      box-shadow: 0 0 30px rgba(0, 200, 220, 0.3),
+                  inset 0 0 40px rgba(0, 200, 220, 0.08);
+    }
+    .liftoff-character-backdrop[data-char-index="1"] {
+      box-shadow: 0 0 30px rgba(220, 80, 120, 0.3),
+                  inset 0 0 40px rgba(220, 80, 120, 0.08);
+    }
+    .liftoff-character-backdrop[data-char-index="2"] {
+      box-shadow: 0 0 30px rgba(160, 100, 220, 0.3),
+                  inset 0 0 40px rgba(160, 100, 220, 0.08);
+    }
+    /* Gradient stroke on backdrop - white top fading to transparent bottom */
     .liftoff-character-backdrop::before {
       content: '';
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      padding: 1px;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.4) 100%);
+      padding: 2px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.35) 25%, rgba(255,255,255,0.08) 60%, transparent 100%);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       mask-composite: exclude;
+      mix-blend-mode: plus-lighter;
       pointer-events: none;
     }
-    /* Subtle glint animation */
+    /* Subtle glint animation - slightly more visible */
     @keyframes character-glint {
       0% { left: -60%; opacity: 0; }
       5% { opacity: 1; }
@@ -750,7 +767,7 @@ function injectStyles() {
       left: -60%;
       width: 55%;
       height: 100%;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
       transform: skewX(-20deg);
       animation: character-glint 6s ease-in-out infinite;
       pointer-events: none;
@@ -763,26 +780,29 @@ function injectStyles() {
       animation-delay: 1.5s;
     }
     .liftoff-character-backdrop[data-char-index="2"]::after {
-      animation-delay: 2.5s;
+      animation-delay: 2s;
     }
-    .liftoff-character img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-    .liftoff-character:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6);
-    }
-    /* Hover glow */
+    /* Hover glow - intensified */
     .liftoff-character[data-char-index="0"]:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(0, 200, 200, 0.75);
+      border-color: rgba(0, 220, 240, 0.7);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5),
+                  0 0 35px rgba(0, 220, 240, 0.7),
+                  0 0 70px rgba(0, 220, 240, 0.4),
+                  inset 0 0 25px rgba(0, 220, 240, 0.25);
     }
     .liftoff-character[data-char-index="1"]:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(220, 60, 60, 0.75);
+      border-color: rgba(240, 90, 140, 0.7);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5),
+                  0 0 35px rgba(240, 90, 140, 0.7),
+                  0 0 70px rgba(240, 90, 140, 0.4),
+                  inset 0 0 25px rgba(240, 90, 140, 0.25);
     }
     .liftoff-character[data-char-index="2"]:hover {
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(160, 80, 200, 0.75);
+      border-color: rgba(180, 120, 240, 0.7);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5),
+                  0 0 35px rgba(180, 120, 240, 0.7),
+                  0 0 70px rgba(180, 120, 240, 0.4),
+                  inset 0 0 25px rgba(180, 120, 240, 0.25);
     }
     .liftoff-character-name {
       position: absolute;
@@ -817,7 +837,7 @@ function injectStyles() {
     .liftoff-bio p {
       font-family: 'montserrat', sans-serif;
       font-size: clamp(11px, 1.1vw, 14px);
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255,255,255,0.9);
       line-height: 1.7;
       text-align: left;
@@ -856,17 +876,39 @@ function injectStyles() {
       border-color: rgba(255,255,255,0.35);
     }
 
-    /* Character portrait flip animation */
-    .liftoff-character img {
+    /* Character portrait card flip */
+    .liftoff-character {
+      perspective: 600px;
+    }
+    .character-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s ease-out;
+      transform-style: preserve-3d;
+    }
+    .liftoff-character.flipped .character-card-inner {
+      transform: rotateY(180deg);
+    }
+    .character-card-front,
+    .character-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
       backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 50%;
+      overflow: hidden;
     }
-    .liftoff-character.flipping img {
-      animation: character-flip 0.5s ease-out forwards;
+    .character-card-back {
+      transform: rotateY(180deg);
     }
-    @keyframes character-flip {
-      0% { transform: rotateY(0deg); }
-      50% { transform: rotateY(90deg); }
-      100% { transform: rotateY(0deg); }
+    .character-card-front img,
+    .character-card-back img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
     }
 
     /* Title and subtitle transitions when showing character bio */
@@ -889,7 +931,7 @@ function injectStyles() {
       top: calc(36% - 70px);
     }
     .liftoff-text.characters h1 {
-      font-size: clamp(26px, 4.8vw, 51px);
+      font-size: clamp(24px, 4.2vw, 46px);
     }
     .liftoff-text.characters p {
       position: absolute;
@@ -905,7 +947,7 @@ function injectStyles() {
       top: 30%;
     }
     .liftoff-text.story h1 {
-      font-size: clamp(29px, 4.8vw, 48px);
+      font-size: clamp(26px, 4.2vw, 44px);
     }
     .liftoff-text.story p {
       font-size: clamp(10px, 1.2vw, 14px);
@@ -937,8 +979,11 @@ function injectStyles() {
       object-fit: cover;
       border-radius: 8px;
       image-rendering: high-quality;
-      mask-image: radial-gradient(ellipse 70% 70% at center, black 20%, transparent 65%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, black 20%, transparent 65%);
+    }
+    /* Autoplay video mask (logline) - feathered edges with top-right fade */
+    .liftoff-image.autoplay-video video {
+      mask-image: radial-gradient(circle at 40% 58%, black 20%, transparent 45%);
+      -webkit-mask-image: radial-gradient(circle at 40% 58%, black 20%, transparent 45%);
     }
     .liftoff-image.has-video {
       background: transparent;
@@ -1076,7 +1121,7 @@ function injectStyles() {
       z-index: 100;
       font-family: 'montserrat', sans-serif;
       font-size: 11px;
-      font-weight: 300;
+      font-weight: 500;
       letter-spacing: 0.05em;
       color: rgba(255,255,255,0.4);
     }
@@ -1134,10 +1179,17 @@ function init() {
         video.src = imgConfig.video;
         video.playsInline = true;
         video.preload = 'auto';
-        video.loop = false;
+        video.loop = imgConfig.autoplay || false;
 
+        // Check if this is an autoplay looping video (like logline)
+        if (imgConfig.autoplay) {
+          video.muted = true;
+          video.autoplay = true;
+          img.dataset.autoplayVideo = 'true';
+          img.classList.add('autoplay-video');
+        }
         // Check if this is a playable video (like trailer) vs scrub video
-        if (imgConfig.playable) {
+        else if (imgConfig.playable) {
           img.classList.add('playable-video');
           video.muted = false;
           video.controls = false;
@@ -1227,10 +1279,19 @@ function init() {
         imageWorld.appendChild(backdropEl);
         characterBackdrops.push(backdropEl);
 
-        // Character portrait container
+        // Character portrait container with flip card structure
         const charEl = document.createElement('div');
         charEl.className = 'liftoff-character';
-        charEl.innerHTML = `<img src="${charConfig.image}" alt="${charConfig.name}">`;
+        charEl.innerHTML = `
+          <div class="character-card-inner">
+            <div class="character-card-front">
+              <img src="${charConfig.image}" alt="${charConfig.name}">
+            </div>
+            <div class="character-card-back">
+              <img src="${charConfig.castImage}" alt="${charConfig.castName}">
+            </div>
+          </div>
+        `;
 
         // Store metadata
         charEl.dataset.section = sectionIndex;
@@ -1639,6 +1700,19 @@ function update() {
             video.pause();
             video.currentTime = 0;
             img.classList.remove('playing');
+          }
+        }
+      } else if (img.dataset.autoplayVideo === 'true') {
+        // Autoplay looping videos: play when in section or approaching during transition
+        const shouldPlay = (imgSection === currentSection && !isTransitioning) ||
+                          (isTransitioning && imgSection === targetSection);
+        if (shouldPlay) {
+          if (video.paused) {
+            video.play().catch(() => {}); // Ignore autoplay errors
+          }
+        } else {
+          if (!video.paused) {
+            video.pause();
           }
         }
       } else {

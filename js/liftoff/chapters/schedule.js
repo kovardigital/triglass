@@ -13,102 +13,109 @@ export const config = {
   images: []
 };
 
-// Timeline dimensions
-const TIMELINE_WIDTH = 700;
+// Timeline dimensions - spans 16 months (Jan 2026 - Apr 2027)
+const TIMELINE_WIDTH = 800;
 const BAR_HEIGHT = 36;
 const BAR_GAP = 12;
 
-// Production schedule phases - 2026
-const PRODUCTION_PHASES = [
+// Unified production schedule - all phases on one timeline
+// Month indices: 0 = Jan '26, 11 = Dec '26, 12 = Jan '27, 15 = Apr '27
+// labelPos: 'internal' (inside bar), 'below' (external below), 'above' (external above)
+const SCHEDULE_PHASES = [
   {
-    id: 'prep',
-    name: 'Pre-Production',
-    description: 'Script finalization, casting, location scouting, crew hiring, and production planning.',
-    color: 'rgba(60, 140, 200, 0.8)',
-    glowColor: 'rgba(60, 140, 200, 0.4)',
-    startMonth: 0,  // January
-    endMonth: 2.5   // Mid-March
+    id: 'post1',
+    name: 'Post-Production',
+    description: 'Editorial work on existing footage, assembly cuts, and early post work.',
+    color: 'rgba(60, 200, 200, 0.8)',
+    glowColor: 'rgba(60, 200, 200, 0.4)',
+    startMonth: 0,    // January 2026
+    endMonth: 4,      // April 2026
+    row: 0,
+    labelPos: 'internal'
   },
   {
-    id: 'setbuild',
-    name: 'Set Construction',
-    description: 'Building the magical attic set pieces, practical effects elements, and props.',
-    color: 'rgba(200, 140, 60, 0.8)',
-    glowColor: 'rgba(200, 140, 60, 0.4)',
-    startMonth: 2,    // March
-    endMonth: 4.5     // Mid-May
+    id: 'prep',
+    name: 'Prep / Construction',
+    description: 'Set construction, prop building, location prep, and production planning.',
+    color: 'rgba(155, 89, 182, 0.8)',
+    glowColor: 'rgba(155, 89, 182, 0.4)',
+    startMonth: 3,    // April 2026
+    endMonth: 6,      // June 2026
+    row: 1,
+    labelPos: 'internal'
   },
   {
     id: 'filming',
     name: 'Principal Photography',
     description: 'Main production filming with cast and crew on location and stage.',
-    color: 'rgba(60, 180, 100, 0.8)',
-    glowColor: 'rgba(60, 180, 100, 0.4)',
-    startMonth: 4,    // May
-    endMonth: 8       // August
+    color: 'rgba(255, 107, 107, 0.8)',
+    glowColor: 'rgba(255, 107, 107, 0.4)',
+    startMonth: 6.5,  // Mid-July 2026
+    endMonth: 7.5,    // Mid-August 2026
+    row: 2,
+    labelPos: 'above'
+  },
+  {
+    id: 'post2',
+    name: 'Post-Production',
+    description: 'Editorial resumes with new footage, rough cuts, and continued post work.',
+    color: 'rgba(60, 200, 200, 0.8)',
+    glowColor: 'rgba(60, 200, 200, 0.4)',
+    startMonth: 7,    // August 2026
+    endMonth: 16,     // April 2027
+    row: 0,
+    labelPos: 'internal'
+  },
+  {
+    id: 'filming2',
+    name: 'Additional Filming',
+    description: 'December filming session for additional scenes and coverage.',
+    color: 'rgba(244, 208, 63, 0.8)',
+    glowColor: 'rgba(244, 208, 63, 0.4)',
+    startMonth: 11,   // December 2026
+    endMonth: 12,     // December 2026
+    row: 2,
+    labelPos: 'above'
   },
   {
     id: 'pickups',
-    name: 'Wrap',
-    description: 'Additional shots, insert photography, and production wrap.',
-    color: 'rgba(160, 90, 200, 0.8)',
-    glowColor: 'rgba(160, 90, 200, 0.4)',
-    startMonth: 8,    // September
-    endMonth: 10      // October
+    name: 'Pick Up Shoots',
+    description: 'Additional shots and insert photography for remaining coverage.',
+    color: 'rgba(44, 62, 80, 0.8)',
+    glowColor: 'rgba(44, 62, 80, 0.4)',
+    startMonth: 12,   // January 2027
+    endMonth: 14,     // February 2027
+    row: 3,
+    labelPos: 'above'
   }
 ];
 
-// Post-production schedule phases - 2027
-const POST_PHASES = [
-  {
-    id: 'editing',
-    name: 'Editorial',
-    description: 'Assembly cut, rough cut, and fine cut editing with director.',
-    color: 'rgba(60, 200, 200, 0.8)',
-    glowColor: 'rgba(60, 200, 200, 0.4)',
-    startMonth: 0,    // January
-    endMonth: 4       // April
-  },
-  {
-    id: 'vfx',
-    name: 'VFX & Sound Design',
-    description: 'Visual effects, sound design, ADR, and Foley recording.',
-    color: 'rgba(200, 80, 160, 0.8)',
-    glowColor: 'rgba(200, 80, 160, 0.4)',
-    startMonth: 3,    // April (overlaps with editing)
-    endMonth: 8       // August
-  },
-  {
-    id: 'color',
-    name: 'Color & DI',
-    description: 'Digital intermediate, color correction, and establishing final look.',
-    color: 'rgba(220, 180, 60, 0.8)',
-    glowColor: 'rgba(220, 180, 60, 0.4)',
-    startMonth: 8,    // September
-    endMonth: 10      // October
-  },
-  {
-    id: 'delivery',
-    name: 'Final Mix',
-    description: 'Final sound mix, mastering, and deliverables for distribution.',
-    color: 'rgba(60, 160, 160, 0.8)',
-    glowColor: 'rgba(60, 160, 160, 0.4)',
-    startMonth: 10,   // November
-    endMonth: 12      // December
-  }
+// Month labels for the 16-month timeline
+const MONTH_LABELS = [
+  { abbrev: 'J', month: 'Jan', year: "'26" },
+  { abbrev: 'F', month: 'Feb', year: "'26" },
+  { abbrev: 'M', month: 'Mar', year: "'26" },
+  { abbrev: 'A', month: 'Apr', year: "'26" },
+  { abbrev: 'M', month: 'May', year: "'26" },
+  { abbrev: 'J', month: 'Jun', year: "'26" },
+  { abbrev: 'J', month: 'Jul', year: "'26" },
+  { abbrev: 'A', month: 'Aug', year: "'26" },
+  { abbrev: 'S', month: 'Sep', year: "'26" },
+  { abbrev: 'O', month: 'Oct', year: "'26" },
+  { abbrev: 'N', month: 'Nov', year: "'26" },
+  { abbrev: 'D', month: 'Dec', year: "'26" },
+  { abbrev: 'J', month: 'Jan', year: "'27" },
+  { abbrev: 'F', month: 'Feb', year: "'27" },
+  { abbrev: 'M', month: 'Mar', year: "'27" },
+  { abbrev: 'A', month: 'Apr', year: "'27" }
 ];
-
-const MONTH_ABBREV = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // DOM elements
 let scheduleContainer = null;
 let timelineContainer = null;
-let yearLabel = null;
-let yearToggle = null;
-let yearRow = null;
+let titleRow = null;
 let tooltipEl = null;
 let sectionIndex = -1;
-let currentYear = 2026;
 let hasAnimated = false;
 
 // Z positions matching content.js fly-through system
@@ -130,7 +137,7 @@ function injectStyles() {
       width: 100vw;
     }
     .liftoff-text.schedule-layout h1 {
-      font-size: clamp(26px, 4vw, 45px);
+      font-size: clamp(24px, 3.6vw, 42px);
     }
     .liftoff-text.schedule-layout p {
       display: none;
@@ -143,7 +150,7 @@ function injectStyles() {
       width: 100vw;
     }
     .liftoff-preview.preview-schedule h1 {
-      font-size: clamp(26px, 4vw, 45px);
+      font-size: clamp(24px, 3.6vw, 42px);
     }
     .liftoff-preview.preview-schedule p {
       display: none;
@@ -160,52 +167,35 @@ function injectStyles() {
       gap: 24px;
     }
 
-    /* Year row with label and toggle */
-    .schedule-year-row {
+    /* Title row */
+    .schedule-title-row {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 24px;
+      margin-bottom: 8px;
       opacity: 0;
       transform: translateY(-20px);
       transition: opacity 0.5s ease, transform 0.5s ease;
     }
-    .schedule-year-row.animate-in {
+    .schedule-title-row.animate-in {
       opacity: 1;
       transform: translateY(0);
     }
-    .schedule-year {
+    .schedule-title {
       font-family: 'montserrat', sans-serif;
-      font-size: clamp(32px, 5vw, 48px);
+      font-size: clamp(14px, 2vw, 18px);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .schedule-years {
+      font-family: 'montserrat', sans-serif;
+      font-size: clamp(28px, 4vw, 40px);
       font-weight: 700;
       color: rgba(255, 255, 255, 0.95);
       letter-spacing: 0.05em;
-    }
-    .schedule-toggle {
-      display: flex;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 20px;
-      overflow: hidden;
-    }
-    .schedule-toggle button {
-      font-family: 'montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(255, 255, 255, 0.4);
-      background: transparent;
-      border: none;
-      padding: 10px 18px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .schedule-toggle button:hover {
-      color: rgba(255, 255, 255, 0.7);
-    }
-    .schedule-toggle button.active {
-      background: rgba(255, 255, 255, 0.12);
-      color: rgba(255, 255, 255, 0.95);
     }
 
     /* Timeline container */
@@ -223,12 +213,12 @@ function injectStyles() {
     }
     .schedule-month-marker {
       font-family: 'montserrat', sans-serif;
-      font-size: 10px;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.7);
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      width: ${TIMELINE_WIDTH / 12}px;
+      letter-spacing: 0.02em;
+      width: ${TIMELINE_WIDTH / 16}px;
       text-align: center;
       opacity: 0;
       transform: translateY(-10px);
@@ -237,6 +227,33 @@ function injectStyles() {
     .schedule-month-marker.animate-in {
       opacity: 1;
       transform: translateY(0);
+    }
+    .schedule-month-marker .year-label {
+      display: block;
+      font-size: 8px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 2px;
+    }
+
+    /* Year divider line */
+    .schedule-year-divider {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0) 100%);
+      opacity: 0;
+      transform: scaleY(0);
+      transform-origin: top center;
+      transition: opacity 0.4s ease, transform 0.5s ease;
+    }
+    .schedule-year-divider.animate-in {
+      opacity: 1;
+      transform: scaleY(1);
     }
 
     /* Vertical month guide lines */
@@ -278,33 +295,31 @@ function injectStyles() {
       border-radius: 4px;
     }
 
-    /* Phase bars container */
+    /* Phase bars container - uses rows for overlapping phases */
     .schedule-bars {
       position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: ${BAR_GAP}px;
+      height: ${(BAR_HEIGHT + BAR_GAP) * 4 + 80}px;
     }
 
-    /* Individual phase bar */
+    /* Individual phase bar wrapper - contains bar + external label */
+    .schedule-bar-wrapper {
+      position: absolute;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .schedule-bar-wrapper.animate-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* The actual bar */
     .schedule-bar {
       position: relative;
       height: ${BAR_HEIGHT}px;
       border-radius: ${BAR_HEIGHT / 2}px;
       cursor: pointer;
-      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-                  opacity 0.4s ease;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      overflow: hidden;
-      opacity: 0;
-      transform: scaleX(0);
-      transform-origin: left center;
-    }
-    .schedule-bar.animate-in {
-      opacity: 1;
-      transform: scaleX(1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     .schedule-bar::before {
       content: '';
@@ -319,21 +334,40 @@ function injectStyles() {
       mask-composite: exclude;
       pointer-events: none;
     }
-    .schedule-bar:hover {
-      transform: scale(1.02) translateY(-2px);
+    .schedule-bar-wrapper:hover .schedule-bar {
+      transform: scale(1.03) translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       z-index: 10;
     }
-    .schedule-bar-label {
+
+    /* External label */
+    .schedule-bar-label-external {
+      position: absolute;
       font-family: 'montserrat', sans-serif;
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Internal label for wide bars */
+    .schedule-bar-label-internal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'montserrat', sans-serif;
+      font-size: 10px;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.95);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       white-space: nowrap;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-      position: relative;
-      z-index: 1;
+      pointer-events: none;
     }
 
     /* Tooltip */
@@ -376,7 +410,7 @@ function injectStyles() {
     .schedule-tooltip-desc {
       font-family: 'montserrat', sans-serif;
       font-size: 12px;
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255, 255, 255, 0.75);
       line-height: 1.6;
     }
@@ -384,37 +418,40 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-// Calculate bar position and width from month values
+// Calculate bar position and width from month values (16-month timeline)
 function getBarStyle(phase) {
-  const startPercent = (phase.startMonth / 12) * 100;
-  const widthPercent = ((phase.endMonth - phase.startMonth) / 12) * 100;
+  const startPercent = (phase.startMonth / 16) * 100;
+  const widthPercent = ((phase.endMonth - phase.startMonth) / 16) * 100;
+  const topPosition = phase.row * (BAR_HEIGHT + BAR_GAP);
   return {
     left: `${startPercent}%`,
-    width: `${widthPercent}%`
+    width: `${widthPercent}%`,
+    top: `${topPosition}px`
   };
 }
 
 // Get date range string
 function getDateRange(phase) {
-  const startMonth = MONTH_ABBREV[Math.floor(phase.startMonth)];
-  const endMonth = MONTH_ABBREV[Math.min(11, Math.floor(phase.endMonth))];
-  return `${startMonth} – ${endMonth} ${currentYear}`;
+  const startIdx = Math.floor(phase.startMonth);
+  const endIdx = Math.min(15, Math.floor(phase.endMonth) - 1);
+  const startLabel = MONTH_LABELS[startIdx];
+  const endLabel = MONTH_LABELS[endIdx];
+  return `${startLabel.month} ${startLabel.year} – ${endLabel.month} ${endLabel.year}`;
 }
 
-// Build timeline for current year
+// Build unified timeline
 function buildTimeline() {
   if (!timelineContainer) return;
 
   timelineContainer.innerHTML = '';
-  const phases = currentYear === 2026 ? PRODUCTION_PHASES : POST_PHASES;
 
   // Month markers
   const monthsRow = document.createElement('div');
   monthsRow.className = 'schedule-months';
-  MONTH_ABBREV.forEach(month => {
+  MONTH_LABELS.forEach((monthData, i) => {
     const marker = document.createElement('div');
     marker.className = 'schedule-month-marker';
-    marker.textContent = month;
+    marker.innerHTML = `${monthData.abbrev}<span class="year-label">${i === 0 || i === 12 ? monthData.year : ''}</span>`;
     monthsRow.appendChild(marker);
   });
   timelineContainer.appendChild(monthsRow);
@@ -431,36 +468,70 @@ function buildTimeline() {
   // Month guide lines (separators between months)
   const guidesContainer = document.createElement('div');
   guidesContainer.className = 'schedule-month-guides';
-  for (let i = 1; i < 12; i++) {
+  for (let i = 1; i < 16; i++) {
     const guide = document.createElement('div');
     guide.className = 'schedule-month-guide';
-    guide.style.left = `${(i / 12) * 100}%`;
+    guide.style.left = `${(i / 16) * 100}%`;
     guidesContainer.appendChild(guide);
   }
   barsContainer.appendChild(guidesContainer);
 
-  // Phase bars
-  phases.forEach(phase => {
-    const bar = document.createElement('div');
-    bar.className = 'schedule-bar';
+  // Year divider between Dec '26 and Jan '27
+  const yearDivider = document.createElement('div');
+  yearDivider.className = 'schedule-year-divider';
+  yearDivider.style.left = `${(12 / 16) * 100}%`;
+  barsContainer.appendChild(yearDivider);
+
+  // Phase bars with wrappers for labels
+  SCHEDULE_PHASES.forEach(phase => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'schedule-bar-wrapper';
 
     const style = getBarStyle(phase);
-    bar.style.marginLeft = style.left;
-    bar.style.width = style.width;
-    bar.style.background = phase.color;
+    wrapper.style.left = style.left;
+    wrapper.style.width = style.width;
+    wrapper.style.top = style.top;
+    wrapper.style.height = `${BAR_HEIGHT}px`;
 
-    // Label inside bar
-    const label = document.createElement('span');
-    label.className = 'schedule-bar-label';
-    label.textContent = phase.name;
-    bar.appendChild(label);
+    // The bar itself
+    const bar = document.createElement('div');
+    bar.className = 'schedule-bar';
+    bar.style.width = '100%';
+    bar.style.background = phase.color;
+    wrapper.appendChild(bar);
+
+    // Add label based on position type
+    if (phase.labelPos === 'internal') {
+      // Label inside the bar
+      const label = document.createElement('span');
+      label.className = 'schedule-bar-label-internal';
+      label.textContent = phase.name;
+      bar.appendChild(label);
+    } else if (phase.labelPos === 'above') {
+      // External label above - left aligned with pill
+      const label = document.createElement('span');
+      label.className = 'schedule-bar-label-external';
+      label.textContent = phase.name;
+      label.style.bottom = '32px';
+      label.style.left = '0';
+      wrapper.appendChild(label);
+    } else {
+      // External label below (5px below bottom of pill)
+      const label = document.createElement('span');
+      label.className = 'schedule-bar-label-external';
+      label.textContent = phase.name;
+      label.style.top = `${BAR_HEIGHT + 5}px`;
+      label.style.left = '50%';
+      label.style.transform = 'translateX(-50%)';
+      wrapper.appendChild(label);
+    }
 
     // Hover events
-    bar.addEventListener('mouseenter', (e) => showTooltip(e, phase));
-    bar.addEventListener('mouseleave', hideTooltip);
-    bar.addEventListener('mousemove', moveTooltip);
+    wrapper.addEventListener('mouseenter', (e) => showTooltip(e, phase));
+    wrapper.addEventListener('mouseleave', hideTooltip);
+    wrapper.addEventListener('mousemove', moveTooltip);
 
-    barsContainer.appendChild(bar);
+    barsContainer.appendChild(wrapper);
   });
 
   timelineContainer.appendChild(barsContainer);
@@ -512,16 +583,16 @@ function triggerAnimations() {
   if (hasAnimated) return;
   hasAnimated = true;
 
-  // Animate year row first
-  if (yearRow) {
-    setTimeout(() => yearRow.classList.add('animate-in'), 100);
+  // Animate title row first
+  if (titleRow) {
+    setTimeout(() => titleRow.classList.add('animate-in'), 100);
   }
 
   // Animate month markers with stagger
   const monthMarkers = timelineContainer?.querySelectorAll('.schedule-month-marker');
   if (monthMarkers) {
     monthMarkers.forEach((marker, i) => {
-      setTimeout(() => marker.classList.add('animate-in'), 200 + i * 40);
+      setTimeout(() => marker.classList.add('animate-in'), 200 + i * 30);
     });
   }
 
@@ -529,24 +600,30 @@ function triggerAnimations() {
   const monthGuides = timelineContainer?.querySelectorAll('.schedule-month-guide');
   if (monthGuides) {
     monthGuides.forEach((guide, i) => {
-      setTimeout(() => guide.classList.add('animate-in'), 300 + i * 40);
+      setTimeout(() => guide.classList.add('animate-in'), 250 + i * 25);
     });
   }
 
-  // Animate bars with stagger (left-to-right grow effect)
-  const bars = timelineContainer?.querySelectorAll('.schedule-bar');
-  if (bars) {
-    bars.forEach((bar, i) => {
-      setTimeout(() => bar.classList.add('animate-in'), 500 + i * 150);
+  // Animate year divider
+  const yearDivider = timelineContainer?.querySelector('.schedule-year-divider');
+  if (yearDivider) {
+    setTimeout(() => yearDivider.classList.add('animate-in'), 400);
+  }
+
+  // Animate bar wrappers with stagger
+  const wrappers = timelineContainer?.querySelectorAll('.schedule-bar-wrapper');
+  if (wrappers) {
+    wrappers.forEach((wrapper, i) => {
+      setTimeout(() => wrapper.classList.add('animate-in'), 500 + i * 120);
     });
   }
 }
 
-// Reset animations (for when switching years or re-entering section)
+// Reset animations (for when re-entering section)
 function resetAnimations() {
   hasAnimated = false;
 
-  if (yearRow) yearRow.classList.remove('animate-in');
+  if (titleRow) titleRow.classList.remove('animate-in');
 
   const monthMarkers = timelineContainer?.querySelectorAll('.schedule-month-marker');
   if (monthMarkers) {
@@ -558,34 +635,15 @@ function resetAnimations() {
     monthGuides.forEach(guide => guide.classList.remove('animate-in'));
   }
 
-  const bars = timelineContainer?.querySelectorAll('.schedule-bar');
-  if (bars) {
-    bars.forEach(bar => bar.classList.remove('animate-in'));
-  }
-}
-
-// Switch year
-function switchYear(year) {
-  if (year === currentYear) return;
-  currentYear = year;
-
-  if (yearLabel) {
-    yearLabel.textContent = year;
+  const yearDivider = timelineContainer?.querySelector('.schedule-year-divider');
+  if (yearDivider) {
+    yearDivider.classList.remove('animate-in');
   }
 
-  if (yearToggle) {
-    yearToggle.querySelectorAll('button').forEach(btn => {
-      btn.classList.toggle('active', parseInt(btn.dataset.year) === year);
-    });
+  const wrappers = timelineContainer?.querySelectorAll('.schedule-bar-wrapper');
+  if (wrappers) {
+    wrappers.forEach(wrapper => wrapper.classList.remove('animate-in'));
   }
-
-  buildTimeline();
-
-  // Re-trigger bar animations for new timeline
-  hasAnimated = false;
-  // Keep year row animated, just animate new content
-  if (yearRow) yearRow.classList.add('animate-in');
-  triggerAnimations();
 }
 
 // Initialize chapter DOM elements
@@ -602,27 +660,13 @@ export function init(imgWorld, sections) {
   scheduleContainer = document.createElement('div');
   scheduleContainer.className = 'schedule-container';
 
-  // Year row
-  yearRow = document.createElement('div');
-  yearRow.className = 'schedule-year-row';
-
-  yearLabel = document.createElement('div');
-  yearLabel.className = 'schedule-year';
-  yearLabel.textContent = currentYear;
-  yearRow.appendChild(yearLabel);
-
-  yearToggle = document.createElement('div');
-  yearToggle.className = 'schedule-toggle';
-  yearToggle.innerHTML = `
-    <button data-year="2026" class="active">Production</button>
-    <button data-year="2027">Post</button>
+  // Title row with year span
+  titleRow = document.createElement('div');
+  titleRow.className = 'schedule-title-row';
+  titleRow.innerHTML = `
+    <span class="schedule-years">2026 – 2027</span>
   `;
-  yearToggle.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => switchYear(parseInt(btn.dataset.year)));
-  });
-  yearRow.appendChild(yearToggle);
-
-  scheduleContainer.appendChild(yearRow);
+  scheduleContainer.appendChild(titleRow);
 
   // Timeline container
   timelineContainer = document.createElement('div');
@@ -634,7 +678,7 @@ export function init(imgWorld, sections) {
   tooltipEl.className = 'schedule-tooltip';
   document.body.appendChild(tooltipEl);
 
-  // Build initial timeline
+  // Build timeline
   buildTimeline();
 
   scheduleContainer.style.opacity = 0;
@@ -727,11 +771,8 @@ export function destroy() {
     tooltipEl = null;
   }
   timelineContainer = null;
-  yearLabel = null;
-  yearToggle = null;
-  yearRow = null;
+  titleRow = null;
   sectionIndex = -1;
-  currentYear = 2026;
   hasAnimated = false;
 
   const styles = document.getElementById('schedule-chapter-styles');

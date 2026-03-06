@@ -178,23 +178,10 @@ function init(cam) {
   elasticOffset = 0;
   elasticVelocity = 0;
 
-  // Create debug indicator
-  debugIndicator = document.createElement('div');
-  debugIndicator.style.cssText = `
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    background: rgba(0,0,0,0.7);
-    color: #0f0;
-    font-family: monospace;
-    font-size: 12px;
-    padding: 8px 12px;
-    border-radius: 4px;
-    z-index: 9999;
-    pointer-events: none;
-    line-height: 1.6;
-  `;
-  document.body.appendChild(debugIndicator);
+  // Debug indicator disabled for production
+  // debugIndicator = document.createElement('div');
+  // debugIndicator.style.cssText = `...`;
+  // document.body.appendChild(debugIndicator);
 
   window.addEventListener('wheel', onWheel, { passive: true });
 

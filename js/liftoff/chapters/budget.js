@@ -19,60 +19,81 @@ const PIE_INNER_RADIUS = 130; // Inner radius for donut hole
 const PIE_CENTER_RADIUS = 100; // Center circle for total/back button
 const BACKDROP_PADDING = 24; // Extra padding around pie for blur backdrop
 const SEGMENT_GAP = 2; // Gap in degrees between segments
+const LEADER_LINE_LENGTH = 30; // Length of leader line for small segments
+const LABEL_OFFSET = 8; // Distance from leader line end to label
 
-// Main budget categories (percentages should sum to 100)
-// Vibrant colors inspired by modern donut chart aesthetic
+// Main budget categories based on Liftoff Budget Draft V1 (03-03-26)
+// Grand Total: $2,195,214
 const BUDGET_DATA = {
-  total: 2500000, // $2.5M total budget
+  total: 2195214,
   categories: [
     {
       id: 'production',
       label: 'Production',
-      percent: 45,
+      percent: 44,
       color: '#4ECDC4', // Teal
-      description: 'Principal photography, locations, equipment, and production staff',
+      description: 'Below-the-line production: crew, equipment, locations, and operations',
       subcategories: [
-        { label: 'Cast', percent: 25, color: '#5ED4CB' },
-        { label: 'Crew', percent: 30, color: '#4ECDC4' },
-        { label: 'Equipment', percent: 20, color: '#3DBDB5' },
-        { label: 'Locations', percent: 15, color: '#2CADA5' },
-        { label: 'Production Office', percent: 10, color: '#1C9D95' }
+        { label: 'Locations', percent: 14, color: '#5ED4CB' },
+        { label: 'Camera', percent: 14, color: '#4ECDC4' },
+        { label: 'Crew', percent: 13, color: '#3DBDB5' },
+        { label: 'Travel & Living', percent: 11, color: '#2CADA5' },
+        { label: 'Electrical', percent: 9, color: '#1C9D95' },
+        { label: 'Set Operations', percent: 8, color: '#0C8D85' },
+        { label: 'Other', percent: 31, color: '#3DBDB5' }
+      ]
+    },
+    {
+      id: 'atl',
+      label: 'Above-The-Line',
+      percent: 29,
+      color: '#FF6B6B', // Coral/Red
+      description: 'Story rights, cast, direction, producers, and ATL travel',
+      subcategories: [
+        { label: 'Story & Rights', percent: 42, color: '#FF7B7B' },
+        { label: 'Cast', percent: 35, color: '#FF6B6B' },
+        { label: 'ATL Travel', percent: 16, color: '#FF5B5B' },
+        { label: 'Direction', percent: 4, color: '#FF4B4B' },
+        { label: 'Producers', percent: 3, color: '#FF3B3B' }
       ]
     },
     {
       id: 'post',
       label: 'Post Production',
-      percent: 30,
-      color: '#FF6B6B', // Coral/Red
-      description: 'Editing, VFX, sound design, color grading, and music',
+      percent: 11,
+      color: '#9B59B6', // Purple
+      description: 'Editing, VFX, sound, color, music, and deliverables',
       subcategories: [
-        { label: 'VFX', percent: 40, color: '#FF7B7B' },
-        { label: 'Editing', percent: 20, color: '#FF6B6B' },
-        { label: 'Sound Design', percent: 20, color: '#FF5B5B' },
-        { label: 'Music', percent: 15, color: '#FF4B4B' },
-        { label: 'Color', percent: 5, color: '#FF3B3B' }
-      ]
-    },
-    {
-      id: 'preproduction',
-      label: 'Pre-Production',
-      percent: 15,
-      color: '#2C3E50', // Dark navy/slate
-      description: 'Script development, casting, location scouting, and planning',
-      subcategories: [
-        { label: 'Development', percent: 35, color: '#3C4E60' },
-        { label: 'Casting', percent: 25, color: '#2C3E50' },
-        { label: 'Location Scout', percent: 20, color: '#1C2E40' },
-        { label: 'Storyboards', percent: 20, color: '#0C1E30' }
+        { label: 'Visual Effects', percent: 42, color: '#A569C6' },
+        { label: 'Editing', percent: 19, color: '#9B59B6' },
+        { label: 'DI & Color', percent: 12, color: '#8B49A6' },
+        { label: 'Deliverables', percent: 11, color: '#7B3996' },
+        { label: 'Sound', percent: 8, color: '#6B2986' },
+        { label: 'Music', percent: 6, color: '#5B1976' },
+        { label: 'Titles', percent: 2, color: '#4B0966' }
       ]
     },
     {
       id: 'contingency',
       label: 'Contingency',
-      percent: 10,
+      percent: 9,
       color: '#F4D03F', // Golden yellow
-      description: 'Reserve fund for unexpected costs and overages',
+      description: '10% reserve for unexpected costs and production overages',
       subcategories: []
+    },
+    {
+      id: 'general',
+      label: 'General & Fees',
+      percent: 7,
+      color: '#2C3E50', // Dark navy/slate
+      description: 'Insurance, legal, finance fees, and residual reserves',
+      subcategories: [
+        { label: 'General Expense', percent: 32, color: '#3C4E60' },
+        { label: 'Insurance', percent: 25, color: '#2C3E50' },
+        { label: 'Residuals', percent: 20, color: '#1C2E40' },
+        { label: 'Finance Fees', percent: 14, color: '#1C2E40' },
+        { label: 'Legal', percent: 9, color: '#0C1E30' }
+      ]
     }
   ]
 };
@@ -127,13 +148,13 @@ function injectStyles() {
 
     /* Budget title */
     .budget-title {
-      font-family: 'montserrat', sans-serif;
-      font-size: clamp(26px, 4vw, 45px);
-      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(24px, 3.6vw, 42px);
+      font-weight: 400;
       color: #d4d4d4;
       text-transform: uppercase;
       margin-bottom: 16px;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.14em;
     }
 
     /* Info panel - fixed position below title */
@@ -158,7 +179,7 @@ function injectStyles() {
     .budget-info-desc {
       font-family: 'montserrat', sans-serif;
       font-size: 12px;
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255,255,255,0.7);
       line-height: 1.5;
     }
@@ -172,7 +193,7 @@ function injectStyles() {
     .budget-info-default {
       font-family: 'montserrat', sans-serif;
       font-size: 12px;
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255,255,255,0.5);
       font-style: italic;
     }
@@ -239,11 +260,11 @@ function injectStyles() {
       z-index: 1;
     }
 
-    /* Pie segments - full opacity, glow only on hover */
+    /* Pie segments - slight transparency to match schedule pills */
     .pie-segment {
       cursor: pointer;
       pointer-events: auto;
-      opacity: 1;
+      fill-opacity: 0.8;
       transition: filter 0.3s ease,
                   transform 0.2s ease;
       transform-origin: center;
@@ -255,7 +276,7 @@ function injectStyles() {
       transform: scale(1.02);
     }
 
-    /* Segment labels */
+    /* Segment labels - inside donut */
     .pie-label {
       font-family: 'montserrat', sans-serif;
       font-size: 13px;
@@ -273,6 +294,34 @@ function injectStyles() {
       text-anchor: middle;
       pointer-events: none;
       text-shadow: 0 1px 1px rgba(0,0,0,0.5), 0 2px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Leader lines for small segments */
+    .pie-leader-line {
+      stroke: rgba(255,255,255,0.4);
+      stroke-width: 1;
+      fill: none;
+      pointer-events: none;
+    }
+    .pie-leader-dot {
+      fill: rgba(255,255,255,0.6);
+      pointer-events: none;
+    }
+
+    /* External labels for small segments */
+    .pie-label-external {
+      font-family: 'montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      fill: rgba(255,255,255,0.85);
+      pointer-events: none;
+    }
+    .pie-label-external-percent {
+      font-family: 'montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      fill: rgba(255,255,255,0.7);
+      pointer-events: none;
     }
 
     /* Center circle - dark hole with subtle border */
@@ -368,7 +417,8 @@ function getLabelPosition(cx, cy, outerRadius, innerRadius, startAngle, endAngle
 
 // Build pie chart SVG
 function buildPieChart() {
-  const size = PIE_OUTER_RADIUS * 2 + 40;
+  // Larger SVG to accommodate external labels with leader lines
+  const size = PIE_OUTER_RADIUS * 2 + 160;
   const cx = size / 2;
   const cy = size / 2;
 
@@ -394,8 +444,9 @@ function buildPieChart() {
     totalForView = BUDGET_DATA.total * (category.percent / 100);
   }
 
-  // Create segments
+  // Create segments first (so leader lines draw on top)
   let currentAngle = 0;
+  const segmentData = []; // Store segment info for labels
 
   data.forEach((segment, index) => {
     const segmentAngle = (segment.percent / 100) * 360;
@@ -425,11 +476,25 @@ function buildPieChart() {
 
     svgElement.appendChild(path);
 
-    // Add label if segment is large enough (in the middle of the donut ring)
-    if (segmentAngle > 25) {
-      const labelPos = getLabelPosition(cx, cy, PIE_OUTER_RADIUS, PIE_INNER_RADIUS, currentAngle, endAngle);
+    // Store segment data for label rendering
+    segmentData.push({
+      segment,
+      segmentAngle,
+      startAngle: currentAngle,
+      endAngle
+    });
 
-      // Label text (category name)
+    currentAngle = endAngle;
+  });
+
+  // Now add labels (internal or external with leader lines)
+  segmentData.forEach(({ segment, segmentAngle, startAngle, endAngle }) => {
+    const midAngle = (startAngle + endAngle) / 2;
+
+    if (segmentAngle > 25) {
+      // Large segment: label inside the donut ring
+      const labelPos = getLabelPosition(cx, cy, PIE_OUTER_RADIUS, PIE_INNER_RADIUS, startAngle, endAngle);
+
       const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       labelText.setAttribute('x', labelPos.x);
       labelText.setAttribute('y', labelPos.y - 4);
@@ -437,16 +502,53 @@ function buildPieChart() {
       labelText.textContent = segment.label;
       svgElement.appendChild(labelText);
 
-      // Percent text below
       const percentText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       percentText.setAttribute('x', labelPos.x);
       percentText.setAttribute('y', labelPos.y + 10);
       percentText.setAttribute('class', 'pie-label-percent');
       percentText.textContent = segment.percent + '%';
       svgElement.appendChild(percentText);
-    }
+    } else {
+      // Small segment: leader line with external label
+      const edgePos = polarToCartesian(cx, cy, PIE_OUTER_RADIUS, midAngle);
+      const outerPos = polarToCartesian(cx, cy, PIE_OUTER_RADIUS + LEADER_LINE_LENGTH, midAngle);
 
-    currentAngle = endAngle;
+      // Determine if label should be on left or right
+      const isRightSide = midAngle < 180;
+      const labelEndX = outerPos.x + (isRightSide ? LABEL_OFFSET + 5 : -LABEL_OFFSET - 5);
+
+      // Draw leader line (two segments: radial + horizontal)
+      const leaderLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      leaderLine.setAttribute('d', `M ${edgePos.x} ${edgePos.y} L ${outerPos.x} ${outerPos.y} L ${labelEndX} ${outerPos.y}`);
+      leaderLine.setAttribute('class', 'pie-leader-line');
+      svgElement.appendChild(leaderLine);
+
+      // Small dot at the segment edge
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', edgePos.x);
+      dot.setAttribute('cy', edgePos.y);
+      dot.setAttribute('r', 2);
+      dot.setAttribute('class', 'pie-leader-dot');
+      svgElement.appendChild(dot);
+
+      // External label
+      const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      labelText.setAttribute('x', labelEndX + (isRightSide ? 4 : -4));
+      labelText.setAttribute('y', outerPos.y - 2);
+      labelText.setAttribute('class', 'pie-label-external');
+      labelText.setAttribute('text-anchor', isRightSide ? 'start' : 'end');
+      labelText.textContent = segment.label;
+      svgElement.appendChild(labelText);
+
+      // External percent
+      const percentText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      percentText.setAttribute('x', labelEndX + (isRightSide ? 4 : -4));
+      percentText.setAttribute('y', outerPos.y + 10);
+      percentText.setAttribute('class', 'pie-label-external-percent');
+      percentText.setAttribute('text-anchor', isRightSide ? 'start' : 'end');
+      percentText.textContent = segment.percent + '%';
+      svgElement.appendChild(percentText);
+    }
   });
 
   // Center circle

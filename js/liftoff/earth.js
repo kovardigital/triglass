@@ -106,7 +106,7 @@ function createLabels() {
       position: absolute;
       font-family: 'montserrat', sans-serif;
       font-size: clamp(10px, 1.2vw, 13px);
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255,255,255,0.7);
       text-align: center;
       letter-spacing: 0.02em;

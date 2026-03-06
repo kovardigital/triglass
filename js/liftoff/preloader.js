@@ -20,11 +20,23 @@ const ASSETS = {
     'https://triglass-assets.s3.amazonaws.com/image0.png', // Title image
     'https://triglass-assets.s3.amazonaws.com/selena-2.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/leo-2.jpg', // Character
+    'https://triglass-assets.s3.amazonaws.com/grandpa-2.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/dad-2.jpg', // Character
+    // Cast headshots
+    'https://triglass-assets.s3.amazonaws.com/genevieve.jpg',
+    'https://triglass-assets.s3.amazonaws.com/seamus.jpg',
+    'https://triglass-assets.s3.amazonaws.com/erik.jpg',
     'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg', // Earth texture
+    // Comp movie posters (featured)
+    'https://triglass-assets.s3.amazonaws.com/movie-1.jpg',
+    'https://triglass-assets.s3.amazonaws.com/movie-2.jpg',
+    'https://triglass-assets.s3.amazonaws.com/movie-3.jpg',
+    'https://triglass-assets.s3.amazonaws.com/movie-4.jpg',
+    // Comp movie posters (background)
+    ...Array.from({ length: 14 }, (_, i) => `https://triglass-assets.s3.amazonaws.com/movie-${i + 5}.jpg`),
   ],
   videos: [
-    'https://triglass-assets.s3.us-east-1.amazonaws.com/LadderShot_scrub.mp4', // Logline scrub
+    'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', // Logline autoplay loop
     'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', // Trailer
   ],
 };

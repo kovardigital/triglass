@@ -26,12 +26,12 @@
   preconnect2.crossOrigin = 'anonymous';
   document.head.appendChild(preconnect2);
 
-  // Load Montserrat font (300, 500, 600, 700 weights)
+  // Load Montserrat + Space Grotesk fonts
   const fontLink = document.createElement('link');
   fontLink.rel = 'stylesheet';
-  fontLink.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;700&display=swap';
+  fontLink.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;700&family=Space+Grotesk:wght@300;400;500&display=swap';
   document.head.appendChild(fontLink);
-  console.log('%c[LIFTOFF-3D] Google Fonts (Montserrat) injected', 'color: #10b981');
+  console.log('%c[LIFTOFF-3D] Google Fonts (Montserrat + Space Grotesk) injected', 'color: #10b981');
 
   // Inject importmap for ES modules
   const importmap = document.createElement('script');

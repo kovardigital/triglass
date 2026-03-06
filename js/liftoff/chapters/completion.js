@@ -16,12 +16,12 @@ export const config = {
 // Progress bar configuration
 const COMPLETION_PERCENT = 23; // Current completion percentage
 const BUDGET_RAISED = 250000; // Amount raised
-const BUDGET_NEEDED = 1500000; // Total budget needed
+const BUDGET_NEEDED = 1750000; // Total budget needed
 const BUDGET_PERCENT = (BUDGET_RAISED / BUDGET_NEEDED) * 100;
-const BAR_WIDTH = 560;
-const BAR_HEIGHT = 44;
-const BAR_OFFSET_Y = -32; // Offset from center (shared by bar track and blur backdrop)
-const BUDGET_OFFSET_Y = BAR_OFFSET_Y + BAR_HEIGHT + 60; // Budget bar below completion bar
+const BAR_WIDTH = 660;
+const BAR_HEIGHT = 52;
+const BAR_OFFSET_Y = -45; // Offset from center (shared by bar track and blur backdrop)
+const BUDGET_OFFSET_Y = BAR_OFFSET_Y + BAR_HEIGHT + 90; // Budget bar below completion bar
 
 // DOM elements
 let progressContainer = null;
@@ -60,12 +60,12 @@ function injectStyles() {
   style.textContent = `
     /* Completion layout - title above progress bar */
     .liftoff-text.completion-layout {
-      top: calc(50% - 100px);
+      top: calc(50% - 140px);
       max-width: none;
       width: 100vw;
     }
     .liftoff-text.completion-layout h1 {
-      font-size: clamp(29px, 4.8vw, 58px);
+      font-size: clamp(26px, 4.2vw, 52px);
     }
     .liftoff-text.completion-layout p {
       display: none;
@@ -73,12 +73,12 @@ function injectStyles() {
 
     /* Preview styling for completion */
     .liftoff-preview.preview-completion {
-      top: calc(50% - 100px);
+      top: calc(50% - 140px);
       max-width: none;
       width: 100vw;
     }
     .liftoff-preview.preview-completion h1 {
-      font-size: clamp(29px, 4.8vw, 58px);
+      font-size: clamp(26px, 4.2vw, 52px);
     }
     .liftoff-preview.preview-completion p {
       display: none;
@@ -145,17 +145,14 @@ function injectStyles() {
       pointer-events: none;
     }
 
-    /* Progress bar fill */
+    /* Progress bar fill - teal matching schedule Post-Production */
     .completion-bar-fill {
       position: absolute;
       top: 4px;
       left: 4px;
       height: calc(100% - 8px);
       width: 0px;
-      background: linear-gradient(90deg,
-        rgba(40, 180, 200, 0.7) 0%,
-        rgba(60, 200, 220, 0.7) 50%,
-        rgba(80, 220, 240, 0.7) 100%);
+      background: rgba(60, 200, 200, 0.8);
       border-radius: ${(BAR_HEIGHT - 8) / 2}px;
     }
 
@@ -175,7 +172,7 @@ function injectStyles() {
     /* Current percent label */
     .completion-percent {
       font-family: 'montserrat', sans-serif;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.95);
       text-shadow: 0 0 10px rgba(60, 200, 220, 0.5);
@@ -188,7 +185,7 @@ function injectStyles() {
     /* 100% label */
     .completion-max {
       font-family: 'montserrat', sans-serif;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 400;
       color: rgba(255, 255, 255, 0.7);
       letter-spacing: 0.05em;
@@ -201,7 +198,7 @@ function injectStyles() {
     .completion-status {
       font-family: 'montserrat', sans-serif;
       font-size: clamp(13px, 1.5vw, 17px);
-      font-weight: 300;
+      font-weight: 500;
       color: rgba(255, 255, 255, 0.7);
       text-align: center;
       line-height: 1.5;
@@ -236,17 +233,14 @@ function injectStyles() {
       pointer-events: none;
     }
 
-    /* Budget bar fill - blue */
+    /* Budget bar fill - purple matching schedule Prep/Construction */
     .budget-bar-fill {
       position: absolute;
       top: 4px;
       left: 4px;
       height: calc(100% - 8px);
       width: 0px;
-      background: linear-gradient(90deg,
-        rgba(80, 120, 200, 0.7) 0%,
-        rgba(100, 140, 220, 0.7) 50%,
-        rgba(120, 160, 240, 0.7) 100%);
+      background: rgba(155, 89, 182, 0.8);
       border-radius: ${(BAR_HEIGHT - 8) / 2}px;
     }
 
@@ -265,7 +259,7 @@ function injectStyles() {
 
     .budget-raised {
       font-family: 'montserrat', sans-serif;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.95);
       text-shadow: 0 0 10px rgba(100, 140, 220, 0.5);
@@ -277,7 +271,7 @@ function injectStyles() {
 
     .budget-needed {
       font-family: 'montserrat', sans-serif;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 400;
       color: rgba(255, 255, 255, 0.7);
       letter-spacing: 0.05em;
@@ -294,10 +288,13 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-// Format currency (e.g., 1500000 -> "1.5M", 250000 -> "250K")
+// Format currency (e.g., 1500000 -> "1.5M", 1750000 -> "1.75M", 250000 -> "250K")
 function formatCurrency(amount) {
   if (amount >= 1000000) {
-    return '$' + (amount / 1000000).toFixed(1) + 'M';
+    const millions = amount / 1000000;
+    // Use 2 decimal places if needed (e.g., 1.75M), otherwise 1 (e.g., 1.5M)
+    const formatted = millions % 0.1 !== 0 ? millions.toFixed(2) : millions.toFixed(1);
+    return '$' + formatted + 'M';
   } else if (amount >= 1000) {
     return '$' + Math.round(amount / 1000) + 'K';
   }
@@ -489,7 +486,7 @@ function animateBudget(timestamp) {
 
   // Update raised label
   if (budgetRaisedLabel) {
-    budgetRaisedLabel.textContent = formatCurrency(currentRaised) + ' Raised';
+    budgetRaisedLabel.textContent = formatCurrency(currentRaised) + ' Spent';
   }
 
   if (progress < 1) {
