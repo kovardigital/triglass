@@ -68,6 +68,7 @@ function injectStyles() {
       z-index: 100;
       pointer-events: auto;
       padding-left: 200px;
+      transition: opacity 0.3s ease;
     }
 
     .rocket-marker-wrap {

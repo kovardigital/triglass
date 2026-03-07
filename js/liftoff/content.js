@@ -173,8 +173,20 @@ let meetCastButton = null; // "Meet the cast" button element
 const characterAnimState = []; // {x, y, opacity, nameOpacity} for each character
 const CHAR_LERP_SPEED = 0.15; // How fast characters animate (0-1, higher = faster)
 
-// Earth element for Story section
-let earthElement = null;
+// Story video for Story section (single video approach)
+let storyVideoContainer = null;  // Container for close button overlay
+let storyVideo = null;           // The actual video element (in preview)
+let storyCloseButton = null;
+let storyPlayButton = null;      // Container with video + play circle
+let storyPlayCircle = null;      // Play button overlay
+let isStoryVideoActive = false;
+let isStoryVideoExiting = false; // Prevents re-triggering outro
+
+// Story video URLs - single video with built-in intro/outro
+const STORY_VIDEO_WEBM = 'https://triglass-assets.s3.amazonaws.com/liftoffstoryslide-website-unfinishedv1.webm';
+const STORY_VIDEO_HEVC = 'https://triglass-assets.s3.amazonaws.com/liftoffstoryslide-website-unfinishedv1.mp4';
+// Exit point - jump to this time to play the outro animation (last ~9 seconds)
+const STORY_VIDEO_EXIT_TIME = 105; // seconds from start where outro begins
 
 // Toggle character bio view
 function toggleCharacterBio(charIndex) {
@@ -331,12 +343,92 @@ function toggleCastBio() {
   }
 }
 
-// Wheel handler to close bio on scroll attempt
+// Story Video functions (single video - plays in place)
+function openStoryVideo(e) {
+  if (e) e.stopPropagation();
+  if (isStoryVideoActive || !storyVideo) return;
+
+  isStoryVideoActive = true;
+
+  // Hide play button, show close button, hide title/subtitle
+  if (storyPlayCircle) storyPlayCircle.style.opacity = '0';
+  if (storyVideoContainer) storyVideoContainer.classList.add('active');
+  if (textContainer) textContainer.style.opacity = '0';
+
+  // Hide contact button and rocket indicator
+  if (contactBtn) contactBtn.style.opacity = '0';
+  const rocketIndicator = document.querySelector('.rocket-indicator');
+  if (rocketIndicator) rocketIndicator.style.opacity = '0';
+
+  // Play the video from start
+  storyVideo.currentTime = 0;
+  storyVideo.play().catch((err) => {
+    console.error('[LIFTOFF] Story video play error:', err);
+  });
+
+  console.log('[LIFTOFF] Story video opened');
+}
+
+function exitStoryVideo() {
+  if (!isStoryVideoActive || !storyVideo || isStoryVideoExiting) return;
+
+  isStoryVideoExiting = true;
+
+  // Jump to the exit point (last ~9 seconds) to play outro animation
+  storyVideo.currentTime = STORY_VIDEO_EXIT_TIME;
+  storyVideo.play().catch(() => {});
+
+  console.log('[LIFTOFF] Story video exiting - playing outro');
+}
+
+function closeStoryVideo() {
+  // Called when video ends (either naturally or after outro)
+  if (!storyVideo) return;
+
+  isStoryVideoActive = false;
+  isStoryVideoExiting = false;
+
+  // Hide close button
+  if (storyVideoContainer) storyVideoContainer.classList.remove('active');
+
+  // Pause video at last frame and fade out using CSS class
+  storyVideo.pause();
+  storyVideo.classList.add('fading');
+
+  // After fade out, reset and fade everything in
+  setTimeout(() => {
+    // Reset to first frame while invisible
+    storyVideo.currentTime = 0;
+
+    // Brief pause to let video frame update
+    setTimeout(() => {
+      // Remove fading class to fade video back in
+      storyVideo.classList.remove('fading');
+
+      // Fade in all UI elements
+      if (storyPlayCircle) storyPlayCircle.style.opacity = '1';
+      if (textContainer) textContainer.style.opacity = '1';
+      if (contactBtn) contactBtn.style.opacity = '1';
+      const rocketIndicator = document.querySelector('.rocket-indicator');
+      if (rocketIndicator) rocketIndicator.style.opacity = '1';
+
+      console.log('[LIFTOFF] Story video closed');
+    }, 50);
+  }, 400);
+}
+
+// Wheel handler to close bio on scroll attempt and exit story video on scroll
 function onWheelCloseBio(e) {
   if (characterBioMode) {
     e.preventDefault();
     e.stopPropagation();
     closeCharacterBio();
+  }
+  // Exit story video on scroll (plays outro)
+  if (isStoryVideoActive) {
+    e.preventDefault();
+    e.stopPropagation();
+    exitStoryVideo();
   }
 }
 
@@ -420,6 +512,7 @@ function injectStyles() {
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
       backface-visibility: hidden;
+      transition: opacity 0.3s ease;
     }
     .liftoff-text h1 {
       font-family: 'Space Grotesk', sans-serif;
@@ -510,6 +603,7 @@ function injectStyles() {
     }
     .liftoff-text.trailer h1 {
       font-size: clamp(26px, 4.2vw, 52px);
+      letter-spacing: 0.05em;
     }
 
     /* Preview container for backward scroll anticipation */
@@ -953,18 +1047,100 @@ function injectStyles() {
       font-size: clamp(10px, 1.2vw, 14px);
     }
 
-    /* Earth image for Story section */
-    .liftoff-earth {
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      backface-visibility: hidden;
+    /* Story Video - close button overlay (video plays in place) */
+    .story-video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2000;
+      background: transparent;
+      display: none;
       pointer-events: none;
     }
-    .liftoff-earth img {
+    .story-video-container.active {
+      display: block;
+    }
+    .story-video-close {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      z-index: 10;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-out 1s, background 0.2s ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .story-video-container.active .story-video-close {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .story-video-close:hover {
+      background: rgba(0, 0, 0, 0.8);
+      transform: scale(1.1);
+    }
+    /* Story play button trigger in THE STORY section */
+    .story-play-trigger {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      cursor: pointer;
+      backface-visibility: hidden;
+      pointer-events: auto;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .story-play-trigger .preview-video {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: contain;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .story-play-trigger .preview-video.fading {
+      opacity: 0;
+    }
+    .story-play-trigger .play-circle {
+      position: relative;
+      z-index: 2;
+      width: 64px;
+      height: 64px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-60px);
+      transition: background 0.2s ease, transform 0.2s ease, opacity 0.3s ease;
+    }
+    .story-play-trigger:hover .play-circle {
+      background: rgba(0, 0, 0, 0.7);
+      transform: translateY(-60px) scale(1.1);
+    }
+    .story-play-trigger .play-circle svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
+      margin-left: 3px;
     }
     .liftoff-image span {
       display: inline-block;
@@ -1104,7 +1280,7 @@ function injectStyles() {
       border-radius: 6px;
       padding: 10px 20px;
       cursor: pointer;
-      transition: background 0.2s ease-out, border-color 0.2s ease-out;
+      transition: background 0.2s ease-out, border-color 0.2s ease-out, opacity 0.3s ease;
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
@@ -1343,14 +1519,71 @@ function init() {
       imageWorld.appendChild(meetCastButton);
     }
 
-    // Create Earth element for Story section
+    // Create Story Video for Story section (simplified single video approach)
     if (sectionData.storyLayout) {
-      earthElement = document.createElement('div');
-      earthElement.className = 'liftoff-earth';
-      earthElement.innerHTML = `<img src="https://triglass-assets.s3.amazonaws.com/earth-1.png" alt="Earth">`;
-      earthElement.dataset.section = sectionIndex;
-      earthElement.style.opacity = 0;
-      imageWorld.appendChild(earthElement);
+      // Play button trigger with video preview (shows in the section)
+      storyPlayButton = document.createElement('div');
+      storyPlayButton.className = 'story-play-trigger';
+      storyPlayButton.dataset.section = sectionIndex;
+      storyPlayButton.style.opacity = 0;
+
+      // The video element (shows first frame, plays in place when clicked)
+      storyVideo = document.createElement('video');
+      storyVideo.className = 'preview-video';
+      storyVideo.playsInline = true;
+      storyVideo.preload = 'auto';
+      // Add sources
+      const sourceWebm = document.createElement('source');
+      sourceWebm.src = STORY_VIDEO_WEBM;
+      sourceWebm.type = 'video/webm';
+      storyVideo.appendChild(sourceWebm);
+      const sourceHevc = document.createElement('source');
+      sourceHevc.src = STORY_VIDEO_HEVC;
+      sourceHevc.type = 'video/mp4; codecs=hvc1';
+      storyVideo.appendChild(sourceHevc);
+
+      // Pause at first frame when loaded
+      storyVideo.addEventListener('loadeddata', () => {
+        storyVideo.currentTime = 0;
+        storyVideo.pause();
+        console.log('[LIFTOFF] Story video loaded, duration:', storyVideo.duration);
+      });
+
+      // When video ends, close immediately
+      storyVideo.addEventListener('ended', closeStoryVideo);
+
+      // Debug: log errors
+      storyVideo.addEventListener('error', () => {
+        console.error('[LIFTOFF] Story video error:', storyVideo.error);
+      });
+
+      storyPlayButton.appendChild(storyVideo);
+
+      // Play button overlay
+      storyPlayCircle = document.createElement('div');
+      storyPlayCircle.className = 'play-circle';
+      storyPlayCircle.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+      storyPlayButton.appendChild(storyPlayCircle);
+
+      storyPlayButton.addEventListener('click', openStoryVideo);
+      imageWorld.appendChild(storyPlayButton);
+
+      // Close button container (fixed overlay, just for close button)
+      storyVideoContainer = document.createElement('div');
+      storyVideoContainer.className = 'story-video-container';
+
+      // Close button
+      storyCloseButton = document.createElement('button');
+      storyCloseButton.className = 'story-video-close';
+      storyCloseButton.innerHTML = '&times;';
+      storyCloseButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        exitStoryVideo();
+      });
+
+      // Append close button container to body (video stays in imageWorld)
+      storyVideoContainer.appendChild(storyCloseButton);
+      document.body.appendChild(storyVideoContainer);
     }
   });
 
@@ -1595,14 +1828,16 @@ function update() {
     textZ += elasticOffset * 500;
   }
 
-  // Apply text transform with parallax
-  if (currentSection === 0 && textContainer.classList.contains('intro') && !isTransitioning) {
-    // Intro section: only show if revealed
-    if (textContainer.classList.contains('revealed')) {
+  // Apply text transform with parallax (skip if story video is playing)
+  if (!isStoryVideoActive) {
+    if (currentSection === 0 && textContainer.classList.contains('intro') && !isTransitioning) {
+      // Intro section: only show if revealed
+      if (textContainer.classList.contains('revealed')) {
+        textContainer.style.opacity = textOpacity;
+      }
+    } else {
       textContainer.style.opacity = textOpacity;
     }
-  } else {
-    textContainer.style.opacity = textOpacity;
   }
 
   textContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${textZ}px) rotate(${leanAngle}deg) scale(${textScale})`;
@@ -1873,61 +2108,59 @@ function update() {
     meetCastButton.style.transform = `translate(calc(-50% + ${btnOffsetX}px), calc(-50% + ${btnOffsetY + 165}px)) translateZ(${REST_Z}px)`;
   }
 
-  // Update Earth element for Story section (section index 4)
-  if (earthElement) {
-    const earthSection = 4; // Story section
-    let earthZ = REST_Z;
-    let earthOpacity = 0;
-    let earthScale = 1;
+  // Update Story Play Button for Story section (section index 4)
+  if (storyPlayButton && !isStoryVideoActive) {
+    const storySection = 4; // Story section
+    let btnZ = REST_Z;
+    let btnOpacity = 0;
+    let btnScale = 1;
 
     if (isTransitioning) {
-      if (earthSection === currentSection) {
-        // Current section's Earth animates away
+      if (storySection === currentSection) {
+        // Current section's button animates away
         if (goingForward) {
-          earthZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
-          earthScale = 1 + transitionProgress * 0.5;
-          earthOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
+          btnZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+          btnScale = 1 + transitionProgress * 0.5;
+          btnOpacity = Math.max(0, 1 - transitionProgress * 2);
         } else {
-          earthZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
-          earthScale = 1 - transitionProgress * 0.3;
-          earthOpacity = 1 - transitionProgress;
+          btnZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
+          btnScale = 1 - transitionProgress * 0.3;
+          btnOpacity = 1 - transitionProgress;
         }
-      } else if (earthSection === targetSection) {
-        // Earth approaches with target section
+      } else if (storySection === targetSection) {
+        // Button approaches with target section
         if (goingForward) {
-          earthZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
-          earthScale = 0.7 + transitionProgress * 0.3;
+          btnZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+          btnScale = 0.7 + transitionProgress * 0.3;
         } else {
-          earthZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
-          earthScale = 1.5 - transitionProgress * 0.5;
+          btnZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
+          btnScale = 1.5 - transitionProgress * 0.5;
         }
-        earthOpacity = transitionProgress;
+        btnOpacity = transitionProgress;
       }
     } else {
       // At rest
-      if (earthSection === currentSection) {
-        earthZ = REST_Z + elasticOffset * 500;
-        earthOpacity = 1;
+      if (storySection === currentSection) {
+        btnZ = REST_Z + elasticOffset * 500;
+        btnOpacity = 1;
 
         // Apply scroll anticipation
         if (scrollAnticipation < 0) {
-          earthZ = REST_Z + Math.abs(scrollAnticipation) * 200;
-          earthScale = 1 + Math.abs(scrollAnticipation) * 0.2;
-          earthOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
+          btnZ = REST_Z + Math.abs(scrollAnticipation) * 200;
+          btnScale = 1 + Math.abs(scrollAnticipation) * 0.2;
+          btnOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
         } else if (scrollAnticipation > 0) {
-          earthZ = REST_Z - scrollAnticipation * 400;
-          earthScale = 1 - scrollAnticipation * 0.3;
-          earthOpacity = 1 - scrollAnticipation * 0.6;
+          btnZ = REST_Z - scrollAnticipation * 400;
+          btnScale = 1 - scrollAnticipation * 0.3;
+          btnOpacity = 1 - scrollAnticipation * 0.6;
         }
       }
     }
 
-    // Position Earth below the text (y offset positive = below center)
-    const earthOffsetX = mouse.x * 6;
-    const earthOffsetY = 140 - mouse.y * 5; // Below center
-
-    earthElement.style.transform = `translate(calc(-50% + ${earthOffsetX}px), calc(-50% + ${earthOffsetY}px)) translateZ(${earthZ}px) scale(${earthScale})`;
-    earthElement.style.opacity = Math.max(0, Math.min(1, earthOpacity));
+    // Position preview centered (no parallax offset since it's fullscreen)
+    storyPlayButton.style.transform = `translate(-50%, -50%) translateZ(${btnZ}px) scale(${btnScale})`;
+    storyPlayButton.style.opacity = Math.max(0, Math.min(1, btnOpacity));
+    storyPlayButton.style.pointerEvents = (storySection === currentSection && !isTransitioning && btnOpacity > 0.5) ? 'auto' : 'none';
   }
 
   // Update chapter modules
@@ -1969,6 +2202,7 @@ function destroy() {
   if (scrollSpacer) scrollSpacer.remove();
   if (contactBtn) contactBtn.remove();
   if (copyrightEl) copyrightEl.remove();
+  if (storyVideoContainer) storyVideoContainer.remove();
   viewport = null;
   textContainer = null;
   previewContainer = null;
@@ -1983,7 +2217,12 @@ function destroy() {
   bioContainer = null;
   bioTextEl = null;
   meetCastButton = null;
-  earthElement = null;
+  // Story video cleanup
+  storyVideoContainer = null;
+  storyVideo = null;
+  storyCloseButton = null;
+  storyPlayButton = null;
+  isStoryVideoActive = false;
   selectedCharacterIndex = -1;
   characterBioMode = false;
   showingCastBio = false;
