@@ -24,7 +24,7 @@ const SECTIONS = [
     title: 'LOGLINE',
     subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
     images: [
-      { x: -120, y: -20, width: 1000, height: 1000, scale: 0.85, label: 'Logline', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', autoplay: true, pingpong: true },
+      { x: -120, y: -20, width: 1000, height: 1000, scale: 0.85, label: 'Logline', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', autoplay: true },
     ]
   },
   {
@@ -1354,7 +1354,7 @@ function init() {
         video.src = imgConfig.video;
         video.playsInline = true;
         video.preload = 'auto';
-        video.loop = imgConfig.autoplay && !imgConfig.pingpong;
+        video.loop = imgConfig.autoplay || false;
 
         // Check if this is an autoplay looping video (like logline)
         if (imgConfig.autoplay) {
@@ -1362,46 +1362,6 @@ function init() {
           video.autoplay = true;
           img.dataset.autoplayVideo = 'true';
           img.classList.add('autoplay-video');
-
-          // Pingpong mode: play forward then backward on loop
-          if (imgConfig.pingpong) {
-            video.loop = false;
-            video.autoplay = false;
-            let isReversing = false;
-            let lastReverseTime = 0;
-
-            // Reverse playback: manual currentTime control
-            const updateReverse = () => {
-              if (!isReversing) return;
-
-              const now = performance.now();
-              const delta = lastReverseTime ? (now - lastReverseTime) / 1000 : 0;
-              lastReverseTime = now;
-
-              const newTime = video.currentTime - delta;
-
-              if (newTime <= 0) {
-                // Reached start, switch to forward
-                video.currentTime = 0;
-                isReversing = false;
-                video.play();
-              } else {
-                video.currentTime = newTime;
-                requestAnimationFrame(updateReverse);
-              }
-            };
-
-            // When video ends, start reversing
-            video.addEventListener('ended', () => {
-              isReversing = true;
-              lastReverseTime = performance.now();
-              requestAnimationFrame(updateReverse);
-            });
-
-            video.addEventListener('loadedmetadata', () => {
-              video.play();
-            });
-          }
         }
         // Check if this is a playable video (like trailer) vs scrub video
         else if (imgConfig.playable) {
