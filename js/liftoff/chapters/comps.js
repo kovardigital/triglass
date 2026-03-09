@@ -313,7 +313,6 @@ export function init(imgWorld, sections) {
   wallContainer.style.opacity = 0;
   imgWorld.appendChild(wallContainer);
 
-  console.log('[COMPS] Chapter initialized with', posterElements.length, 'posters');
 }
 
 // Update chapter based on discrete section system (matching content.js)

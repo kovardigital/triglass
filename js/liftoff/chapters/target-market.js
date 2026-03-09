@@ -113,10 +113,9 @@ function injectStyles() {
     /* Target Market layout - combined for both preview and settled states */
     .liftoff-text.target-market-layout,
     .liftoff-preview.preview-target-market {
-      top: calc(26% - 20px);
+      top: calc(23% - 20px);
       max-width: none;
       width: 100vw;
-      transition: opacity 0.4s ease-out;
     }
     .liftoff-text.target-market-layout h1,
     .liftoff-preview.preview-target-market h1 {
@@ -125,7 +124,7 @@ function injectStyles() {
     .liftoff-text.target-market-layout p,
     .liftoff-preview.preview-target-market p {
       position: absolute;
-      top: 580px;
+      top: 540px;
       left: 50%;
       transform: translateX(-50%);
       font-size: clamp(11px, 1.3vw, 15px);
@@ -581,7 +580,6 @@ export function init(imgWorld, sections) {
   chartContainer.style.visibility = 'hidden';
   imgWorld.appendChild(chartContainer);
 
-  console.log('[TARGET-MARKET] Chapter initialized with stacked bar chart');
 }
 
 export function update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation) {

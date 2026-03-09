@@ -684,7 +684,6 @@ export function init(imgWorld, sections) {
   scheduleContainer.style.opacity = 0;
   imgWorld.appendChild(scheduleContainer);
 
-  console.log('[SCHEDULE] Chapter initialized');
 }
 
 // Update chapter based on discrete section system

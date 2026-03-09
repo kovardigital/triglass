@@ -554,7 +554,6 @@ function init() {
 
   window.addEventListener('scroll', scrollHandler, { passive: true });
 
-  console.log('[LIFTOFF] Rocket indicator initialized');
 }
 
 // Update rocket position based on discrete section state

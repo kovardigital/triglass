@@ -54,7 +54,6 @@ function init(worldGroup) {
   worldGroupRef = worldGroup;
   const loader = new THREE.TextureLoader();
 
-  console.log('[LIFTOFF] Loading galaxy from:', GALAXY_URL);
 
   loader.load(
     GALAXY_URL,
@@ -86,10 +85,8 @@ function init(worldGroup) {
         GALAXY_OFFSET.y,
         camera.position.z + GALAXY_OFFSET.z
       );
-      console.log('[LIFTOFF] Galaxy loaded with parallax, z offset:', GALAXY_OFFSET.z);
     },
     (progress) => {
-      console.log('[LIFTOFF] Galaxy loading...', Math.round((progress.loaded / progress.total) * 100) + '%');
     },
     (error) => {
       console.error('[LIFTOFF] Failed to load galaxy texture:', GALAXY_URL, error);

@@ -24,7 +24,7 @@ const SECTIONS = [
     title: 'LOGLINE',
     subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
     images: [
-      { x: -120, y: -20, width: 1000, height: 1000, scale: 0.85, label: 'Logline', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', autoplay: true },
+      { x: -120, y: -20, width: 1000, height: 1000, scale: 0.85, label: 'Logline', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', autoplay: true, pingpong: true },
     ]
   },
   {
@@ -181,6 +181,7 @@ let storyPlayButton = null;      // Container with video + play circle
 let storyPlayCircle = null;      // Play button overlay
 let isStoryVideoActive = false;
 let isStoryVideoExiting = false; // Prevents re-triggering outro
+let isStoryVideoClosing = false; // Prevents duplicate close calls
 
 // Story video URLs - single video with built-in intro/outro
 const STORY_VIDEO_WEBM = 'https://triglass-assets.s3.amazonaws.com/liftoffstoryslide-website-unfinishedv1.webm';
@@ -349,6 +350,7 @@ function openStoryVideo(e) {
   if (isStoryVideoActive || !storyVideo) return;
 
   isStoryVideoActive = true;
+  isStoryVideoClosing = false; // Reset for new playback
 
   // Hide play button, show close button, hide title/subtitle
   if (storyPlayCircle) storyPlayCircle.style.opacity = '0';
@@ -366,7 +368,6 @@ function openStoryVideo(e) {
     console.error('[LIFTOFF] Story video play error:', err);
   });
 
-  console.log('[LIFTOFF] Story video opened');
 }
 
 function exitStoryVideo() {
@@ -378,42 +379,33 @@ function exitStoryVideo() {
   storyVideo.currentTime = STORY_VIDEO_EXIT_TIME;
   storyVideo.play().catch(() => {});
 
-  console.log('[LIFTOFF] Story video exiting - playing outro');
 }
 
 function closeStoryVideo() {
-  // Called when video ends (either naturally or after outro)
+  // Called ~1s before video ends (before content fades to transparent)
   if (!storyVideo) return;
 
-  isStoryVideoActive = false;
   isStoryVideoExiting = false;
 
   // Hide close button
   if (storyVideoContainer) storyVideoContainer.classList.remove('active');
 
-  // Pause video at last frame and fade out using CSS class
-  storyVideo.pause();
-  storyVideo.classList.add('fading');
+  // Reset transform to rest state (scale 1) to match starting size
+  if (storyPlayButton) {
+    storyPlayButton.style.transform = `translate(-50%, -50%) translateZ(${REST_Z}px) scale(1)`;
+  }
 
-  // After fade out, reset and fade everything in
+  // Fade in UI elements on top of current frame
+  if (storyPlayCircle) storyPlayCircle.style.opacity = '1';
+  if (textContainer) textContainer.style.opacity = '1';
+  if (contactBtn) contactBtn.style.opacity = '1';
+  const rocketIndicator = document.querySelector('.rocket-indicator');
+  if (rocketIndicator) rocketIndicator.style.opacity = '1';
+
+  // After UI is visible, reset video and release render loop
   setTimeout(() => {
-    // Reset to first frame while invisible
     storyVideo.currentTime = 0;
-
-    // Brief pause to let video frame update
-    setTimeout(() => {
-      // Remove fading class to fade video back in
-      storyVideo.classList.remove('fading');
-
-      // Fade in all UI elements
-      if (storyPlayCircle) storyPlayCircle.style.opacity = '1';
-      if (textContainer) textContainer.style.opacity = '1';
-      if (contactBtn) contactBtn.style.opacity = '1';
-      const rocketIndicator = document.querySelector('.rocket-indicator');
-      if (rocketIndicator) rocketIndicator.style.opacity = '1';
-
-      console.log('[LIFTOFF] Story video closed');
-    }, 50);
+    isStoryVideoActive = false;
   }, 400);
 }
 
@@ -512,7 +504,6 @@ function injectStyles() {
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
       backface-visibility: hidden;
-      transition: opacity 0.3s ease;
     }
     .liftoff-text h1 {
       font-family: 'Space Grotesk', sans-serif;
@@ -599,7 +590,7 @@ function injectStyles() {
 
     /* Trailer section - large title positioned above video */
     .liftoff-text.trailer {
-      top: 28%;
+      top: 24%;
     }
     .liftoff-text.trailer h1 {
       font-size: clamp(26px, 4.2vw, 52px);
@@ -673,10 +664,11 @@ function injectStyles() {
       font-size: clamp(14px, 2vw, 20px);
     }
     .liftoff-preview.preview-trailer {
-      top: 28%;
+      top: 24%;
     }
     .liftoff-preview.preview-trailer h1 {
       font-size: clamp(26px, 4.2vw, 52px);
+      letter-spacing: 0.05em;
     }
     .liftoff-preview.preview-characters {
       top: calc(36% - 70px);
@@ -1099,8 +1091,9 @@ function injectStyles() {
       cursor: pointer;
       backface-visibility: hidden;
       pointer-events: auto;
-      width: 100vw;
-      height: 100vh;
+      /* 80% size to compensate for ~25% perspective enlargement (REST_Z=200, perspective=1000) */
+      width: 80vw;
+      height: 80vh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1111,7 +1104,7 @@ function injectStyles() {
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;  /* Fill width, crop top/bottom on ultrawide */
       pointer-events: none;
       transition: opacity 0.4s ease;
     }
@@ -1196,6 +1189,12 @@ function injectStyles() {
       cursor: pointer;
       pointer-events: auto;
       overflow: visible;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 12px;
+      transition: border-color 0.3s ease;
+    }
+    .liftoff-image.playable-video.playing {
+      border-color: transparent;
     }
     .liftoff-play-button {
       position: absolute;
@@ -1355,7 +1354,7 @@ function init() {
         video.src = imgConfig.video;
         video.playsInline = true;
         video.preload = 'auto';
-        video.loop = imgConfig.autoplay || false;
+        video.loop = imgConfig.autoplay && !imgConfig.pingpong;
 
         // Check if this is an autoplay looping video (like logline)
         if (imgConfig.autoplay) {
@@ -1363,6 +1362,46 @@ function init() {
           video.autoplay = true;
           img.dataset.autoplayVideo = 'true';
           img.classList.add('autoplay-video');
+
+          // Pingpong mode: play forward then backward on loop
+          if (imgConfig.pingpong) {
+            video.loop = false;
+            video.autoplay = false;
+            let isReversing = false;
+            let lastReverseTime = 0;
+
+            // Reverse playback: manual currentTime control
+            const updateReverse = () => {
+              if (!isReversing) return;
+
+              const now = performance.now();
+              const delta = lastReverseTime ? (now - lastReverseTime) / 1000 : 0;
+              lastReverseTime = now;
+
+              const newTime = video.currentTime - delta;
+
+              if (newTime <= 0) {
+                // Reached start, switch to forward
+                video.currentTime = 0;
+                isReversing = false;
+                video.play();
+              } else {
+                video.currentTime = newTime;
+                requestAnimationFrame(updateReverse);
+              }
+            };
+
+            // When video ends, start reversing
+            video.addEventListener('ended', () => {
+              isReversing = true;
+              lastReverseTime = performance.now();
+              requestAnimationFrame(updateReverse);
+            });
+
+            video.addEventListener('loadedmetadata', () => {
+              video.play();
+            });
+          }
         }
         // Check if this is a playable video (like trailer) vs scrub video
         else if (imgConfig.playable) {
@@ -1546,11 +1585,16 @@ function init() {
       storyVideo.addEventListener('loadeddata', () => {
         storyVideo.currentTime = 0;
         storyVideo.pause();
-        console.log('[LIFTOFF] Story video loaded, duration:', storyVideo.duration);
       });
 
-      // When video ends, close immediately
-      storyVideo.addEventListener('ended', closeStoryVideo);
+      // Catch video BEFORE content fades out (outro has alpha fade at end)
+      storyVideo.addEventListener('timeupdate', () => {
+        if (isStoryVideoActive && !isStoryVideoClosing && storyVideo.duration - storyVideo.currentTime < 1.0) {
+          isStoryVideoClosing = true;
+          storyVideo.pause(); // Freeze before content fades
+          closeStoryVideo();
+        }
+      });
 
       // Debug: log errors
       storyVideo.addEventListener('error', () => {
@@ -1627,7 +1671,6 @@ function init() {
   // Set initial text for intro
   setTextContent(0);
 
-  console.log('[LIFTOFF] Content initialized with', SECTIONS.length, 'sections,', imageElements.length, 'images');
 }
 
 // Set text content (no CSS animation - handled by JavaScript fly-through)
@@ -2178,7 +2221,6 @@ function reveal() {
   textContainer.offsetHeight; // Force reflow
   requestAnimationFrame(() => {
     textContainer.classList.add('revealed');
-    console.log('[LIFTOFF] Content intro revealed');
   });
 }
 

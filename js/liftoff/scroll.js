@@ -74,7 +74,6 @@ function triggerSectionChange(newSection) {
   spaceZStart = spaceZ;
   spaceZTarget = spaceZ + direction * SPACE_Z_PER_SECTION;
 
-  console.log('[LIFTOFF] Transitioning to section', newSection);
 }
 
 // Wheel handler - only source of scroll detection
@@ -119,7 +118,6 @@ function onWheel(e) {
       chainCooldown = true;
       if (chainCooldownTimeout) clearTimeout(chainCooldownTimeout);
       chainCooldownTimeout = setTimeout(() => { chainCooldown = false; }, CHAIN_COOLDOWN_MS);
-      console.log('[LIFTOFF] Chaining forward to section', targetSection);
     } else if (!chainCooldown && transitionProgress > 0.4 && !goingForward && accumulatedScroll > SCROLL_THRESHOLD && targetSection > 0) {
       // Snap current transition complete, start prev
       currentSection = targetSection;
@@ -134,7 +132,6 @@ function onWheel(e) {
       chainCooldown = true;
       if (chainCooldownTimeout) clearTimeout(chainCooldownTimeout);
       chainCooldownTimeout = setTimeout(() => { chainCooldown = false; }, CHAIN_COOLDOWN_MS);
-      console.log('[LIFTOFF] Chaining backward to section', targetSection);
     }
     return;
   }
@@ -185,7 +182,6 @@ function init(cam) {
 
   window.addEventListener('wheel', onWheel, { passive: true });
 
-  console.log('[LIFTOFF] Discrete scroll initialized');
 }
 
 // Scroll to starting position
@@ -206,7 +202,6 @@ function scrollToStart() {
   spaceZTarget = 0;
   if (chainCooldownTimeout) clearTimeout(chainCooldownTimeout);
 
-  console.log('[LIFTOFF] Reset to section 0');
 }
 
 // Jump directly to a section (for sidebar clicks)
@@ -228,7 +223,6 @@ function jumpToSection(sectionIndex) {
   spaceZStart = spaceZ;
   spaceZTarget = spaceZ + direction * Math.abs(sectionDelta) * SPACE_Z_PER_SECTION;
 
-  console.log('[LIFTOFF] Jumping to section', sectionIndex);
 }
 
 // Update transition state (called each frame)

@@ -63,7 +63,6 @@ function start() {
   if (isRunning) return;
   isRunning = true;
   animate();
-  console.log('%c[LIFTOFF] Animation loop started', 'color: #10b981');
 }
 
 // Stop the animation loop
@@ -73,7 +72,6 @@ function stop() {
     cancelAnimationFrame(animationId);
     animationId = null;
   }
-  console.log('[LIFTOFF] Animation loop stopped');
 }
 
 export { start, stop, onUpdate, offUpdate, setCustomRender, clearCustomRender };

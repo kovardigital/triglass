@@ -36,8 +36,11 @@ const ASSETS = {
     ...Array.from({ length: 14 }, (_, i) => `https://triglass-assets.s3.amazonaws.com/movie-${i + 5}.jpg`),
   ],
   videos: [
-    'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', // Logline autoplay loop
-    'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', // Trailer
+    'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', // Trailer (metadata only)
+  ],
+  // Videos that need full preload (not just metadata)
+  videosFullPreload: [
+    'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', // Logline pingpong - needs full preload
   ],
 };
 
@@ -84,6 +87,28 @@ function preloadVideo(src) {
   });
 }
 
+// Fully preload a video (wait for enough data to play through)
+function preloadVideoFull(src) {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'auto';
+    video.muted = true;
+    video.oncanplaythrough = () => {
+      loadedCount++;
+      updateProgress();
+      resolve();
+    };
+    video.onerror = () => {
+      console.warn('[LIFTOFF] Failed to fully preload video:', src);
+      loadedCount++;
+      updateProgress();
+      resolve(); // Resolve anyway to not block
+    };
+    video.src = src;
+    video.load(); // Explicitly start loading
+  });
+}
+
 // Update progress bar based on loaded assets
 function updateProgress() {
   if (totalAssets > 0) {
@@ -97,15 +122,12 @@ function updateProgress() {
 function preloadAssets() {
   const imagePromises = ASSETS.images.map(preloadImage);
   const videoPromises = ASSETS.videos.map(preloadVideo);
+  const videoFullPromises = ASSETS.videosFullPreload.map(preloadVideoFull);
 
-  totalAssets = ASSETS.images.length + ASSETS.videos.length;
+  totalAssets = ASSETS.images.length + ASSETS.videos.length + ASSETS.videosFullPreload.length;
   loadedCount = 0;
 
-  console.log('[LIFTOFF] Preloading', totalAssets, 'assets...');
-
-  return Promise.all([...imagePromises, ...videoPromises]).then(() => {
-    console.log('[LIFTOFF] All assets preloaded');
-  });
+  return Promise.all([...imagePromises, ...videoPromises, ...videoFullPromises]);
 }
 
 // Initialize preloader (show immediately)
@@ -178,7 +200,6 @@ function init() {
   document.head.appendChild(styleEl);
 
   document.body.appendChild(preloaderEl);
-  console.log('[LIFTOFF] Preloader shown, logo:', LOGO_URL);
 }
 
 // Set loading progress (0 to 1)
@@ -213,7 +234,6 @@ function hide(delay = 300) {
 
       // Fire ready callbacks
       readyCallbacks.forEach(cb => cb());
-      console.log('[LIFTOFF] Preloader hidden');
     }, 500);
   }, delay);
 }

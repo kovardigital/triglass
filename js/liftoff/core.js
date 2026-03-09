@@ -15,7 +15,6 @@ document.body.appendChild(container);
 // Reveal the scene (called after text starts animating)
 function revealScene() {
   container.style.opacity = '1';
-  console.log('[LIFTOFF] Scene fading in');
 }
 
 // Scene
@@ -58,6 +57,5 @@ function destroy() {
   container.remove();
 }
 
-console.log('%c[LIFTOFF] Core initialized', 'color: #6b7cff');
 
 export { scene, camera, renderer, worldGroup, container, revealScene, destroy };

@@ -66,7 +66,6 @@ function onMouseMove(e) {
 function init(group) {
   worldGroup = group;
   document.addEventListener('mousemove', onMouseMove);
-  console.log('[LIFTOFF] Parallax initialized');
 }
 
 // Update parallax (called each frame)

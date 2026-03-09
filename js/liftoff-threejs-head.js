@@ -12,7 +12,6 @@
   }
   // Scroll position set in scroll.js init (starts at bottom, scroll UP to progress)
 
-  console.log('%c[LIFTOFF-3D] Head script starting...', 'color: #6b7cff; font-weight: bold');
 
   // Preconnect to Google Fonts for faster loading
   const preconnect1 = document.createElement('link');
@@ -31,7 +30,6 @@
   fontLink.rel = 'stylesheet';
   fontLink.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;700&family=Space+Grotesk:wght@300;400;500&display=swap';
   document.head.appendChild(fontLink);
-  console.log('%c[LIFTOFF-3D] Google Fonts (Montserrat + Space Grotesk) injected', 'color: #10b981');
 
   // Inject importmap for ES modules
   const importmap = document.createElement('script');
@@ -44,7 +42,6 @@
     }
   });
   document.head.appendChild(importmap);
-  console.log('%c[LIFTOFF-3D] Importmap injected', 'color: #10b981');
 
   // Inject minimal CSS
   const styles = document.createElement('style');
@@ -118,6 +115,4 @@ html, body {
 }
   `;
   document.head.appendChild(styles);
-
-  console.log('%c[LIFTOFF-3D] Styles injected', 'color: #10b981');
 })();

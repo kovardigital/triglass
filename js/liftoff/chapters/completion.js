@@ -411,7 +411,6 @@ export function init(imgWorld, sections) {
   progressContainer.style.opacity = 0;
   imgWorld.appendChild(progressContainer);
 
-  console.log('[COMPLETION] Chapter initialized');
 }
 
 // Animate the progress bar

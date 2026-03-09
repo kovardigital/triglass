@@ -182,7 +182,6 @@ function init(worldGroup) {
   ultraDistantLifetimes = ultraDistant.lifetimes;
   ultraDistantDurations = ultraDistant.durations;
 
-  console.log('[LIFTOFF] Triple starfield created:', DISTANT_STAR_COUNT, 'distant +', CLOSE_STAR_COUNT, 'close +', ULTRA_DISTANT_STAR_COUNT, 'ultra-distant stars');
 }
 
 // Update all starfields

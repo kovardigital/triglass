@@ -35,7 +35,6 @@ const COLOR_CLOSE_DISTANCE = 400;   // Full brightness at this distance
 // Initialize physics world and asteroids
 function init(worldGroup) {
   try {
-    console.log('[LIFTOFF] Initializing physics asteroids...');
 
     // Create physics world with no gravity (space!)
     world = new CANNON.World();
@@ -51,7 +50,6 @@ function init(worldGroup) {
     createAsteroid(i);
   }
 
-    console.log('[LIFTOFF] Physics asteroids created:', asteroids.length);
   } catch (error) {
     console.error('[LIFTOFF] Failed to initialize physics asteroids:', error);
   }

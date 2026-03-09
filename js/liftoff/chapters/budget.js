@@ -23,9 +23,9 @@ const LEADER_LINE_LENGTH = 30; // Length of leader line for small segments
 const LABEL_OFFSET = 8; // Distance from leader line end to label
 
 // Main budget categories based on Liftoff Budget Draft V1 (03-03-26)
-// Grand Total: $2,195,214
+// Grand Total: $1,800,000
 const BUDGET_DATA = {
-  total: 2195214,
+  total: 1800000,
   categories: [
     {
       id: 'production',
@@ -707,7 +707,6 @@ export function init(imgWorld, sections) {
   budgetContainer.style.opacity = 0;
   imgWorld.appendChild(budgetContainer);
 
-  console.log('[BUDGET] Chapter initialized with interactive pie chart');
 }
 
 // Update chapter based on discrete section system

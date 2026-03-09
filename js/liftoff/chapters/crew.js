@@ -696,7 +696,6 @@ export function init(imgWorld, sections) {
   // Add document click listener
   document.addEventListener('click', onDocumentClick);
 
-  console.log('[CREW] Chapter initialized with', CREW_DATA.length, 'crew members');
 }
 
 // Create a portrait element with its label and blur backdrop
