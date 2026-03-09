@@ -31,3 +31,9 @@ npm-debug.log*
 
 # Documentation (local)
 docs/
+
+# Large media assets (hosted on S3)
+assets/*.mov
+assets/*.webm
+assets/*.mp4
+assets/test_*.png
