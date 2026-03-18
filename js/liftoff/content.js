@@ -31,6 +31,8 @@ const SECTIONS = [
     title: 'TRAILER',
     subtitle: '',
     trailerLayout: true,
+    passwordProtected: true,
+    password: 'watchliftoffnow',
     images: [
       { x: 0, y: 0, width: 1280, height: 720, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-1.mp4', playable: true },
     ]
@@ -531,10 +533,12 @@ function injectStyles() {
       display: block;
       margin: 0 auto;
     }
-    /* Intro subtitle - moved up over PNG whitespace */
+    /* Intro subtitle - anchored to fixed position in container */
     .liftoff-text.intro p {
-      position: relative;
-      top: clamp(-243px, calc(-40vw + 57px), -123px);
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(50% + 40px);
     }
     .liftoff-text p {
       font-family: 'montserrat', sans-serif;
@@ -659,8 +663,10 @@ function injectStyles() {
       margin: 0 auto;
     }
     .liftoff-preview.preview-intro p {
-      position: relative;
-      top: clamp(-243px, calc(-40vw + 57px), -123px);
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(50% + 40px);
       font-size: clamp(14px, 2vw, 20px);
     }
     .liftoff-preview.preview-trailer {
@@ -1262,6 +1268,99 @@ function injectStyles() {
       pointer-events: auto;
     }
 
+    /* Password overlay for protected videos */
+    .liftoff-password-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      gap: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .liftoff-password-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .liftoff-password-overlay .password-lock-icon {
+      width: 36px;
+      height: 36px;
+      fill: rgba(255, 255, 255, 0.6);
+      margin-bottom: 4px;
+    }
+    .liftoff-password-overlay .password-label {
+      font-family: 'montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .liftoff-password-overlay .password-input-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .liftoff-password-overlay input {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 14px 18px;
+      color: white;
+      font-family: 'montserrat', sans-serif;
+      font-size: clamp(16px, 2.5vw, 20px);
+      letter-spacing: 0.05em;
+      outline: none;
+      width: clamp(160px, 30vw, 260px);
+      transition: border-color 0.2s ease;
+    }
+    .liftoff-password-overlay input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+    .liftoff-password-overlay input:focus {
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .liftoff-password-overlay input.error {
+      border-color: rgba(255, 80, 80, 0.7);
+      animation: password-shake 0.4s ease;
+    }
+    .liftoff-password-overlay .password-submit {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 14px 22px;
+      color: white;
+      font-family: 'montserrat', sans-serif;
+      font-size: clamp(14px, 2vw, 18px);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .liftoff-password-overlay .password-submit:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    @keyframes password-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
     /* Contact button - top right */
     .liftoff-contact {
       position: fixed;
@@ -1369,11 +1468,57 @@ function init() {
           video.muted = false;
           video.controls = false;
 
+          // Track if password has been verified for this session
+          let passwordVerified = !sectionData.passwordProtected;
+
           // Add play button overlay
           const playBtn = document.createElement('div');
           playBtn.className = 'liftoff-play-button';
           playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
           img.appendChild(playBtn);
+
+          // Add password overlay if section is password-protected
+          if (sectionData.passwordProtected) {
+            const passwordOverlay = document.createElement('div');
+            passwordOverlay.className = 'liftoff-password-overlay';
+            passwordOverlay.innerHTML = `
+              <svg class="password-lock-icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+              <span class="password-label">Enter password to watch</span>
+              <div class="password-input-wrap">
+                <input type="password" placeholder="Password" autocomplete="off" />
+                <button class="password-submit">Go</button>
+              </div>
+            `;
+            passwordOverlay.classList.add('visible');
+            playBtn.style.display = 'none';
+            img.appendChild(passwordOverlay);
+
+            const pwInput = passwordOverlay.querySelector('input');
+            const pwSubmit = passwordOverlay.querySelector('.password-submit');
+
+            const attemptPassword = () => {
+              if (pwInput.value === sectionData.password) {
+                passwordVerified = true;
+                passwordOverlay.classList.remove('visible');
+                playBtn.style.display = '';
+              } else {
+                pwInput.classList.add('error');
+                pwInput.value = '';
+                setTimeout(() => pwInput.classList.remove('error'), 500);
+              }
+            };
+
+            pwSubmit.addEventListener('click', (e) => {
+              e.stopPropagation();
+              attemptPassword();
+            });
+            pwInput.addEventListener('keydown', (e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') attemptPassword();
+            });
+            pwInput.addEventListener('click', (e) => e.stopPropagation());
+            passwordOverlay.addEventListener('click', (e) => e.stopPropagation());
+          }
 
           // Add fullscreen button overlay
           const fullscreenBtn = document.createElement('div');
@@ -1393,8 +1538,9 @@ function init() {
             }
           });
 
-          // Click to play/pause
+          // Click to play/pause (blocked until password verified)
           img.addEventListener('click', () => {
+            if (!passwordVerified) return;
             if (video.paused) {
               video.play();
               img.classList.add('playing');
@@ -1924,7 +2070,13 @@ function update() {
 
     // Disable pointer-events when not visible (prevents blocking other sections)
     if (isPlayable) {
-      img.style.pointerEvents = imgOpacity > 0.5 ? 'auto' : 'none';
+      const isVisible = imgOpacity > 0.5;
+      img.style.pointerEvents = isVisible ? 'auto' : 'none';
+      // Also disable password overlay pointer-events to prevent it blocking other sections
+      const pwOverlay = img.querySelector('.liftoff-password-overlay');
+      if (pwOverlay) {
+        pwOverlay.style.pointerEvents = isVisible ? '' : 'none';
+      }
     }
 
     // Handle videos
