@@ -1,6 +1,7 @@
 /* ==========================================================================
    Liftoff - SCHEDULE Chapter
    Gantt-style horizontal timeline showing production phases
+   With drill-down: click a phase to see weekly breakdown
    ========================================================================== */
 
 // Uses discrete section system from content.js
@@ -31,7 +32,15 @@ const SCHEDULE_PHASES = [
     startMonth: 0,    // January 2026
     endMonth: 4,      // April 2026
     row: 0,
-    labelPos: 'internal'
+    labelPos: 'internal',
+    weeks: [
+      { label: 'Footage Review & Logging', startWeek: 0, endWeek: 2, color: 'rgba(80, 210, 210, 0.8)' },
+      { label: 'Assembly Cut', startWeek: 2, endWeek: 6, color: 'rgba(60, 200, 200, 0.8)' },
+      { label: 'Rough Cut V1', startWeek: 6, endWeek: 10, color: 'rgba(50, 185, 185, 0.8)' },
+      { label: 'Sound Design (Temp)', startWeek: 8, endWeek: 12, color: 'rgba(40, 170, 170, 0.8)' },
+      { label: 'VFX Prep & Bidding', startWeek: 10, endWeek: 14, color: 'rgba(70, 195, 195, 0.8)' },
+      { label: 'Rough Cut V2', startWeek: 12, endWeek: 16, color: 'rgba(55, 190, 190, 0.8)' },
+    ]
   },
   {
     id: 'prep',
@@ -42,7 +51,15 @@ const SCHEDULE_PHASES = [
     startMonth: 3,    // April 2026
     endMonth: 6,      // June 2026
     row: 1,
-    labelPos: 'internal'
+    labelPos: 'internal',
+    weeks: [
+      { label: 'Location Scouting', startWeek: 0, endWeek: 3, color: 'rgba(170, 100, 195, 0.8)' },
+      { label: 'Set Design & Planning', startWeek: 1, endWeek: 4, color: 'rgba(155, 89, 182, 0.8)' },
+      { label: 'Construction Phase 1', startWeek: 3, endWeek: 7, color: 'rgba(140, 78, 168, 0.8)' },
+      { label: 'Prop & Wardrobe Prep', startWeek: 4, endWeek: 8, color: 'rgba(165, 95, 188, 0.8)' },
+      { label: 'Construction Phase 2', startWeek: 7, endWeek: 10, color: 'rgba(135, 72, 162, 0.8)' },
+      { label: 'Tech Scouts & Rehearsals', startWeek: 9, endWeek: 12, color: 'rgba(148, 84, 175, 0.8)' },
+    ]
   },
   {
     id: 'filming',
@@ -53,7 +70,13 @@ const SCHEDULE_PHASES = [
     startMonth: 6.5,  // Mid-July 2026
     endMonth: 7.5,    // Mid-August 2026
     row: 2,
-    labelPos: 'above'
+    labelPos: 'above',
+    weeks: [
+      { label: 'Week 1 — Interior Scenes', startWeek: 0, endWeek: 1, color: 'rgba(255, 120, 120, 0.8)' },
+      { label: 'Week 2 — Exterior / Location', startWeek: 1, endWeek: 2, color: 'rgba(255, 107, 107, 0.8)' },
+      { label: 'Week 3 — Stage Work', startWeek: 2, endWeek: 3, color: 'rgba(240, 95, 95, 0.8)' },
+      { label: 'Week 4 — Final Scenes & Wrap', startWeek: 3, endWeek: 4, color: 'rgba(225, 85, 85, 0.8)' },
+    ]
   },
   {
     id: 'post2',
@@ -64,7 +87,16 @@ const SCHEDULE_PHASES = [
     startMonth: 7,    // August 2026
     endMonth: 16,     // April 2027
     row: 0,
-    labelPos: 'internal'
+    labelPos: 'internal',
+    weeks: [
+      { label: 'Dailies & Selects', startWeek: 0, endWeek: 4, color: 'rgba(80, 210, 210, 0.8)' },
+      { label: 'Fine Cut', startWeek: 4, endWeek: 12, color: 'rgba(60, 200, 200, 0.8)' },
+      { label: 'VFX Production', startWeek: 6, endWeek: 24, color: 'rgba(50, 185, 185, 0.8)' },
+      { label: 'Sound Design & Mix', startWeek: 16, endWeek: 28, color: 'rgba(40, 170, 170, 0.8)' },
+      { label: 'Color Grade', startWeek: 24, endWeek: 32, color: 'rgba(70, 195, 195, 0.8)' },
+      { label: 'Music & Score', startWeek: 20, endWeek: 30, color: 'rgba(55, 190, 190, 0.8)' },
+      { label: 'Final Mix & Deliverables', startWeek: 30, endWeek: 36, color: 'rgba(45, 180, 180, 0.8)' },
+    ]
   },
   {
     id: 'filming2',
@@ -75,7 +107,12 @@ const SCHEDULE_PHASES = [
     startMonth: 11,   // December 2026
     endMonth: 12,     // December 2026
     row: 2,
-    labelPos: 'above'
+    labelPos: 'above',
+    weeks: [
+      { label: 'Prep & Setup', startWeek: 0, endWeek: 1, color: 'rgba(250, 215, 80, 0.8)' },
+      { label: 'Filming — Additional Scenes', startWeek: 1, endWeek: 3, color: 'rgba(244, 208, 63, 0.8)' },
+      { label: 'Wrap & Data Management', startWeek: 3, endWeek: 4, color: 'rgba(230, 195, 55, 0.8)' },
+    ]
   },
   {
     id: 'pickups',
@@ -86,7 +123,13 @@ const SCHEDULE_PHASES = [
     startMonth: 12,   // January 2027
     endMonth: 14,     // February 2027
     row: 3,
-    labelPos: 'above'
+    labelPos: 'above',
+    weeks: [
+      { label: 'Shot List & Planning', startWeek: 0, endWeek: 2, color: 'rgba(55, 75, 95, 0.8)' },
+      { label: 'Insert Photography', startWeek: 2, endWeek: 5, color: 'rgba(44, 62, 80, 0.8)' },
+      { label: 'Pick Up Filming', startWeek: 4, endWeek: 7, color: 'rgba(38, 55, 72, 0.8)' },
+      { label: 'Final Wrap', startWeek: 7, endWeek: 8, color: 'rgba(50, 68, 88, 0.8)' },
+    ]
   }
 ];
 
@@ -118,10 +161,18 @@ let tooltipEl = null;
 let sectionIndex = -1;
 let hasAnimated = false;
 
+// Drill-down state
+let currentView = 'main'; // 'main' or phase id
+let detailContainer = null;
+
 // Z positions matching content.js fly-through system
 const REST_Z = 200;
 const APPROACH_Z = -1400;
 const DEPART_Z = 800;
+
+// Detail view dimensions
+const DETAIL_BAR_HEIGHT = 28;
+const DETAIL_BAR_GAP = 8;
 
 // Inject chapter-specific styles
 function injectStyles() {
@@ -202,6 +253,12 @@ function injectStyles() {
     .schedule-timeline {
       position: relative;
       width: ${TIMELINE_WIDTH}px;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .schedule-timeline.fade-out {
+      opacity: 0;
+      transform: scale(0.95);
+      pointer-events: none;
     }
 
     /* Month markers */
@@ -340,6 +397,25 @@ function injectStyles() {
       z-index: 10;
     }
 
+    /* Click hint on hover */
+    .schedule-bar-wrapper:hover .schedule-bar-click-hint {
+      opacity: 1;
+    }
+    .schedule-bar-click-hint {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'montserrat', sans-serif;
+      font-size: 9px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
     /* External label */
     .schedule-bar-label-external {
       position: absolute;
@@ -414,6 +490,198 @@ function injectStyles() {
       color: rgba(255, 255, 255, 0.75);
       line-height: 1.6;
     }
+    .schedule-tooltip-hint {
+      font-family: 'montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 8px;
+    }
+
+    /* ===== Detail (drill-down) view ===== */
+    .schedule-detail {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      transform: scale(1.05);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+    .schedule-detail.visible {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    /* Detail header */
+    .schedule-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      width: ${TIMELINE_WIDTH}px;
+    }
+    .schedule-detail-back {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      flex-shrink: 0;
+    }
+    .schedule-detail-back:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .schedule-detail-back svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.8);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .schedule-detail-title {
+      font-family: 'montserrat', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .schedule-detail-dates {
+      font-family: 'montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.5);
+      margin-left: auto;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Detail timeline */
+    .schedule-detail-timeline {
+      position: relative;
+      width: ${TIMELINE_WIDTH}px;
+    }
+
+    /* Week markers */
+    .schedule-detail-weeks {
+      display: flex;
+      margin-bottom: 12px;
+      padding: 0 2px;
+    }
+    .schedule-detail-week-marker {
+      font-family: 'montserrat', sans-serif;
+      font-size: 8px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .schedule-detail-week-marker.animate-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Detail bars container */
+    .schedule-detail-bars {
+      position: relative;
+    }
+
+    /* Detail bar wrapper */
+    .schedule-detail-bar-wrapper {
+      position: absolute;
+      height: ${DETAIL_BAR_HEIGHT}px;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .schedule-detail-bar-wrapper.animate-in {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Detail bar */
+    .schedule-detail-bar {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: ${DETAIL_BAR_HEIGHT / 2}px;
+      cursor: default;
+      transition: transform 0.2s ease;
+    }
+    .schedule-detail-bar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: ${DETAIL_BAR_HEIGHT / 2}px;
+      padding: 1px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.15) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .schedule-detail-bar-wrapper:hover .schedule-detail-bar {
+      transform: scale(1.02) translateY(-1px);
+    }
+
+    /* Detail bar label */
+    .schedule-detail-bar-label {
+      position: absolute;
+      top: 50%;
+      left: 14px;
+      transform: translateY(-50%);
+      font-family: 'montserrat', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.95);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+
+    /* Detail week guides */
+    .schedule-detail-guides {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      pointer-events: none;
+    }
+    .schedule-detail-guide {
+      position: absolute;
+      top: -12px;
+      width: 1px;
+      height: calc(100% + 12px);
+      background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 60%,
+        rgba(255, 255, 255, 0) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .schedule-detail-guide.animate-in {
+      opacity: 1;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -439,7 +707,7 @@ function getDateRange(phase) {
   return `${startLabel.month} ${startLabel.year} – ${endLabel.month} ${endLabel.year}`;
 }
 
-// Build unified timeline
+// Build unified timeline (main view)
 function buildTimeline() {
   if (!timelineContainer) return;
 
@@ -526,10 +794,23 @@ function buildTimeline() {
       wrapper.appendChild(label);
     }
 
+    // Click hint (only for phases with weeks data)
+    if (phase.weeks && phase.weeks.length > 0) {
+      const hint = document.createElement('span');
+      hint.className = 'schedule-bar-click-hint';
+      hint.textContent = 'Click for weekly breakdown';
+      bar.appendChild(hint);
+    }
+
     // Hover events
     wrapper.addEventListener('mouseenter', (e) => showTooltip(e, phase));
     wrapper.addEventListener('mouseleave', hideTooltip);
     wrapper.addEventListener('mousemove', moveTooltip);
+
+    // Click to drill down
+    if (phase.weeks && phase.weeks.length > 0) {
+      wrapper.addEventListener('click', () => drillDown(phase));
+    }
 
     barsContainer.appendChild(wrapper);
   });
@@ -537,14 +818,242 @@ function buildTimeline() {
   timelineContainer.appendChild(barsContainer);
 }
 
+// === Drill-down detail view ===
+
+function drillDown(phase) {
+  if (currentView !== 'main') return;
+  currentView = phase.id;
+
+  hideTooltip();
+
+  // Fade out main timeline
+  timelineContainer.classList.add('fade-out');
+
+  // Build and show detail view
+  buildDetailView(phase);
+
+  // Update title row
+  if (titleRow) {
+    const yearsEl = titleRow.querySelector('.schedule-years');
+    if (yearsEl) {
+      yearsEl.dataset.originalText = yearsEl.textContent;
+      yearsEl.textContent = phase.name;
+    }
+  }
+}
+
+function drillUp() {
+  if (currentView === 'main') return;
+  currentView = 'main';
+
+  // Hide detail view
+  if (detailContainer) {
+    detailContainer.classList.remove('visible');
+    setTimeout(() => {
+      if (detailContainer) {
+        detailContainer.remove();
+        detailContainer = null;
+      }
+    }, 400);
+  }
+
+  // Fade main timeline back in
+  timelineContainer.classList.remove('fade-out');
+
+  // Restore title row
+  if (titleRow) {
+    const yearsEl = titleRow.querySelector('.schedule-years');
+    if (yearsEl && yearsEl.dataset.originalText) {
+      yearsEl.textContent = yearsEl.dataset.originalText;
+    }
+  }
+}
+
+function buildDetailView(phase) {
+  // Remove existing detail view
+  if (detailContainer) {
+    detailContainer.remove();
+    detailContainer = null;
+  }
+
+  detailContainer = document.createElement('div');
+  detailContainer.className = 'schedule-detail';
+
+  // Calculate total weeks for this phase
+  const totalMonths = phase.endMonth - phase.startMonth;
+  const totalWeeks = Math.ceil(totalMonths * 4.33); // ~4.33 weeks per month
+  const maxWeek = Math.max(...phase.weeks.map(w => w.endWeek));
+
+  // Header with back button
+  const header = document.createElement('div');
+  header.className = 'schedule-detail-header';
+
+  const backBtn = document.createElement('div');
+  backBtn.className = 'schedule-detail-back';
+  backBtn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>';
+  backBtn.addEventListener('click', drillUp);
+  header.appendChild(backBtn);
+
+  const titleEl = document.createElement('span');
+  titleEl.className = 'schedule-detail-title';
+  titleEl.style.color = phase.color.replace('0.8', '1');
+  titleEl.textContent = phase.name;
+  header.appendChild(titleEl);
+
+  const datesEl = document.createElement('span');
+  datesEl.className = 'schedule-detail-dates';
+  datesEl.textContent = getDateRange(phase);
+  header.appendChild(datesEl);
+
+  detailContainer.appendChild(header);
+
+  // Detail timeline
+  const detailTimeline = document.createElement('div');
+  detailTimeline.className = 'schedule-detail-timeline';
+
+  // Week markers
+  const weeksRow = document.createElement('div');
+  weeksRow.className = 'schedule-detail-weeks';
+  for (let i = 0; i < maxWeek; i++) {
+    const marker = document.createElement('div');
+    marker.className = 'schedule-detail-week-marker';
+    marker.style.width = `${100 / maxWeek}%`;
+    marker.textContent = `W${i + 1}`;
+    weeksRow.appendChild(marker);
+  }
+  detailTimeline.appendChild(weeksRow);
+
+  // Bars container
+  const barsContainer = document.createElement('div');
+  barsContainer.className = 'schedule-detail-bars';
+
+  // Week guide lines
+  const guidesContainer = document.createElement('div');
+  guidesContainer.className = 'schedule-detail-guides';
+  for (let i = 1; i < maxWeek; i++) {
+    const guide = document.createElement('div');
+    guide.className = 'schedule-detail-guide';
+    guide.style.left = `${(i / maxWeek) * 100}%`;
+    guidesContainer.appendChild(guide);
+  }
+  barsContainer.appendChild(guidesContainer);
+
+  // Calculate rows for overlapping bars (simple greedy algorithm)
+  const rows = assignRows(phase.weeks, maxWeek);
+  const totalRows = Math.max(...rows) + 1;
+  barsContainer.style.height = `${totalRows * (DETAIL_BAR_HEIGHT + DETAIL_BAR_GAP) + 20}px`;
+
+  // Build bars
+  phase.weeks.forEach((week, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'schedule-detail-bar-wrapper';
+
+    const leftPercent = (week.startWeek / maxWeek) * 100;
+    const widthPercent = ((week.endWeek - week.startWeek) / maxWeek) * 100;
+    const topPosition = rows[i] * (DETAIL_BAR_HEIGHT + DETAIL_BAR_GAP);
+
+    wrapper.style.left = `${leftPercent}%`;
+    wrapper.style.width = `${widthPercent}%`;
+    wrapper.style.top = `${topPosition}px`;
+
+    const bar = document.createElement('div');
+    bar.className = 'schedule-detail-bar';
+    bar.style.background = week.color;
+    wrapper.appendChild(bar);
+
+    // Label
+    const label = document.createElement('span');
+    label.className = 'schedule-detail-bar-label';
+    label.textContent = week.label;
+    bar.appendChild(label);
+
+    // Hover tooltip for detail bars
+    wrapper.addEventListener('mouseenter', (e) => {
+      if (!tooltipEl) return;
+      const weekStart = week.startWeek + 1;
+      const weekEnd = week.endWeek;
+      tooltipEl.innerHTML = `
+        <div class="schedule-tooltip-title" style="color: ${week.color.replace('0.8', '1')}">${week.label}</div>
+        <div class="schedule-tooltip-dates">Week ${weekStart} – Week ${weekEnd}</div>
+      `;
+      moveTooltip(e);
+      tooltipEl.classList.add('visible');
+    });
+    wrapper.addEventListener('mouseleave', hideTooltip);
+    wrapper.addEventListener('mousemove', moveTooltip);
+
+    barsContainer.appendChild(wrapper);
+  });
+
+  detailTimeline.appendChild(barsContainer);
+  detailContainer.appendChild(detailTimeline);
+
+  // Append to schedule container
+  scheduleContainer.appendChild(detailContainer);
+
+  // Trigger entrance animation
+  requestAnimationFrame(() => {
+    detailContainer.classList.add('visible');
+
+    // Stagger animate week markers
+    const weekMarkers = detailContainer.querySelectorAll('.schedule-detail-week-marker');
+    weekMarkers.forEach((marker, i) => {
+      setTimeout(() => marker.classList.add('animate-in'), 100 + i * 20);
+    });
+
+    // Stagger animate guides
+    const guides = detailContainer.querySelectorAll('.schedule-detail-guide');
+    guides.forEach((guide, i) => {
+      setTimeout(() => guide.classList.add('animate-in'), 150 + i * 15);
+    });
+
+    // Stagger animate bars
+    const bars = detailContainer.querySelectorAll('.schedule-detail-bar-wrapper');
+    bars.forEach((bar, i) => {
+      setTimeout(() => bar.classList.add('animate-in'), 250 + i * 80);
+    });
+  });
+}
+
+// Assign rows to overlapping bars using greedy algorithm
+function assignRows(weeks, maxWeek) {
+  const rows = new Array(weeks.length).fill(0);
+  const rowEnds = []; // Track when each row becomes free
+
+  // Sort by start time for greedy assignment
+  const indices = weeks.map((_, i) => i).sort((a, b) => weeks[a].startWeek - weeks[b].startWeek);
+
+  indices.forEach(idx => {
+    const week = weeks[idx];
+    let placed = false;
+    for (let r = 0; r < rowEnds.length; r++) {
+      if (rowEnds[r] <= week.startWeek) {
+        rows[idx] = r;
+        rowEnds[r] = week.endWeek;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      rows[idx] = rowEnds.length;
+      rowEnds.push(week.endWeek);
+    }
+  });
+
+  return rows;
+}
+
 // Show tooltip
 function showTooltip(e, phase) {
   if (!tooltipEl) return;
+
+  const hasWeeks = phase.weeks && phase.weeks.length > 0;
 
   tooltipEl.innerHTML = `
     <div class="schedule-tooltip-title" style="color: ${phase.color.replace('0.8', '1')}">${phase.name}</div>
     <div class="schedule-tooltip-dates">${getDateRange(phase)}</div>
     <div class="schedule-tooltip-desc">${phase.description}</div>
+    ${hasWeeks ? '<div class="schedule-tooltip-hint">Click to see weekly breakdown</div>' : ''}
   `;
 
   moveTooltip(e);
@@ -644,6 +1153,22 @@ function resetAnimations() {
   if (wrappers) {
     wrappers.forEach(wrapper => wrapper.classList.remove('animate-in'));
   }
+
+  // Also reset detail view when leaving
+  if (currentView !== 'main') {
+    currentView = 'main';
+    if (detailContainer) {
+      detailContainer.remove();
+      detailContainer = null;
+    }
+    timelineContainer.classList.remove('fade-out');
+    if (titleRow) {
+      const yearsEl = titleRow.querySelector('.schedule-years');
+      if (yearsEl && yearsEl.dataset.originalText) {
+        yearsEl.textContent = yearsEl.dataset.originalText;
+      }
+    }
+  }
 }
 
 // Initialize chapter DOM elements
@@ -707,6 +1232,21 @@ export function update(currentSection, targetSection, transitionProgress, isTran
         containerScale = 1 - transitionProgress * 0.3;
         containerOpacity = 1 - transitionProgress;
       }
+      // Reset to main view when leaving
+      if (transitionProgress > 0.5 && currentView !== 'main') {
+        currentView = 'main';
+        if (detailContainer) {
+          detailContainer.remove();
+          detailContainer = null;
+        }
+        timelineContainer.classList.remove('fade-out');
+        if (titleRow) {
+          const yearsEl = titleRow.querySelector('.schedule-years');
+          if (yearsEl && yearsEl.dataset.originalText) {
+            yearsEl.textContent = yearsEl.dataset.originalText;
+          }
+        }
+      }
     } else if (sectionIndex === targetSection) {
       if (goingForward) {
         containerZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
@@ -769,10 +1309,15 @@ export function destroy() {
     tooltipEl.remove();
     tooltipEl = null;
   }
+  if (detailContainer) {
+    detailContainer.remove();
+    detailContainer = null;
+  }
   timelineContainer = null;
   titleRow = null;
   sectionIndex = -1;
   hasAnimated = false;
+  currentView = 'main';
 
   const styles = document.getElementById('schedule-chapter-styles');
   if (styles) styles.remove();

@@ -13,35 +13,27 @@ const DEPART_Z = 800;
 const PORTRAIT_SIZE = 120;
 
 // Crew member data - positions are relative offsets from center (in pixels)
-// Layout: 2 rows of 4 - Top row: Ryan, Triglass, Charles, Noelle | Bottom row: Rita, Kaleb, David, James
+// Layout: Top row of 3, bottom row of 4 - Top row: Ryan, Triglass, Noelle | Bottom row: Rita, Kaleb, David, James
 const CREW_DATA = [
   {
     name: 'Ryan Thielen',
     role: 'Director',
-    x: -300,
+    x: -200,
     y: -100,
     image: 'https://triglass-assets.s3.amazonaws.com/ryan.jpg',
-    bio: `The world through Ryan Thielen's eyes is big, bold, and filled with endless possibility. His work lives at the intersection of emotional story driven story and imaginative, fantastical worlds.
+    bio: `The world through Ryan Thielen's eyes is big, bold and filled with endless possibility. His work intersects emotional storytelling with imaginative, fantastical worlds.
 
-Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</strong>, 8 Telly Awards, 2 IDEA Awards, and a Clio.`,
+Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</strong>, <strong>8 Telly Awards</strong>, <strong>2 IDEA Awards</strong>, and multiple <strong>Clio Awards</strong>.`,
     reel: 'https://triglass-assets.s3.amazonaws.com/RyanVid.png',
     signature: 'https://triglass-assets.s3.amazonaws.com/signature.png',
   },
   {
-    name: 'Charles Mulford',
-    role: 'Producer',
-    x: 100,
-    y: -100,
-    image: 'https://triglass-assets.s3.amazonaws.com/charles.jpg',
-    bio: 'Charles Mulford produces Liftoff with a focus on bringing imaginative stories to life while maintaining creative integrity.',
-  },
-  {
     name: 'Noelle Anderson',
     role: 'AD',
-    x: 300,
+    x: 200,
     y: -100,
     image: 'https://triglass-assets.s3.amazonaws.com/noelle.jpg',
-    bio: 'Noelle Anderson serves as Assistant Director, coordinating the production with precision and creative insight.',
+    bio: 'Noelle Anderson serves as Assistant Director, coordinating the production with precision and creative insight. She is known for developing and delivering compelling visual and narrative-driven projects across film, television and digital media. With a strong eye for storytelling and production strategy, she specializes in guiding projects from concept through completion, balancing creative vision with executional excellence.',
   },
   {
     name: 'Kaleb Lechowski',
@@ -49,15 +41,15 @@ Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</str
     x: -100,
     y: 120,
     image: 'https://triglass-assets.s3.amazonaws.com/kaleb.jpg',
-    bio: 'Kaleb Lechowski brings the visual world of Liftoff to life as Art Director, crafting the magical aesthetic of the film.',
+    bio: 'As Art Director, Kaleb Lechowski brings the visual world of Liftoff to life, crafting the film\'s magical aesthetic. Kaleb is best known for his visually striking, cinematic animations that blend science fiction with emotional storytelling. He gained international recognition with his short film R\'ha, which showcased Hollywood-level visual effects created independently and led to opportunities in major film and game productions. His work is characterized by technical precision, atmospheric design, and a focus on immersive, character-driven narratives.',
   },
   {
     name: 'David Vanderwarn',
-    role: 'Line Producer',
+    role: 'Producer',
     x: 100,
     y: 120,
     image: 'https://triglass-assets.s3.amazonaws.com/david.jpg',
-    bio: 'David Vanderwarn manages the day-to-day production as Line Producer, ensuring everything runs smoothly.',
+    bio: 'David Vanderwarn has a natural ability to build trust and communicate value. He excels at identifying needs and delivering outcomes that exceed expectations. Known for his reliability, competitive edge, and relationship-focused approach, David is someone clients and teams rely on to move the needle and close the gap between potential and performance.',
   },
   {
     name: 'Rita Thielen',
@@ -65,7 +57,7 @@ Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</str
     x: -300,
     y: 120,
     image: 'https://triglass-assets.s3.amazonaws.com/rita-1.png',
-    bio: 'Rita Thielen is the writer of Liftoff, crafting the emotional story at the heart of the film.',
+    bio: 'Rita Thielen is the writer of Liftoff, crafting the emotional story at the heart of the film. With a talent for developing authentic characters and layered narratives, she brings nuance, heart, and clarity to each scene, shaping a story that resonates beyond the screen. Her writing reflects a thoughtful balance of structure and emotion, drawing viewers into a compelling journey that explores human experience with honesty and depth.',
   },
   {
     name: 'James Evenson',
@@ -73,12 +65,12 @@ Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</str
     x: 300,
     y: 120,
     image: 'https://triglass-assets.s3.amazonaws.com/james-1.jpg',
-    bio: 'James Evenson brings his expertise to the Liftoff production team.',
+    bio: 'James Evenson is a seasoned entrepreneur, investor, and business strategist who has been building, acquiring and restructuring companies for nearly four decades. Known for solving complex challenges and bringing order to chaos, he combines deep intuition with rigorous analysis to drive success across startups and billion-dollar enterprises worldwide.',
   },
   {
     name: 'Triglass Productions',
     role: 'Production & Post House',
-    x: -100,
+    x: 0,
     y: -100,
     image: 'https://triglass-assets.s3.amazonaws.com/triglass.png',
     isLogo: true,
@@ -303,89 +295,77 @@ function injectStyles() {
                   0 0 35px rgba(255, 150, 50, 0.6),
                   0 0 70px rgba(255, 150, 50, 0.35);
     }
-    /* Charles Mulford - Pink/Magenta */
-    .crew-portrait[data-crew-index="1"] .crew-portrait-inner {
-      border-color: rgba(255, 80, 150, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(255, 80, 150, 0.45),
-                  0 0 50px rgba(255, 80, 150, 0.25);
-    }
-    .crew-portrait[data-crew-index="1"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(255, 80, 150, 0.6),
-                  0 0 70px rgba(255, 80, 150, 0.35);
-    }
     /* Noelle Anderson - Green */
-    .crew-portrait[data-crew-index="2"] .crew-portrait-inner {
+    .crew-portrait[data-crew-index="1"] .crew-portrait-inner {
       border-color: rgba(80, 220, 120, 0.5);
       box-shadow: 0 8px 32px rgba(0,0,0,0.4),
                   0 0 25px rgba(80, 220, 120, 0.45),
                   0 0 50px rgba(80, 220, 120, 0.25);
     }
-    .crew-portrait[data-crew-index="2"]:hover .crew-portrait-inner {
+    .crew-portrait[data-crew-index="1"]:hover .crew-portrait-inner {
       box-shadow: 0 10px 40px rgba(0,0,0,0.5),
                   0 0 35px rgba(80, 220, 120, 0.6),
                   0 0 70px rgba(80, 220, 120, 0.35);
     }
     /* Kaleb Lechowski - Pink/Magenta */
-    .crew-portrait[data-crew-index="3"] .crew-portrait-inner {
+    .crew-portrait[data-crew-index="2"] .crew-portrait-inner {
       border-color: rgba(255, 80, 150, 0.5);
       box-shadow: 0 8px 32px rgba(0,0,0,0.4),
                   0 0 25px rgba(255, 80, 150, 0.45),
                   0 0 50px rgba(255, 80, 150, 0.25);
     }
-    .crew-portrait[data-crew-index="3"]:hover .crew-portrait-inner {
+    .crew-portrait[data-crew-index="2"]:hover .crew-portrait-inner {
       box-shadow: 0 10px 40px rgba(0,0,0,0.5),
                   0 0 35px rgba(255, 80, 150, 0.6),
                   0 0 70px rgba(255, 80, 150, 0.35);
     }
     /* David Vanderwarn - Cyan/Teal */
-    .crew-portrait[data-crew-index="4"] .crew-portrait-inner {
+    .crew-portrait[data-crew-index="3"] .crew-portrait-inner {
       border-color: rgba(50, 200, 200, 0.5);
       box-shadow: 0 8px 32px rgba(0,0,0,0.4),
                   0 0 25px rgba(50, 200, 200, 0.45),
                   0 0 50px rgba(50, 200, 200, 0.25);
     }
-    .crew-portrait[data-crew-index="4"]:hover .crew-portrait-inner {
+    .crew-portrait[data-crew-index="3"]:hover .crew-portrait-inner {
       box-shadow: 0 10px 40px rgba(0,0,0,0.5),
                   0 0 35px rgba(50, 200, 200, 0.6),
                   0 0 70px rgba(50, 200, 200, 0.35);
     }
-    /* Triglass - Purple */
-    .crew-portrait[data-crew-index="7"] .crew-portrait-inner {
-      border-color: rgba(160, 80, 200, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(160, 80, 200, 0.45),
-                  0 0 50px rgba(160, 80, 200, 0.25);
-    }
-    .crew-portrait[data-crew-index="7"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(160, 80, 200, 0.6),
-                  0 0 70px rgba(160, 80, 200, 0.35);
-    }
     /* Rita Thielen - Warm Orange/Gold */
-    .crew-portrait[data-crew-index="5"] .crew-portrait-inner {
+    .crew-portrait[data-crew-index="4"] .crew-portrait-inner {
       border-color: rgba(255, 180, 80, 0.5);
       box-shadow: 0 8px 32px rgba(0,0,0,0.4),
                   0 0 25px rgba(255, 180, 80, 0.45),
                   0 0 50px rgba(255, 180, 80, 0.25);
     }
-    .crew-portrait[data-crew-index="5"]:hover .crew-portrait-inner {
+    .crew-portrait[data-crew-index="4"]:hover .crew-portrait-inner {
       box-shadow: 0 10px 40px rgba(0,0,0,0.5),
                   0 0 35px rgba(255, 180, 80, 0.6),
                   0 0 70px rgba(255, 180, 80, 0.35);
     }
     /* James Evenson - Blue */
-    .crew-portrait[data-crew-index="6"] .crew-portrait-inner {
+    .crew-portrait[data-crew-index="5"] .crew-portrait-inner {
       border-color: rgba(80, 150, 255, 0.5);
       box-shadow: 0 8px 32px rgba(0,0,0,0.4),
                   0 0 25px rgba(80, 150, 255, 0.45),
                   0 0 50px rgba(80, 150, 255, 0.25);
     }
-    .crew-portrait[data-crew-index="6"]:hover .crew-portrait-inner {
+    .crew-portrait[data-crew-index="5"]:hover .crew-portrait-inner {
       box-shadow: 0 10px 40px rgba(0,0,0,0.5),
                   0 0 35px rgba(80, 150, 255, 0.6),
                   0 0 70px rgba(80, 150, 255, 0.35);
+    }
+    /* Triglass - Purple */
+    .crew-portrait[data-crew-index="6"] .crew-portrait-inner {
+      border-color: rgba(160, 80, 200, 0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
+                  0 0 25px rgba(160, 80, 200, 0.45),
+                  0 0 50px rgba(160, 80, 200, 0.25);
+    }
+    .crew-portrait[data-crew-index="6"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
+                  0 0 35px rgba(160, 80, 200, 0.6),
+                  0 0 70px rgba(160, 80, 200, 0.35);
     }
 
     /* Crew name and role labels */

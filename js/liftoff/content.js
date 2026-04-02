@@ -83,13 +83,13 @@ const SECTIONS = [
   },
   {
     title: 'COMPS',
-    subtitle: 'Films like E.T., Jumanji, Bridge to Terabithia, and Sketch succeed because they tap into a universal childhood truth: when children face experiences too big to understand—loss, fear, isolation, change—imagination becomes their survival tool.',
+    subtitle: '',
     compsLayout: true,
     images: []
   },
   {
     title: 'TARGET MARKET',
-    subtitle: 'Family films and Sci-Fi consistently dominate the $100M+ box office. Our film sits at the intersection of the two fastest-growing genres.',
+    subtitle: '',
     targetMarketLayout: true,
     images: []
   },
@@ -582,6 +582,9 @@ function injectStyles() {
     }
 
     /* Logline section */
+    .liftoff-text.logline {
+      top: 46%;
+    }
     .liftoff-text.logline h1 {
       font-size: clamp(24px, 4.2vw, 46px);
     }
@@ -594,7 +597,7 @@ function injectStyles() {
 
     /* Trailer section - large title positioned above video */
     .liftoff-text.trailer {
-      top: 24%;
+      top: 28%;
     }
     .liftoff-text.trailer h1 {
       font-size: clamp(26px, 4.2vw, 52px);
@@ -640,6 +643,9 @@ function injectStyles() {
       letter-spacing: 0.02em;
     }
     /* Preview logline styling - matches main logline */
+    .liftoff-preview.preview-logline {
+      top: 46%;
+    }
     .liftoff-preview.preview-logline h1 {
       font-size: clamp(24px, 4.2vw, 46px);
     }
@@ -670,7 +676,7 @@ function injectStyles() {
       font-size: clamp(14px, 2vw, 20px);
     }
     .liftoff-preview.preview-trailer {
-      top: 24%;
+      top: 28%;
     }
     .liftoff-preview.preview-trailer h1 {
       font-size: clamp(26px, 4.2vw, 52px);
@@ -1920,6 +1926,7 @@ function update() {
       previewScale = 1.5 - transitionProgress * 0.5; // Starts large (1.5), shrinks to normal (1.0)
       previewY = -30 * (1 - transitionProgress); // Slides down from -30px to 0 (coming from above)
     }
+
   } else {
     // AT REST: Only current section visible, with scroll anticipation effects
     if (currentSection !== lastSectionIndex) {

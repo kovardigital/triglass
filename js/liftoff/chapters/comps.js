@@ -1,6 +1,6 @@
 /* ==========================================================================
    Liftoff - COMPS Chapter
-   Wall of movie poster comps - flat wall at section Z, pan with mouse
+   Comparison matrix showing Liftoff vs comparable films
    ========================================================================== */
 
 // Uses discrete section system from content.js
@@ -8,61 +8,126 @@
 // Chapter configuration
 export const config = {
   title: 'COMPS',
-  subtitle: "Children's movies have a proven track record of working across decades...",
+  subtitle: '',
   compsLayout: true,
   images: []
 };
 
-// Wall dimensions - wide grid with featured 4 in center
-const WALL_COLS = 10;  // Extra column on each side
-const WALL_ROWS = 5;   // Extra row on top and bottom
-const POSTER_WIDTH = 226;  // 20% larger again
-const POSTER_HEIGHT = 337; // 20% larger again
-const POSTER_GAP = 16;
-
-// Featured poster positions (col, row) - center row, middle 4 columns
-const FEATURED_POSITIONS = [
-  { col: 3, row: 2 },
-  { col: 4, row: 2 },
-  { col: 5, row: 2 },
-  { col: 6, row: 2 },
+// Comparable films data
+const COMP_FILMS = [
+  {
+    id: 'stand-by-me',
+    title: 'Stand By Me',
+    year: '1986',
+    poster: 'https://triglass-assets.s3.amazonaws.com/comp-stand-by-me.jpg',
+    budget: '$8M',
+    boxOffice: '$52M',
+    roi: '6.5x',
+    childLed: true,
+    originalIP: false,
+    highConcept: true,
+    independent: true,
+    firstDirector: true,
+    festivalPedigree: false,
+    festivalNote: '',
+  },
+  {
+    id: 'wilderpeople',
+    title: 'Hunt for the Wilderpeople',
+    year: '2016',
+    poster: 'https://triglass-assets.s3.amazonaws.com/comp-wilderpeople.jpg',
+    budget: '$2.5M',
+    boxOffice: '$23M',
+    roi: '9.2x',
+    childLed: true,
+    originalIP: false,
+    highConcept: true,
+    independent: true,
+    firstDirector: true,
+    festivalPedigree: true,
+    festivalNote: 'Sundance Premiere',
+  },
+  {
+    id: 'pbf',
+    title: 'Peanut Butter Falcon',
+    year: '2019',
+    poster: 'https://triglass-assets.s3.amazonaws.com/comp-pbf.jpg',
+    budget: '$6M',
+    boxOffice: '$23M',
+    roi: '3.8x',
+    childLed: true,
+    originalIP: true,
+    highConcept: true,
+    independent: true,
+    firstDirector: true,
+    festivalPedigree: true,
+    festivalNote: 'SXSW Audience Award',
+  },
+  {
+    id: 'sketch',
+    title: 'Sketch',
+    year: '2025',
+    poster: 'https://triglass-assets.s3.amazonaws.com/comp-sketch.jpg',
+    budget: '$3M',
+    boxOffice: '$11M',
+    roi: '3.7x',
+    childLed: true,
+    originalIP: true,
+    highConcept: true,
+    independent: true,
+    firstDirector: true,
+    festivalPedigree: true,
+    festivalNote: 'TIFF Premiere',
+  },
+  {
+    id: 'liftoff',
+    title: 'Liftoff',
+    year: '2027',
+    poster: 'https://triglass-assets.s3.amazonaws.com/comp-liftoff.jpg',
+    budget: '$1.8M',
+    boxOffice: '',
+    roi: '',
+    childLed: true,
+    originalIP: true,
+    highConcept: true,
+    independent: true,
+    firstDirector: true,
+    festivalPedigree: false,
+    festivalNote: '',
+    isLiftoff: true,
+  },
 ];
 
-// Hidden positions - leave space for title (row above featured) and subtitle (row below featured)
-const HIDDEN_POSITIONS = [
-  // Row above featured - middle 3 for title (centered)
-  { col: 4, row: 1 },
-  { col: 5, row: 1 },
-  { col: 6, row: 1 },
-  // Row below featured - middle 4 for subtitle
-  { col: 3, row: 3 },
-  { col: 4, row: 3 },
-  { col: 5, row: 3 },
-  { col: 6, row: 3 },
+// Attribute rows in display order
+const ATTRIBUTES = [
+  { key: 'childLed', label: 'Child-led Perspective' },
+  { key: 'originalIP', label: 'Original IP' },
+  { key: 'highConcept', label: 'High Concept' },
+  { key: 'independent', label: 'Independent Production' },
+  { key: 'firstDirector', label: 'First or Second Time Directors' },
+  { key: 'festivalPedigree', label: 'Festival Pedigree' },
 ];
 
-// Featured poster data
-const FEATURED_DATA = [
-  { title: 'E.T.', budget: '~$10.5M', boxOffice: '~$797.3M', year: '1982', image: 'https://triglass-assets.s3.amazonaws.com/movie-1.jpg' },
-  { title: 'Jumanji', budget: '~$65M', boxOffice: '~$262.8M', year: '1995', image: 'https://triglass-assets.s3.amazonaws.com/movie-2.jpg' },
-  { title: 'Bridge to Terabithia', budget: '~$20M', boxOffice: '~$137M', year: '2007', image: 'https://triglass-assets.s3.amazonaws.com/movie-3.jpg' },
-  { title: 'Sketch', budget: '~$3M', boxOffice: '~$10.8M', year: '2025', image: 'https://triglass-assets.s3.amazonaws.com/movie-4.jpg' },
+const FINANCIAL_ROWS = [
+  { key: 'budget', label: 'Budget' },
+  { key: 'boxOffice', label: 'Box Office' },
+  { key: 'roi', label: 'ROI Ratio' },
 ];
 
-// Background poster images (movie-5 through movie-18)
-const BACKGROUND_IMAGES = Array.from({ length: 14 }, (_, i) =>
-  `https://triglass-assets.s3.amazonaws.com/movie-${i + 5}.jpg`
-);
+// Layout
+const POSTER_WIDTH = 120;
+const POSTER_HEIGHT = 178;
+const COLUMN_WIDTH = 140;
+const LABEL_WIDTH = 220;
 
 // DOM elements
-let wallContainer = null;
-let posterElements = [];
+let compsContainer = null;
 let sectionIndex = -1;
 
 // Z positions matching content.js fly-through system
-const REST_Z = 200;           // Where content sits when active
-const APPROACH_Z = -1400;     // Where content starts when approaching
-const DEPART_Z = 800;         // Where content goes when departing (must be < perspective 1000px)
+const REST_Z = 200;
+const APPROACH_Z = -1400;
+const DEPART_Z = 800;
 
 // Inject chapter-specific styles
 function injectStyles() {
@@ -71,180 +136,312 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = 'comps-chapter-styles';
   style.textContent = `
-    /* Comps layout - expand container width */
-    .liftoff-text.comps-layout,
+    /* Hide default text container for comps */
+    .liftoff-text.comps-layout {
+      display: none;
+    }
     .liftoff-preview.preview-comps {
-      max-width: 1600px;
-      width: 95vw;
+      display: none;
     }
 
-    /* Comps layout - title above posters, subtitle below */
-    .liftoff-text.comps-layout h1,
-    .liftoff-preview.preview-comps h1 {
+    /* Comps container */
+    .comps-container {
       position: absolute;
-      top: -280px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: clamp(26px, 4.2vw, 52px);
-      width: 100%;
-      text-align: center;
-      white-space: nowrap;
-    }
-    .liftoff-text.comps-layout p,
-    .liftoff-preview.preview-comps p {
-      position: absolute;
-      top: 220px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: clamp(11px, 1.3vw, 15px);
-      font-weight: 500;
-      max-width: 1400px;
-      padding: 0 20px;
-      text-align: center;
-      line-height: 1.6;
-    }
-
-    /* Poster wall grid */
-    .comps-wall {
-      position: absolute;
-      display: grid;
-      grid-template-columns: repeat(${WALL_COLS}, ${POSTER_WIDTH}px);
-      grid-template-rows: repeat(${WALL_ROWS}, ${POSTER_HEIGHT}px);
-      gap: ${POSTER_GAP}px;
       transform-style: preserve-3d;
       pointer-events: none;
     }
 
-    /* Background poster - dimmed but clearly visible */
-    .comps-poster {
+    /* Inner wrapper for layout */
+    .comps-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Section title */
+    .comps-section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(24px, 3.6vw, 42px);
+      font-weight: 400;
+      color: #d4d4d4;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    /* Table container - glassmorphism */
+    .comps-table {
+      background: rgba(15, 20, 35, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 28px 24px 20px;
+      pointer-events: auto;
+    }
+
+    /* Poster row */
+    .comps-poster-row {
+      display: flex;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .comps-poster-label-cell {
+      width: ${LABEL_WIDTH}px;
+      flex-shrink: 0;
+    }
+    .comps-poster-cell {
+      width: ${COLUMN_WIDTH}px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .comps-poster-img {
       width: ${POSTER_WIDTH}px;
       height: ${POSTER_HEIGHT}px;
-      background: linear-gradient(180deg, rgba(55,55,85,0.98) 0%, rgba(35,35,55,0.98) 100%);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 4px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(40, 40, 60, 0.6);
+      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .comps-poster-img:hover {
+      transform: scale(1.04);
+      border-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    /* Liftoff poster gets a subtle accent glow */
+    .comps-poster-cell.liftoff .comps-poster-img {
+      border-color: rgba(254, 208, 3, 0.25);
+    }
+    .comps-poster-cell.liftoff .comps-poster-img:hover {
+      border-color: rgba(254, 208, 3, 0.5);
+      box-shadow: 0 8px 24px rgba(254, 208, 3, 0.15);
+    }
+
+    /* Attribute rows */
+    .comps-attr-row {
+      display: flex;
+      align-items: center;
+      min-height: 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .comps-attr-row:last-child {
+      border-bottom: none;
+    }
+    .comps-attr-label {
+      width: ${LABEL_WIDTH}px;
+      flex-shrink: 0;
+      font-family: 'montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      padding-right: 16px;
+    }
+    .comps-attr-cell {
+      width: ${COLUMN_WIDTH}px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      position: relative;
-      overflow: hidden;
-      opacity: 0.25;
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  opacity 0.3s ease-out;
+      gap: 2px;
     }
-    .comps-poster .poster-label {
+
+    /* Dot indicators */
+    .comps-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+    }
+    .comps-dot.filled {
+      background: #2d8a4e;
+      box-shadow: 0 0 6px rgba(45, 138, 78, 0.4);
+    }
+    .comps-dot.empty {
+      background: transparent;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* Festival note under dot */
+    .comps-festival-note {
       font-family: 'montserrat', sans-serif;
-      font-size: 8px;
-      font-weight: 400;
-      color: rgba(255,255,255,0.25);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-    .comps-poster:hover {
-      opacity: 0.35;
-      transform: scale(1.03);
+      font-size: 9px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.55);
+      font-style: italic;
+      text-align: center;
+      line-height: 1.3;
+      max-width: ${COLUMN_WIDTH - 8}px;
     }
 
-    /* Very dim poster - in title/subtitle areas */
-    .comps-poster.very-dim {
-      opacity: 0.15;
-      background: linear-gradient(180deg, rgba(40,40,60,0.9) 0%, rgba(25,25,40,0.9) 100%);
-      border-color: rgba(255,255,255,0.06);
-    }
-    .comps-poster.very-dim:hover {
-      opacity: 0.2;
-    }
-    .comps-poster.very-dim .poster-label {
-      color: rgba(255,255,255,0.12);
-    }
-
-    /* Background poster with image */
-    .comps-poster .bg-poster-image {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 3px;
-    }
-
-    /* Featured poster - bright and prominent */
-    .comps-poster.featured {
-      background: #111;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 6px;
-      opacity: 1;
-    }
-    .comps-poster.featured:hover {
-      opacity: 1;
-      transform: scale(1.05);
-      border-color: rgba(255,255,255,0.25);
-      box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 50px rgba(100,150,255,0.15);
-    }
-    .comps-poster.featured .poster-image {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 5px;
-    }
-    .comps-poster.featured .poster-title {
+    /* Financial values */
+    .comps-financial-value {
       font-family: 'montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .comps-financial-value.accent {
+      color: #FED003;
+    }
+    .comps-financial-value.empty {
+      color: rgba(255, 255, 255, 0.2);
       font-size: 12px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.6);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-top: auto;
-      margin-bottom: auto;
-      text-align: center;
-      padding: 0 10px;
+      font-weight: 400;
     }
-    .comps-poster.featured .poster-data {
+
+    /* Financial section separator */
+    .comps-financial-divider {
+      display: flex;
+      align-items: center;
+      min-height: 24px;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+    .comps-financial-divider-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Liftoff column highlight */
+    .comps-poster-cell.liftoff,
+    .comps-attr-cell.liftoff {
+      position: relative;
+    }
+    .comps-attr-cell.liftoff::before {
+      content: '';
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 20px 10px 14px;
-      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
-      text-align: center;
-      z-index: 1;
-    }
-    .comps-poster.featured .poster-data .budget,
-    .comps-poster.featured .poster-data .box-office {
-      font-family: 'montserrat', sans-serif;
-      font-size: 10px;
-      color: rgba(255,255,255,0.7);
-      display: block;
-      line-height: 1.5;
-    }
-    .comps-poster.featured .poster-data .year {
-      font-family: 'montserrat', sans-serif;
-      font-size: 11px;
-      color: rgba(255,255,255,0.9);
-      display: block;
-      margin-top: 5px;
-      font-weight: 500;
+      top: -2px;
+      bottom: -2px;
+      left: 4px;
+      right: 4px;
+      background: rgba(254, 208, 3, 0.03);
+      border-radius: 4px;
+      pointer-events: none;
     }
   `;
   document.head.appendChild(style);
 }
 
-// Check if position is a featured poster, return its data
-function getFeaturedData(col, row) {
-  const posIndex = FEATURED_POSITIONS.findIndex(p => p.col === col && p.row === row);
-  if (posIndex >= 0) {
-    return FEATURED_DATA[posIndex];
-  }
-  return null;
-}
+// Build comparison table
+function buildTable() {
+  const inner = document.createElement('div');
+  inner.className = 'comps-inner';
 
-// Check if position should be hidden (for text visibility)
-function isHiddenPosition(col, row) {
-  return HIDDEN_POSITIONS.some(p => p.col === col && p.row === row);
+  // Section title
+  const title = document.createElement('h1');
+  title.className = 'comps-section-title';
+  title.textContent = 'COMPS';
+  inner.appendChild(title);
+
+  // Table
+  const table = document.createElement('div');
+  table.className = 'comps-table';
+
+  // Poster row
+  const posterRow = document.createElement('div');
+  posterRow.className = 'comps-poster-row';
+
+  const posterLabelCell = document.createElement('div');
+  posterLabelCell.className = 'comps-poster-label-cell';
+  posterRow.appendChild(posterLabelCell);
+
+  COMP_FILMS.forEach(film => {
+    const cell = document.createElement('div');
+    cell.className = 'comps-poster-cell' + (film.isLiftoff ? ' liftoff' : '');
+
+    const img = document.createElement('img');
+    img.className = 'comps-poster-img';
+    img.src = film.poster;
+    img.alt = film.title;
+    img.loading = 'lazy';
+    cell.appendChild(img);
+
+    posterRow.appendChild(cell);
+  });
+
+  table.appendChild(posterRow);
+
+  // Attribute rows
+  ATTRIBUTES.forEach(attr => {
+    const row = document.createElement('div');
+    row.className = 'comps-attr-row';
+
+    const label = document.createElement('div');
+    label.className = 'comps-attr-label';
+    label.textContent = attr.label;
+    row.appendChild(label);
+
+    COMP_FILMS.forEach(film => {
+      const cell = document.createElement('div');
+      cell.className = 'comps-attr-cell' + (film.isLiftoff ? ' liftoff' : '');
+
+      const dot = document.createElement('div');
+      dot.className = 'comps-dot ' + (film[attr.key] ? 'filled' : 'empty');
+      cell.appendChild(dot);
+
+      // Festival pedigree note
+      if (attr.key === 'festivalPedigree' && film.festivalNote) {
+        const note = document.createElement('div');
+        note.className = 'comps-festival-note';
+        note.textContent = film.festivalNote;
+        cell.appendChild(note);
+      }
+
+      row.appendChild(cell);
+    });
+
+    table.appendChild(row);
+  });
+
+  // Financial divider
+  const divider = document.createElement('div');
+  divider.className = 'comps-financial-divider';
+  const dividerLine = document.createElement('div');
+  dividerLine.className = 'comps-financial-divider-line';
+  divider.appendChild(dividerLine);
+  table.appendChild(divider);
+
+  // Financial rows
+  FINANCIAL_ROWS.forEach(fin => {
+    const row = document.createElement('div');
+    row.className = 'comps-attr-row';
+
+    const label = document.createElement('div');
+    label.className = 'comps-attr-label';
+    label.textContent = fin.label;
+    row.appendChild(label);
+
+    COMP_FILMS.forEach(film => {
+      const cell = document.createElement('div');
+      cell.className = 'comps-attr-cell' + (film.isLiftoff ? ' liftoff' : '');
+
+      const value = document.createElement('div');
+      const val = film[fin.key];
+      if (val) {
+        value.className = 'comps-financial-value' + (film.isLiftoff ? ' accent' : '');
+        value.textContent = val;
+      } else {
+        value.className = 'comps-financial-value empty';
+        value.textContent = '—';
+      }
+      cell.appendChild(value);
+
+      row.appendChild(cell);
+    });
+
+    table.appendChild(row);
+  });
+
+  inner.appendChild(table);
+  return inner;
 }
 
 // Initialize chapter DOM elements
@@ -257,134 +454,78 @@ export function init(imgWorld, sections) {
     return;
   }
 
-  // Create wall container
-  wallContainer = document.createElement('div');
-  wallContainer.className = 'comps-wall';
-
-  // Calculate wall dimensions
-  const wallWidth = WALL_COLS * POSTER_WIDTH + (WALL_COLS - 1) * POSTER_GAP;
-  const wallHeight = WALL_ROWS * POSTER_HEIGHT + (WALL_ROWS - 1) * POSTER_GAP;
-
-  // Set dimensions (centering done via transform in update)
-  wallContainer.style.width = `${wallWidth}px`;
-  wallContainer.style.height = `${wallHeight}px`;
-
-  // Create posters in grid
-  let bgImageIndex = 0;
-  for (let row = 0; row < WALL_ROWS; row++) {
-    for (let col = 0; col < WALL_COLS; col++) {
-      // Very dim posters in title/subtitle areas
-      if (isHiddenPosition(col, row)) {
-        const bgImage = BACKGROUND_IMAGES[bgImageIndex % BACKGROUND_IMAGES.length];
-        bgImageIndex++;
-        const dimPoster = document.createElement('div');
-        dimPoster.className = 'comps-poster very-dim';
-        dimPoster.innerHTML = `<img class="bg-poster-image" src="${bgImage}" alt="" />`;
-        wallContainer.appendChild(dimPoster);
-        posterElements.push(dimPoster);
-        continue;
-      }
-
-      const poster = document.createElement('div');
-      poster.className = 'comps-poster';
-
-      const featured = getFeaturedData(col, row);
-      if (featured) {
-        poster.classList.add('featured');
-        poster.innerHTML = `
-          <img class="poster-image" src="${featured.image}" alt="${featured.title}" />
-          <div class="poster-data">
-            <span class="budget">Budget: ${featured.budget}</span>
-            <span class="box-office">Box Office: ${featured.boxOffice}</span>
-            <span class="year">${featured.year}</span>
-          </div>
-        `;
-      } else {
-        const bgImage = BACKGROUND_IMAGES[bgImageIndex % BACKGROUND_IMAGES.length];
-        bgImageIndex++;
-        poster.innerHTML = `<img class="bg-poster-image" src="${bgImage}" alt="" />`;
-      }
-
-      wallContainer.appendChild(poster);
-      posterElements.push(poster);
-    }
-  }
-
-  wallContainer.style.opacity = 0;
-  imgWorld.appendChild(wallContainer);
-
+  compsContainer = document.createElement('div');
+  compsContainer.className = 'comps-container';
+  compsContainer.appendChild(buildTable());
+  compsContainer.style.opacity = 0;
+  imgWorld.appendChild(compsContainer);
 }
 
-// Update chapter based on discrete section system (matching content.js)
+// Update chapter based on discrete section system
 export function update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation) {
-  if (sectionIndex < 0 || !wallContainer) return;
+  if (sectionIndex < 0 || !compsContainer) return;
 
   const goingForward = targetSection > currentSection;
 
-  let wallZ = REST_Z;
-  let wallOpacity = 0;
-  let wallScale = 1;
+  let containerZ = REST_Z;
+  let containerOpacity = 0;
+  let containerScale = 1;
 
   if (isTransitioning) {
     if (sectionIndex === currentSection) {
-      // COMPS is current section, animating away
       if (goingForward) {
-        wallZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
-        wallScale = 1 + transitionProgress * 0.5;
-        wallOpacity = Math.max(0, 1 - transitionProgress * 2); // Fade out twice as fast
+        containerZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+        containerScale = 1 + transitionProgress * 0.5;
+        containerOpacity = Math.max(0, 1 - transitionProgress * 2);
       } else {
-        wallZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
-        wallScale = 1 - transitionProgress * 0.3;
-        wallOpacity = 1 - transitionProgress;
+        containerZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
+        containerScale = 1 - transitionProgress * 0.3;
+        containerOpacity = 1 - transitionProgress;
       }
     } else if (sectionIndex === targetSection) {
-      // COMPS is target section, approaching
       if (goingForward) {
-        wallZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
-        wallScale = 0.7 + transitionProgress * 0.3;
+        containerZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+        containerScale = 0.7 + transitionProgress * 0.3;
       } else {
-        wallZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
-        wallScale = 1.5 - transitionProgress * 0.5;
+        containerZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
+        containerScale = 1.5 - transitionProgress * 0.5;
       }
-      wallOpacity = transitionProgress;
+      containerOpacity = transitionProgress;
     }
   } else {
-    // At rest
     if (sectionIndex === currentSection) {
-      wallZ = REST_Z + elasticOffset * 500;
-      wallOpacity = 1;
+      containerZ = REST_Z + elasticOffset * 500;
+      containerOpacity = 1;
 
-      // Apply scroll anticipation
       if (scrollAnticipation < 0) {
-        wallZ = REST_Z + Math.abs(scrollAnticipation) * 200;
-        wallScale = 1 + Math.abs(scrollAnticipation) * 0.2;
-        wallOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
+        containerZ = REST_Z + Math.abs(scrollAnticipation) * 200;
+        containerScale = 1 + Math.abs(scrollAnticipation) * 0.2;
+        containerOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
       } else if (scrollAnticipation > 0) {
-        wallZ = REST_Z - scrollAnticipation * 400;
-        wallScale = 1 - scrollAnticipation * 0.3;
-        wallOpacity = 1 - scrollAnticipation * 0.6;
+        containerZ = REST_Z - scrollAnticipation * 400;
+        containerScale = 1 - scrollAnticipation * 0.3;
+        containerOpacity = 1 - scrollAnticipation * 0.6;
       }
     }
   }
 
-  // Subtle parallax movement with mouse
-  const panX = mouse.x * 30;
-  const panY = -mouse.y * 15;
+  const offsetX = mouse.x * 12;
+  const offsetY = -mouse.y * 6;
 
-  // Apply transform to wall container - centered
-  wallContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${wallZ}px) rotate(${leanAngle}deg) scale(${wallScale})`;
-  wallContainer.style.opacity = Math.max(0, Math.min(1, wallOpacity));
-  // Only allow interactions when this is the active section and not transitioning
-  wallContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && wallOpacity > 0.5) ? 'auto' : 'none';
+  const shouldBeVisible = sectionIndex === currentSection || sectionIndex === targetSection;
+
+  compsContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
+  compsContainer.style.opacity = Math.max(0, Math.min(1, containerOpacity));
+  compsContainer.style.visibility = shouldBeVisible && containerOpacity > 0.01 ? 'visible' : 'hidden';
+  compsContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && containerOpacity > 0.5) ? 'auto' : 'none';
 }
 
 // Cleanup chapter DOM
 export function destroy() {
-  if (wallContainer) {
-    wallContainer.remove();
-    wallContainer = null;
+  if (compsContainer) {
+    compsContainer.remove();
+    compsContainer = null;
   }
-  posterElements = [];
   sectionIndex = -1;
 
   const styles = document.getElementById('comps-chapter-styles');

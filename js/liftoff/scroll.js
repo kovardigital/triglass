@@ -18,7 +18,14 @@ let scrollDirection = 0; // -1 = forward, 1 = backward, 0 = none
 // Transition settings
 const TRANSITION_SPEED = 0.09;
 const SIDEBAR_TRANSITION_SPEED = 0.05; // Slower, smoother for sidebar clicks
-const SCROLL_THRESHOLD = 75;
+
+// Adaptive thresholds for trackpad vs mouse
+const MOUSE_SCROLL_THRESHOLD = 75;
+const TRACKPAD_SCROLL_THRESHOLD = 130;   // Higher threshold resists trackpad inertia
+const MOUSE_PER_EVENT_CAP = 15;
+const TRACKPAD_PER_EVENT_CAP = 6;        // Lower cap tames rapid small events
+const MOUSE_CHAIN_COOLDOWN_MS = 250;
+const TRACKPAD_CHAIN_COOLDOWN_MS = 500;  // Longer cooldown prevents inertia chaining
 
 // Track if current transition is from sidebar click
 let isSidebarTransition = false;
@@ -44,7 +51,6 @@ const ANTICIPATION_SMOOTH_FACTOR = 0.12; // Lower = smoother
 // Chain cooldown - prevents inertia from triggering multiple chains
 let chainCooldown = false;
 let chainCooldownTimeout = null;
-const CHAIN_COOLDOWN_MS = 250; // Time before another chain can happen
 
 // Space Z movement - accumulates as user navigates, creating fly-through-space effect
 let spaceZ = 0;           // Current interpolated Z position
@@ -57,6 +63,50 @@ let debugIndicator = null;
 
 // Reference to camera
 let camera = null;
+
+// --- Trackpad detection ---
+// Trackpads fire many small, rapid events; mice fire fewer, larger, less frequent events
+let isTrackpad = false;
+let lastWheelTime = 0;
+let smallDeltaCount = 0;
+
+// Scroll decay - kills trackpad inertia when user lifts fingers
+const SCROLL_DECAY_RATE = 0.88;
+const SCROLL_DECAY_DELAY = 100; // ms of silence before decay kicks in
+
+function detectInputDevice(e) {
+  const now = performance.now();
+  const timeDelta = now - lastWheelTime;
+  const absDelta = Math.abs(e.deltaY);
+
+  // Rapid small deltas in succession = trackpad
+  if (timeDelta < 60 && absDelta < 25 && absDelta > 0) {
+    smallDeltaCount++;
+    if (smallDeltaCount >= 3) {
+      isTrackpad = true;
+    }
+  } else if (timeDelta > 150 || absDelta >= 40) {
+    // Large gap or big delta = mouse wheel
+    smallDeltaCount = 0;
+    if (absDelta >= 40) {
+      isTrackpad = false;
+    }
+  }
+
+  lastWheelTime = now;
+}
+
+function getScrollThreshold() {
+  return isTrackpad ? TRACKPAD_SCROLL_THRESHOLD : MOUSE_SCROLL_THRESHOLD;
+}
+
+function getPerEventCap() {
+  return isTrackpad ? TRACKPAD_PER_EVENT_CAP : MOUSE_PER_EVENT_CAP;
+}
+
+function getChainCooldownMs() {
+  return isTrackpad ? TRACKPAD_CHAIN_COOLDOWN_MS : MOUSE_CHAIN_COOLDOWN_MS;
+}
 
 // Trigger a section change with transition
 function triggerSectionChange(newSection) {
@@ -78,9 +128,16 @@ function triggerSectionChange(newSection) {
 
 // Wheel handler - only source of scroll detection
 function onWheel(e) {
+  // Detect input device type (trackpad vs mouse)
+  detectInputDevice(e);
+
+  const SCROLL_THRESHOLD = getScrollThreshold();
+  const PER_EVENT_CAP = getPerEventCap();
+  const CHAIN_COOLDOWN_MS = getChainCooldownMs();
+
   // Accumulate scroll freely - even during transitions (allows interruption)
   // Cap per-event contribution to prevent fast scrolling from being too sensitive
-  accumulatedScroll += Math.min(Math.abs(e.deltaY), 15) * Math.sign(e.deltaY);
+  accumulatedScroll += Math.min(Math.abs(e.deltaY), PER_EVENT_CAP) * Math.sign(e.deltaY);
 
   // Clamp to prevent over-accumulation beyond thresholds
   accumulatedScroll = Math.max(-SCROLL_THRESHOLD * 1.5, Math.min(SCROLL_THRESHOLD * 1.5, accumulatedScroll));
@@ -174,6 +231,9 @@ function init(cam) {
   accumulatedScroll = 0;
   elasticOffset = 0;
   elasticVelocity = 0;
+  isTrackpad = false;
+  smallDeltaCount = 0;
+  lastWheelTime = 0;
 
   // Debug indicator disabled for production
   // debugIndicator = document.createElement('div');
@@ -248,6 +308,17 @@ function update() {
     }
   }
 
+  // Decay accumulated scroll when user stops scrolling (kills trackpad inertia)
+  if (!isTransitioning && accumulatedScroll !== 0) {
+    const timeSinceLastWheel = performance.now() - lastWheelTime;
+    if (timeSinceLastWheel > SCROLL_DECAY_DELAY) {
+      accumulatedScroll *= SCROLL_DECAY_RATE;
+      if (Math.abs(accumulatedScroll) < 1) {
+        accumulatedScroll = 0;
+      }
+    }
+  }
+
   // Spring physics for elastic bounce
   if (elasticOffset !== 0 || elasticVelocity !== 0) {
     const springForce = -elasticOffset * SPRING_STIFFNESS;
@@ -273,6 +344,7 @@ function update() {
   }
 
   // Smooth the anticipation value for visual feedback
+  const SCROLL_THRESHOLD = getScrollThreshold();
   const rawAnticipation = isTransitioning ? 0 : Math.max(-1, Math.min(1, accumulatedScroll / SCROLL_THRESHOLD));
   smoothedAnticipation += (rawAnticipation - smoothedAnticipation) * ANTICIPATION_SMOOTH_FACTOR;
 
@@ -290,7 +362,8 @@ function update() {
       Section: ${currentSection}<br>
       Transition: ${transState}<br>
       Scroll: ${accumulatedScroll.toFixed(0)} ${direction}<br>
-      Anticipation: ${(anticipation * 100).toFixed(0)}%
+      Anticipation: ${(anticipation * 100).toFixed(0)}%<br>
+      Input: ${isTrackpad ? 'Trackpad' : 'Mouse'}
     `;
   }
 }

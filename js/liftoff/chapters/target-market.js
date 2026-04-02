@@ -1,96 +1,74 @@
 /* ==========================================================================
    Liftoff - TARGET MARKET Chapter
-   Interactive stacked bar chart showing genre performance over time
-   Based on Ampere Analysis chart style
+   Family films revenue data with stacked bar chart
    ========================================================================== */
 
 // Chapter configuration
 export const config = {
   title: 'TARGET MARKET',
-  subtitle: 'Family films and Sci-Fi consistently dominate the $100M+ box office. Our film sits at the intersection of the two fastest-growing genres.',
+  subtitle: '',
   targetMarketLayout: true,
   images: []
 };
 
-// Genre colors matching Ampere Analysis style
-const GENRES = [
-  { id: 'scifi', name: 'Sci-Fi & Fantasy', color: '#2eafc9' },
-  { id: 'family', name: 'Children & Family', color: '#3cb371' },
-  { id: 'action', name: 'Action & Adventure', color: '#daa520' },
-  { id: 'comedy', name: 'Comedy', color: '#9b7cc7' },
-  { id: 'crime', name: 'Crime & Thriller', color: '#7b9fc7' },
-  { id: 'drama', name: 'Drama', color: '#d4a5a5' },
-  { id: 'horror', name: 'Horror', color: '#e8915f' },
-  { id: 'romance', name: 'Romance', color: '#a64d79' }
+// Simplified genre categories (colors matched to budget donut for cohesion)
+const CATEGORIES = [
+  { id: 'action', name: 'Action & Adventure', color: '#4ECDC4' },   // Teal (Production)
+  { id: 'family', name: 'Children & Family', color: '#FF6B6B' },    // Coral (Above-The-Line)
+  { id: 'other', name: 'Other', color: 'rgba(120, 120, 120, 0.5)' },
 ];
 
-// Data based on US studio movies grossing >$100m (Ampere Analysis style)
+// Data: US movies grossing >$100M at US Box Office by Genre (% of total)
 const CHART_DATA = [
   {
     year: 2021,
-    total: 11,
     segments: [
-      { genre: 'scifi', count: 7, percent: 64 },
-      { genre: 'family', count: 1, percent: 9 },
-      { genre: 'action', count: 1, percent: 9 },
-      { genre: 'comedy', count: 1, percent: 9 },
-      { genre: 'crime', count: 1, percent: 9 }
-    ]
-  },
-  {
-    year: 2022,
-    total: 15,
-    segments: [
-      { genre: 'scifi', count: 6, percent: 39 },
-      { genre: 'family', count: 3, percent: 20 },
-      { genre: 'action', count: 2, percent: 13 },
-      { genre: 'comedy', count: 1, percent: 7 },
-      { genre: 'crime', count: 1, percent: 7 },
-      { genre: 'drama', count: 1, percent: 7 },
-      { genre: 'horror', count: 1, percent: 7 }
-    ]
-  },
-  {
-    year: 2023,
-    total: 17,
-    segments: [
-      { genre: 'scifi', count: 6, percent: 35 },
-      { genre: 'family', count: 5, percent: 29 },
-      { genre: 'action', count: 2, percent: 12 },
-      { genre: 'comedy', count: 1, percent: 6 },
-      { genre: 'crime', count: 1, percent: 6 },
-      { genre: 'drama', count: 1, percent: 6 },
-      { genre: 'horror', count: 1, percent: 6 }
+      { category: 'other', percent: 27 },
+      { category: 'family', percent: 9 },
+      { category: 'action', percent: 64 },
     ]
   },
   {
     year: 2024,
-    total: 21,
     segments: [
-      { genre: 'scifi', count: 8, percent: 37 },
-      { genre: 'family', count: 7, percent: 33 },
-      { genre: 'action', count: 2, percent: 10 },
-      { genre: 'comedy', count: 2, percent: 10 },
-      { genre: 'crime', count: 1, percent: 5 },
-      { genre: 'drama', count: 1, percent: 5 }
+      { category: 'other', percent: 22 },
+      { category: 'family', percent: 39 },
+      { category: 'action', percent: 39 },
+    ]
+  },
+  {
+    year: 2025,
+    segments: [
+      { category: 'other', percent: 38 },
+      { category: 'family', percent: 28 },
+      { category: 'action', percent: 34 },
     ]
   }
 ];
 
+// Key stats for text panel
+const HEADLINE = 'Family Films Command a Growing Share of Theatrical Revenue';
+const KEY_STAT = 'PG-rated films accounted for 41.5% of the US box-office revenue of 2025';
+const BULLETS = [
+  'Families with children attend the cinema more frequently than average audiences (53% vs. 46%)',
+  '65% of families report watching content together',
+  '33% of studio films grossing $100M in 2024 were family films',
+];
+const SOURCES = [
+  'Wall Street Journal. "Wicked, Zootopia, PG Movies..." (2025).',
+  'Advanced Television. "Analysis: Family Films Fueling the Box Office." (July 28, 2025).',
+];
+
 // Chart dimensions
-const CHART_WIDTH = 700;
-const CHART_HEIGHT = 420;
-const BAR_WIDTH = 100;
-const BAR_GAP = 60;
-const CHART_PADDING = { top: 80, right: 40, bottom: 60, left: 60 };
-const MAX_VALUE = 25;
+const CHART_WIDTH = 340;
+const CHART_HEIGHT = 300;
+const BAR_WIDTH = 80;
+const BAR_GAP = 20;
+const CHART_PADDING = { top: 40, right: 20, bottom: 40, left: 20 };
 
 // DOM elements
-let chartContainer = null;
-let tooltipEl = null;
+let marketContainer = null;
 let sectionIndex = -1;
-let selectedGenre = null;
-let hoveredSegment = null;
 let isHoveringChart = false;
 
 // Z positions matching content.js fly-through system
@@ -98,9 +76,8 @@ const REST_Z = 200;
 const APPROACH_Z = -1400;
 const DEPART_Z = 800;
 
-// Get genre info by id
-function getGenre(id) {
-  return GENRES.find(g => g.id === id);
+function getCategory(id) {
+  return CATEGORIES.find(c => c.id === id);
 }
 
 // Inject chapter-specific styles
@@ -110,459 +87,385 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = 'target-market-chapter-styles';
   style.textContent = `
-    /* Target Market layout - combined for both preview and settled states */
-    .liftoff-text.target-market-layout,
+    /* Hide default text container */
+    .liftoff-text.target-market-layout {
+      display: none;
+    }
     .liftoff-preview.preview-target-market {
-      top: calc(23% - 20px);
-      max-width: none;
-      width: 100vw;
+      display: none;
     }
-    .liftoff-text.target-market-layout h1,
-    .liftoff-preview.preview-target-market h1 {
-      font-size: clamp(24px, 3.6vw, 42px);
-    }
-    .liftoff-text.target-market-layout p,
-    .liftoff-preview.preview-target-market p {
+
+    /* Market container */
+    .target-market-container {
       position: absolute;
-      top: 540px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: clamp(11px, 1.3vw, 15px);
-      max-width: 800px;
-      width: 90vw;
-      padding: 0 20px;
+      transform-style: preserve-3d;
+      pointer-events: none;
+    }
+
+    /* Inner layout - side by side */
+    .target-market-inner {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 48px;
+      max-width: 920px;
+    }
+
+    /* Section title above everything */
+    .target-market-section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(24px, 3.6vw, 42px);
+      font-weight: 400;
+      color: #d4d4d4;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 20px;
+      margin-top: -20px;
       text-align: center;
+      width: 100%;
+    }
+
+    /* Full wrapper */
+    .target-market-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* === Left panel: text content === */
+    .target-market-text {
+      flex: 1;
+      min-width: 380px;
+      max-width: 480px;
+    }
+    .target-market-headline {
+      font-family: 'montserrat', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.95);
+      line-height: 1.35;
+      margin-bottom: 20px;
+    }
+    .target-market-key-stat {
+      font-family: 'montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #FED003;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .target-market-subhead {
+      font-family: 'montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 12px;
+    }
+    .target-market-bullets {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 24px 0;
+    }
+    .target-market-bullets li {
+      font-family: 'montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
       line-height: 1.6;
+      padding-left: 0;
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .target-market-bullets li::before {
+      content: '•  ';
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Chart label */
+    .target-market-chart-label {
+      font-family: 'montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    /* === Right panel: chart === */
+    .target-market-chart-panel {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Legend */
+    .target-market-legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+    .target-market-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .target-market-legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+    }
+    .target-market-legend-label {
+      font-family: 'montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
     }
 
     /* Chart container */
     .target-market-chart {
-      position: absolute;
+      position: relative;
       width: ${CHART_WIDTH}px;
       height: ${CHART_HEIGHT}px;
-      transform-style: preserve-3d;
-      will-change: transform, opacity;
-    }
-
-    .chart-bg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(15, 20, 35, 0.85);
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      pointer-events: none;
-    }
-
-    .chart-legend {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: grid;
-      grid-template-columns: repeat(4, auto);
-      gap: 8px 24px;
-      justify-content: center;
       pointer-events: auto;
     }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 4px;
-      transition: background 0.2s ease-out, opacity 0.2s ease-out;
-      white-space: nowrap;
-      pointer-events: auto;
-    }
-    .legend-item:hover { background: rgba(255,255,255,0.1); }
-    .legend-item.selected { background: rgba(255,255,255,0.15); }
-    .legend-item.highlighted { background: rgba(255,255,255,0.12); }
-    .legend-item.dimmed { opacity: 0.3; }
-    .legend-color {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-    .legend-label {
-      font-family: 'montserrat', sans-serif;
-      font-size: 9px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.8);
-    }
 
-    .y-axis {
+    /* Bar group */
+    .tm-bar-group {
       position: absolute;
-      top: ${CHART_PADDING.top}px;
-      left: 0;
-      width: ${CHART_PADDING.left}px;
-      height: calc(100% - ${CHART_PADDING.top + CHART_PADDING.bottom}px);
-      pointer-events: none;
-    }
-    .y-axis-label {
-      position: absolute;
-      left: 10px;
-      font-family: 'montserrat', sans-serif;
-      font-size: 10px;
-      font-weight: 400;
-      color: rgba(255,255,255,0.5);
-      transform: translateY(-50%);
-    }
-    .y-axis-title {
-      position: absolute;
-      left: -5px;
-      top: 50%;
-      transform: rotate(-90deg) translateX(-50%);
-      transform-origin: left center;
-      font-family: 'montserrat', sans-serif;
-      font-size: 10px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.6);
-      white-space: nowrap;
-    }
-
-    .grid-line {
-      position: absolute;
-      left: ${CHART_PADDING.left}px;
-      width: calc(100% - ${CHART_PADDING.left + CHART_PADDING.right}px);
-      height: 1px;
-      background: rgba(255,255,255,0.08);
-      pointer-events: none;
-    }
-
-    .bars-container {
-      position: absolute;
-      top: ${CHART_PADDING.top}px;
-      left: ${CHART_PADDING.left}px;
-      width: calc(100% - ${CHART_PADDING.left + CHART_PADDING.right}px);
-      height: calc(100% - ${CHART_PADDING.top + CHART_PADDING.bottom}px);
-      pointer-events: auto;
-      transform: translateZ(0);
-      will-change: contents;
-    }
-
-    .bar-group {
-      position: absolute;
-      bottom: 0;
+      bottom: ${CHART_PADDING.bottom}px;
       width: ${BAR_WIDTH}px;
-      cursor: pointer;
-      pointer-events: auto;
-      transform: translateZ(0);
     }
 
-    .bar-segment {
+    /* Bar segment */
+    .tm-bar-segment {
       position: absolute;
       width: 100%;
       left: 0;
-      border-radius: 3px;
-      cursor: pointer;
-      pointer-events: auto;
-      transform: translateZ(0);
-      backface-visibility: hidden;
+      transition: filter 0.2s ease, box-shadow 0.2s ease;
     }
-    .bar-segment:hover {
-      filter: brightness(1.3) saturate(1.2);
-      box-shadow: 0 0 12px rgba(255,255,255,0.3);
+    .tm-bar-segment:hover {
+      filter: brightness(1.2);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
     }
-    .bar-segment:first-child { border-radius: 3px 3px 8px 8px; }
-    .bar-segment:last-child { border-radius: 8px 8px 3px 3px; }
-    .bar-segment.dimmed { opacity: 0.25; filter: grayscale(0.5); }
-    .bar-segment.highlighted { filter: brightness(1.3) saturate(1.2); box-shadow: 0 0 12px rgba(255,255,255,0.3); }
-
-    .segment-label {
+    /* Segment percent label */
+    .tm-segment-label {
       position: absolute;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
       font-family: 'montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      color: #fff;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
       pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s ease-out;
     }
-    .bar-segment.show-label .segment-label,
-    .bar-segment:hover .segment-label { opacity: 1; }
 
-    .year-label {
+    /* Year labels */
+    .tm-year-label {
       position: absolute;
-      bottom: 20px;
+      bottom: 10px;
       font-family: 'montserrat', sans-serif;
       font-size: 14px;
       font-weight: 600;
-      color: rgba(255,255,255,0.9);
+      color: rgba(255, 255, 255, 0.85);
       transform: translateX(-50%);
       pointer-events: none;
     }
 
-    .chart-tooltip {
+    /* Break indicator between 2021 and 2024 */
+    .tm-break {
       position: absolute;
-      padding: 12px 16px;
-      background: rgba(20, 25, 40, 0.98);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease-out;
-      z-index: 100;
-      min-width: 160px;
-    }
-    .chart-tooltip.visible { opacity: 1; }
-    .tooltip-genre {
+      bottom: ${CHART_PADDING.bottom}px;
       font-family: 'montserrat', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .tooltip-color {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-    }
-    .tooltip-stats {
-      font-family: 'montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 400;
-      color: rgba(255,255,255,0.7);
-      line-height: 1.6;
-    }
-    .tooltip-highlight {
-      color: #fff;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 2px;
     }
 
-    .chart-source {
-      position: absolute;
-      bottom: 8px;
-      right: 15px;
+    /* Source attribution */
+    .target-market-sources {
+      margin-top: 16px;
+      max-width: 100%;
+    }
+    .target-market-source-text {
       font-family: 'montserrat', sans-serif;
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 400;
-      color: rgba(255,255,255,0.35);
-      pointer-events: none;
+      color: rgba(255, 255, 255, 0.3);
+      line-height: 1.5;
+      text-align: center;
     }
   `;
   document.head.appendChild(style);
 }
 
-// Create the chart DOM
-function createChart() {
-  chartContainer = document.createElement('div');
-  chartContainer.className = 'target-market-chart';
+// Build the full layout
+function buildLayout() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'target-market-wrapper';
 
-  const bg = document.createElement('div');
-  bg.className = 'chart-bg';
-  chartContainer.appendChild(bg);
+  // Section title
+  const sectionTitle = document.createElement('h1');
+  sectionTitle.className = 'target-market-section-title';
+  sectionTitle.textContent = 'TARGET MARKET';
+  wrapper.appendChild(sectionTitle);
+
+  // Inner two-column layout
+  const inner = document.createElement('div');
+  inner.className = 'target-market-inner';
+
+  // Left: text panel
+  const textPanel = document.createElement('div');
+  textPanel.className = 'target-market-text';
+
+  const headline = document.createElement('div');
+  headline.className = 'target-market-headline';
+  headline.textContent = HEADLINE;
+  textPanel.appendChild(headline);
+
+  const keyStat = document.createElement('div');
+  keyStat.className = 'target-market-key-stat';
+  keyStat.textContent = KEY_STAT;
+  textPanel.appendChild(keyStat);
+
+  const subhead = document.createElement('div');
+  subhead.className = 'target-market-subhead';
+  subhead.textContent = 'Families are a disproportionately valuable segment';
+  textPanel.appendChild(subhead);
+
+  const bullets = document.createElement('ul');
+  bullets.className = 'target-market-bullets';
+  BULLETS.forEach(text => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    bullets.appendChild(li);
+  });
+  textPanel.appendChild(bullets);
+
+  inner.appendChild(textPanel);
+
+  // Right: chart panel
+  const chartPanel = document.createElement('div');
+  chartPanel.className = 'target-market-chart-panel';
+
+  // Chart label
+  const chartLabel = document.createElement('div');
+  chartLabel.className = 'target-market-chart-label';
+  chartLabel.textContent = 'US Movies grossing > $100M at the US Box Office by Genre';
+  chartPanel.appendChild(chartLabel);
 
   // Legend
   const legend = document.createElement('div');
-  legend.className = 'chart-legend';
-  GENRES.forEach(genre => {
+  legend.className = 'target-market-legend';
+  CATEGORIES.forEach(cat => {
     const item = document.createElement('div');
-    item.className = 'legend-item';
-    item.dataset.genre = genre.id;
-    item.innerHTML = `
-      <div class="legend-color" style="background: ${genre.color}"></div>
-      <span class="legend-label">${genre.name}</span>
-    `;
-    item.addEventListener('click', () => onLegendClick(genre.id));
-    item.addEventListener('mouseenter', () => onLegendHover(genre.id));
-    item.addEventListener('mouseleave', () => onLegendHover(null));
+    item.className = 'target-market-legend-item';
+
+    const swatch = document.createElement('div');
+    swatch.className = 'target-market-legend-swatch';
+    swatch.style.backgroundColor = cat.color;
+    item.appendChild(swatch);
+
+    const label = document.createElement('span');
+    label.className = 'target-market-legend-label';
+    label.textContent = cat.name;
+    item.appendChild(label);
+
     legend.appendChild(item);
   });
-  chartContainer.appendChild(legend);
+  chartPanel.appendChild(legend);
 
-  // Y-axis
-  const yAxis = document.createElement('div');
-  yAxis.className = 'y-axis';
-  const yTitle = document.createElement('div');
-  yTitle.className = 'y-axis-title';
-  yTitle.textContent = 'No. of movies (#)';
-  yAxis.appendChild(yTitle);
+  // Chart
+  const chart = document.createElement('div');
+  chart.className = 'target-market-chart';
 
-  const chartHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
-  for (let i = 0; i <= 5; i++) {
-    const value = i * 5;
-    const yPercent = 1 - (value / MAX_VALUE);
-    const label = document.createElement('div');
-    label.className = 'y-axis-label';
-    label.style.top = `${yPercent * 100}%`;
-    label.textContent = value;
-    yAxis.appendChild(label);
+  chart.addEventListener('mouseenter', () => { isHoveringChart = true; });
+  chart.addEventListener('mouseleave', () => { isHoveringChart = false; });
 
-    const gridLine = document.createElement('div');
-    gridLine.className = 'grid-line';
-    gridLine.style.top = `${CHART_PADDING.top + yPercent * chartHeight}px`;
-    chartContainer.appendChild(gridLine);
-  }
-  chartContainer.appendChild(yAxis);
-
-  // Bars
-  const barsContainer = document.createElement('div');
-  barsContainer.className = 'bars-container';
-
+  const barAreaHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
   const totalBarsWidth = CHART_DATA.length * BAR_WIDTH + (CHART_DATA.length - 1) * BAR_GAP;
-  const containerWidth = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
-  const startX = (containerWidth - totalBarsWidth) / 2;
+  // Add extra gap between first and second bar for the break indicator
+  const breakGap = 30;
+  const totalWidth = totalBarsWidth + breakGap;
+  const startX = (CHART_WIDTH - totalWidth) / 2;
 
   CHART_DATA.forEach((yearData, yearIndex) => {
-    const barGroup = document.createElement('div');
-    barGroup.className = 'bar-group';
-    barGroup.style.left = `${startX + yearIndex * (BAR_WIDTH + BAR_GAP)}px`;
+    // Offset for break gap after first bar
+    const extraOffset = yearIndex > 0 ? breakGap : 0;
+    const barX = startX + yearIndex * (BAR_WIDTH + BAR_GAP) + extraOffset;
 
-    let currentY = 0;
-    yearData.segments.forEach((segment) => {
-      const genre = getGenre(segment.genre);
-      const segmentHeight = (segment.count / MAX_VALUE) * chartHeight;
+    const barGroup = document.createElement('div');
+    barGroup.className = 'tm-bar-group';
+    barGroup.style.left = `${barX}px`;
+
+    let currentBottom = 0;
+    yearData.segments.forEach(segment => {
+      const cat = getCategory(segment.category);
+      const segmentHeight = (segment.percent / 100) * barAreaHeight;
 
       const segEl = document.createElement('div');
-      segEl.className = 'bar-segment';
-      segEl.dataset.genre = segment.genre;
-      segEl.dataset.year = yearData.year;
-      segEl.style.background = genre.color;
+      segEl.className = 'tm-bar-segment';
+      segEl.style.backgroundColor = cat.color;
       segEl.style.height = `${segmentHeight}px`;
-      segEl.style.bottom = `${currentY}px`;
+      segEl.style.bottom = `${currentBottom}px`;
 
-      const label = document.createElement('span');
-      label.className = 'segment-label';
-      label.textContent = `${segment.percent}%`;
-      segEl.appendChild(label);
-
-      if (segmentHeight > 30) segEl.classList.add('show-label');
-
-      segEl.addEventListener('mouseenter', (e) => onSegmentHover(segment, yearData, e));
-      segEl.addEventListener('mouseleave', () => onSegmentHover(null, null, null));
-      segEl.addEventListener('click', () => onSegmentClick(segment.genre));
+      // Percent label (only show if segment is large enough)
+      if (segmentHeight > 25) {
+        const label = document.createElement('span');
+        label.className = 'tm-segment-label';
+        label.textContent = `${segment.percent}%`;
+        segEl.appendChild(label);
+      }
 
       barGroup.appendChild(segEl);
-      currentY += segmentHeight;
+      currentBottom += segmentHeight;
     });
 
-    barsContainer.appendChild(barGroup);
+    chart.appendChild(barGroup);
 
+    // Year label
     const yearLabel = document.createElement('div');
-    yearLabel.className = 'year-label';
-    yearLabel.style.left = `${CHART_PADDING.left + startX + yearIndex * (BAR_WIDTH + BAR_GAP) + BAR_WIDTH / 2}px`;
+    yearLabel.className = 'tm-year-label';
+    yearLabel.style.left = `${barX + BAR_WIDTH / 2}px`;
     yearLabel.textContent = yearData.year;
-    chartContainer.appendChild(yearLabel);
+    chart.appendChild(yearLabel);
   });
 
-  chartContainer.appendChild(barsContainer);
+  // Break indicator (//) between 2021 and 2024
+  const break1X = startX + BAR_WIDTH + BAR_GAP / 2 + breakGap / 2;
+  const breakEl = document.createElement('div');
+  breakEl.className = 'tm-break';
+  breakEl.style.left = `${break1X - 8}px`;
+  breakEl.textContent = '//';
+  chart.appendChild(breakEl);
 
-  // Tooltip
-  tooltipEl = document.createElement('div');
-  tooltipEl.className = 'chart-tooltip';
-  tooltipEl.innerHTML = `
-    <div class="tooltip-genre">
-      <div class="tooltip-color"></div>
-      <span class="tooltip-name"></span>
-    </div>
-    <div class="tooltip-stats"></div>
-  `;
-  chartContainer.appendChild(tooltipEl);
+  chartPanel.appendChild(chart);
 
-  const source = document.createElement('div');
-  source.className = 'chart-source';
-  source.textContent = 'Source: Ampere - Movies';
-  chartContainer.appendChild(source);
+  // Source
+  const sources = document.createElement('div');
+  sources.className = 'target-market-sources';
+  const sourceText = document.createElement('div');
+  sourceText.className = 'target-market-source-text';
+  sourceText.textContent = SOURCES.join(' ');
+  sources.appendChild(sourceText);
+  chartPanel.appendChild(sources);
 
-  return chartContainer;
-}
+  inner.appendChild(chartPanel);
+  wrapper.appendChild(inner);
 
-function onLegendClick(genreId) {
-  selectedGenre = selectedGenre === genreId ? null : genreId;
-  updateHighlights();
-}
-
-function onLegendHover(genreId) {
-  if (selectedGenre) return;
-  hoveredSegment = genreId ? { genre: genreId } : null;
-  isHoveringChart = genreId !== null;
-  updateHighlights();
-}
-
-function onSegmentHover(segment, yearData, event) {
-  if (event) event.stopPropagation();
-  if (segment && yearData) {
-    hoveredSegment = { genre: segment.genre, year: yearData.year };
-    isHoveringChart = true;
-  } else {
-    hoveredSegment = null;
-    isHoveringChart = false;
-  }
-  if (!selectedGenre) updateHighlights();
-}
-
-function onSegmentClick(genreId) {
-  selectedGenre = selectedGenre === genreId ? null : genreId;
-  updateHighlights();
-}
-
-function updateHighlights() {
-  if (!chartContainer) return;
-
-  const activeGenre = selectedGenre || (hoveredSegment ? hoveredSegment.genre : null);
-
-  chartContainer.querySelectorAll('.legend-item').forEach(item => {
-    const genreId = item.dataset.genre;
-    item.classList.toggle('selected', selectedGenre === genreId);
-    item.classList.toggle('highlighted', !selectedGenre && hoveredSegment && genreId === hoveredSegment.genre);
-    item.classList.toggle('dimmed', activeGenre && genreId !== activeGenre);
-  });
-
-  chartContainer.querySelectorAll('.bar-segment').forEach(seg => {
-    const genreId = seg.dataset.genre;
-    seg.classList.toggle('dimmed', activeGenre && genreId !== activeGenre);
-    seg.classList.toggle('highlighted', activeGenre && genreId === activeGenre);
-  });
-}
-
-function showTooltip(segment, yearData, event) {
-  const genre = getGenre(segment.genre);
-  tooltipEl.querySelector('.tooltip-color').style.background = genre.color;
-  tooltipEl.querySelector('.tooltip-name').textContent = genre.name;
-  tooltipEl.querySelector('.tooltip-stats').innerHTML = `
-    <span class="tooltip-highlight">${yearData.year}</span>: ${segment.count} films (<span class="tooltip-highlight">${segment.percent}%</span>)<br>
-    of ${yearData.total} films grossing >$100M
-  `;
-
-  const rect = event.target.getBoundingClientRect();
-  const chartRect = chartContainer.getBoundingClientRect();
-  let x = rect.left - chartRect.left + rect.width + 10;
-  let y = rect.top - chartRect.top + rect.height / 2 - 40;
-
-  if (x + 180 > CHART_WIDTH) x = rect.left - chartRect.left - 180;
-  if (y < 10) y = 10;
-  if (y + 80 > CHART_HEIGHT - 10) y = CHART_HEIGHT - 90;
-
-  tooltipEl.style.left = `${x}px`;
-  tooltipEl.style.top = `${y}px`;
-  tooltipEl.classList.add('visible');
-}
-
-function hideTooltip() {
-  tooltipEl.classList.remove('visible');
+  return wrapper;
 }
 
 export function deselectSegment() {
-  if (!selectedGenre) return;
-  selectedGenre = null;
-  updateHighlights();
+  // No segment selection in simplified version
 }
 
 export function isSegmentSelected() {
-  return selectedGenre !== null;
+  return false;
 }
 
 export function init(imgWorld, sections) {
@@ -574,82 +477,79 @@ export function init(imgWorld, sections) {
     return;
   }
 
-  createChart();
-  chartContainer.style.opacity = 0;
-  chartContainer.style.pointerEvents = 'none';
-  chartContainer.style.visibility = 'hidden';
-  imgWorld.appendChild(chartContainer);
-
+  marketContainer = document.createElement('div');
+  marketContainer.className = 'target-market-container';
+  marketContainer.appendChild(buildLayout());
+  marketContainer.style.opacity = 0;
+  marketContainer.style.visibility = 'hidden';
+  imgWorld.appendChild(marketContainer);
 }
 
 export function update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation) {
-  if (sectionIndex < 0 || !chartContainer) return;
+  if (sectionIndex < 0 || !marketContainer) return;
 
   const goingForward = targetSection > currentSection;
-  let chartZ = REST_Z;
-  let chartOpacity = 0;
-  let chartScale = 1;
+  let containerZ = REST_Z;
+  let containerOpacity = 0;
+  let containerScale = 1;
 
   if (isTransitioning) {
-    if (selectedGenre) deselectSegment();
-
     if (sectionIndex === currentSection) {
       if (goingForward) {
-        chartZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
-        chartScale = 1 + transitionProgress * 0.5;
-        chartOpacity = Math.max(0, 1 - transitionProgress * 2);
+        containerZ = REST_Z + (DEPART_Z - REST_Z) * transitionProgress;
+        containerScale = 1 + transitionProgress * 0.5;
+        containerOpacity = Math.max(0, 1 - transitionProgress * 2);
       } else {
-        chartZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
-        chartScale = 1 - transitionProgress * 0.3;
-        chartOpacity = 1 - transitionProgress;
+        containerZ = REST_Z - (REST_Z - APPROACH_Z) * transitionProgress;
+        containerScale = 1 - transitionProgress * 0.3;
+        containerOpacity = 1 - transitionProgress;
       }
     } else if (sectionIndex === targetSection) {
       if (goingForward) {
-        chartZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
-        chartScale = 0.7 + transitionProgress * 0.3;
+        containerZ = APPROACH_Z + (REST_Z - APPROACH_Z) * transitionProgress;
+        containerScale = 0.7 + transitionProgress * 0.3;
       } else {
-        chartZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
-        chartScale = 1.5 - transitionProgress * 0.5;
+        containerZ = DEPART_Z - (DEPART_Z - REST_Z) * transitionProgress;
+        containerScale = 1.5 - transitionProgress * 0.5;
       }
-      chartOpacity = transitionProgress;
+      containerOpacity = transitionProgress;
     }
   } else {
     if (sectionIndex === currentSection) {
-      chartZ = REST_Z + elasticOffset * 500;
-      chartOpacity = 1;
+      containerZ = REST_Z + elasticOffset * 500;
+      containerOpacity = 1;
 
       if (scrollAnticipation < 0) {
-        chartZ = REST_Z + Math.abs(scrollAnticipation) * 200;
-        chartScale = 1 + Math.abs(scrollAnticipation) * 0.2;
-        chartOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
+        containerZ = REST_Z + Math.abs(scrollAnticipation) * 200;
+        containerScale = 1 + Math.abs(scrollAnticipation) * 0.2;
+        containerOpacity = 1 - Math.abs(scrollAnticipation) * 0.5;
       } else if (scrollAnticipation > 0) {
-        chartZ = REST_Z - scrollAnticipation * 400;
-        chartScale = 1 - scrollAnticipation * 0.3;
-        chartOpacity = 1 - scrollAnticipation * 0.6;
+        containerZ = REST_Z - scrollAnticipation * 400;
+        containerScale = 1 - scrollAnticipation * 0.3;
+        containerOpacity = 1 - scrollAnticipation * 0.6;
       }
     }
   }
 
-  // Freeze parallax effect when hovering to prevent transform changes from breaking hover state
-  const panX = isHoveringChart ? 0 : mouse.x * 20;
-  const panY = isHoveringChart ? 0 : -mouse.y * 12;
+  // Freeze parallax when hovering chart to prevent jitter
+  const panX = isHoveringChart ? 0 : mouse.x * 12;
+  const panY = isHoveringChart ? 0 : -mouse.y * 6;
   const effectiveLean = isHoveringChart ? 0 : leanAngle;
 
-  chartContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${chartZ}px) rotate(${effectiveLean}deg) scale(${chartScale})`;
-  chartContainer.style.opacity = Math.max(0, Math.min(1, chartOpacity));
-  chartContainer.style.visibility = chartOpacity > 0.01 ? 'visible' : 'hidden';
-  chartContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && chartOpacity > 0.5) ? 'auto' : 'none';
+  const shouldBeVisible = sectionIndex === currentSection || sectionIndex === targetSection;
+
+  marketContainer.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) translateZ(${containerZ}px) rotate(${effectiveLean}deg) scale(${containerScale})`;
+  marketContainer.style.opacity = Math.max(0, Math.min(1, containerOpacity));
+  marketContainer.style.visibility = shouldBeVisible && containerOpacity > 0.01 ? 'visible' : 'hidden';
+  marketContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && containerOpacity > 0.5) ? 'auto' : 'none';
 }
 
 export function destroy() {
-  if (chartContainer) {
-    chartContainer.remove();
-    chartContainer = null;
+  if (marketContainer) {
+    marketContainer.remove();
+    marketContainer = null;
   }
-  tooltipEl = null;
   sectionIndex = -1;
-  selectedGenre = null;
-  hoveredSegment = null;
   isHoveringChart = false;
 
   const styles = document.getElementById('target-market-chapter-styles');
