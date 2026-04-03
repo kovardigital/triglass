@@ -31,8 +31,6 @@ const SECTIONS = [
     title: 'TRAILER',
     subtitle: '',
     trailerLayout: true,
-    passwordProtected: true,
-    password: 'watchliftoffnow',
     images: [
       { x: 0, y: 0, width: 1280, height: 720, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-1.mp4', playable: true },
     ]
@@ -1196,6 +1194,7 @@ function injectStyles() {
       mask-image: none;
       -webkit-mask-image: none;
       border-radius: 12px;
+      object-fit: contain;
     }
     .liftoff-image.playable-video {
       cursor: pointer;
@@ -1204,6 +1203,7 @@ function injectStyles() {
       border: 1px solid rgba(255, 255, 255, 0.35);
       border-radius: 12px;
       transition: border-color 0.3s ease;
+      background: #000;
     }
     .liftoff-image.playable-video.playing {
       border-color: transparent;
@@ -1238,8 +1238,15 @@ function injectStyles() {
       opacity: 0;
       pointer-events: none;
     }
+    .liftoff-image.playable-video.playing:hover .liftoff-play-button {
+      opacity: 1;
+      pointer-events: auto;
+    }
     .liftoff-image.playable-video:hover .liftoff-play-button {
       opacity: 1;
+    }
+    .liftoff-play-button svg.pause-icon {
+      margin-left: 0;
     }
     .liftoff-fullscreen-button {
       position: absolute;
@@ -1272,6 +1279,101 @@ function injectStyles() {
     .liftoff-image.playable-video.playing .liftoff-fullscreen-button {
       opacity: 1;
       pointer-events: auto;
+    }
+    .liftoff-volume-control {
+      position: absolute;
+      bottom: -70px;
+      right: 66px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .liftoff-image.playable-video.playing .liftoff-volume-control {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .liftoff-volume-button {
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .liftoff-volume-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    .liftoff-volume-button svg {
+      width: 26px;
+      height: 26px;
+      fill: white;
+    }
+    .liftoff-volume-button.muted svg .volume-wave {
+      display: none;
+    }
+    /* Slider container - expands on hover */
+    .liftoff-volume-slider-wrap {
+      width: 0;
+      overflow: hidden;
+      transition: width 0.25s ease;
+      display: flex;
+      align-items: center;
+    }
+    .liftoff-volume-control:hover .liftoff-volume-slider-wrap {
+      width: 110px;
+    }
+    .liftoff-volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 90px;
+      height: 4px;
+      margin: 0 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    .liftoff-volume-slider::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+      background: transparent;
+    }
+    .liftoff-volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      border: none;
+      margin-top: -6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+    .liftoff-volume-slider::-moz-range-track {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+    }
+    .liftoff-volume-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
     }
 
     /* Password overlay for protected videos */
@@ -1544,15 +1646,60 @@ function init() {
             }
           });
 
+          // Add volume control (button + slider)
+          const volumeControl = document.createElement('div');
+          volumeControl.className = 'liftoff-volume-control';
+
+          const sliderWrap = document.createElement('div');
+          sliderWrap.className = 'liftoff-volume-slider-wrap';
+          const slider = document.createElement('input');
+          slider.type = 'range';
+          slider.min = '0';
+          slider.max = '1';
+          slider.step = '0.05';
+          slider.value = '1';
+          slider.className = 'liftoff-volume-slider';
+          sliderWrap.appendChild(slider);
+          volumeControl.appendChild(sliderWrap);
+
+          const volumeBtn = document.createElement('div');
+          volumeBtn.className = 'liftoff-volume-button';
+          volumeBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path class="volume-wave" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+          volumeControl.appendChild(volumeBtn);
+
+          img.appendChild(volumeControl);
+
+          // Volume button click — toggle mute
+          volumeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            video.muted = !video.muted;
+            volumeBtn.classList.toggle('muted', video.muted);
+            if (!video.muted && video.volume === 0) {
+              video.volume = 1;
+              slider.value = '1';
+            }
+          });
+
+          // Slider input — adjust volume
+          slider.addEventListener('input', (e) => {
+            e.stopPropagation();
+            video.volume = parseFloat(slider.value);
+            video.muted = video.volume === 0;
+            volumeBtn.classList.toggle('muted', video.muted);
+          });
+          slider.addEventListener('click', (e) => e.stopPropagation());
+
           // Click to play/pause (blocked until password verified)
           img.addEventListener('click', () => {
             if (!passwordVerified) return;
             if (video.paused) {
               video.play();
               img.classList.add('playing');
+              playBtn.innerHTML = `<svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
             } else {
               video.pause();
               img.classList.remove('playing');
+              playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
             }
           });
 
@@ -1560,6 +1707,7 @@ function init() {
           video.addEventListener('ended', () => {
             img.classList.remove('playing');
             video.currentTime = 0;
+            playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
           });
 
           img.dataset.playable = 'true';
