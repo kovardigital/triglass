@@ -11,8 +11,8 @@ let styleEl = null;
 // Callbacks
 const readyCallbacks = [];
 
-// Logo URL - hosted on GitHub Pages
-const LOGO_URL = 'https://kovardigital.github.io/triglass/assets/images/triglass-logo.png';
+// Logo URL - hosted on S3
+const LOGO_URL = 'https://triglass-assets.s3.amazonaws.com/triglass.png';
 
 // Assets to preload
 const ASSETS = {
