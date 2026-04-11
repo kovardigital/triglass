@@ -29,7 +29,7 @@ Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</str
   },
   {
     name: 'Noelle Anderson',
-    role: 'AD',
+    role: 'Assistant Director',
     x: 200,
     y: -100,
     image: 'https://triglass-assets.s3.amazonaws.com/noelle.jpg',
@@ -61,7 +61,7 @@ Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</str
   },
   {
     name: 'James Evenson',
-    role: '',
+    role: 'Executive Producer',
     x: 300,
     y: 120,
     image: 'https://triglass-assets.s3.amazonaws.com/james-1.jpg',

@@ -43,7 +43,7 @@ const SECTIONS = [
     characters: [
       {
         name: 'Selena',
-        x: -115,
+        x: -172,
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/selena-2.jpg',
         bio: "Selena (12) is a resourceful, intelligent natural leader. She's independent, stubborn, and emotionally ahead of her years. Growing up without a mother and with a father stretched beyond his limits, Selena has quietly become the emotional backbone of her family, acting as both protector and second parent to her younger brother.",
@@ -53,7 +53,7 @@ const SECTIONS = [
       },
       {
         name: 'Leo',
-        x: 0,
+        x: -57,
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/leo-2.jpg',
         bio: "Leo (8) is imaginative, sensitive, and deeply connected to the magical world his mother created for him. He struggles to process grief and instead retreats into fantasy, where he can still feel close to her. His innocence and wonder make him the heart of the story.",
@@ -63,13 +63,20 @@ const SECTIONS = [
       },
       {
         name: 'Dad',
-        x: 115,
+        x: 57,
         y: -12,
         image: 'https://triglass-assets.s3.amazonaws.com/dad-2.jpg',
         bio: "Dad (40s) is a grieving father drowning in responsibility. Once warm and present, he's now emotionally distant, working overtime to keep the family afloat while struggling with his own unprocessed loss. His journey is learning to be present again before it's too late.",
         castName: 'Erik Stolhanske',
         castImage: 'https://triglass-assets.s3.amazonaws.com/erik.jpg',
         castBio: "Erik Stolhanske is an American actor, writer, and producer, and one of the members of the Broken Lizard comedy group. Best known as \"Officer Rabbit\" from the cult-classic Super Troopers, he has starred in Beerfest, The Slammin' Salmon, and Club Dread. He has also appeared on HBO's Curb Your Enthusiasm and Six Feet Under.",
+      },
+      {
+        name: 'Grandpa',
+        x: 172,
+        y: -12,
+        image: 'https://triglass-assets.s3.amazonaws.com/grandpa-2.jpg',
+        bio: "Coming Soon",
       },
     ]
   },
@@ -116,14 +123,6 @@ const SECTIONS = [
     images: []
   },
   {
-    title: 'THE FILM',
-    subtitle: '',
-    trailerLayout: true,
-    images: [
-      { x: 0, y: 0, width: 1280, height: 720, scale: 0.49, label: 'Film', delay: 0, rotateY: 0 },
-    ]
-  },
-  {
     title: 'COMING SOON',
     subtitle: '2027',
     images: []
@@ -149,6 +148,7 @@ let titleEl = null;
 let subtitleEl = null;
 let contactBtn = null;
 let copyrightEl = null;
+let scrollHintEl = null;
 const imageElements = [];
 const characterElements = [];
 const characterBackdrops = []; // Blur backdrops appended directly to imgWorld for proper backdrop-filter
@@ -225,10 +225,14 @@ function openCharacterBio(charIndex) {
     textContainer.classList.add('bio-active');
   }
 
-  // Show "Meet the cast" button
+  // Show "Meet the cast" button only if cast data exists
   if (meetCastButton) {
-    meetCastButton.textContent = 'Meet the Cast';
-    meetCastButton.classList.add('visible');
+    if (charData.castName && charData.castBio) {
+      meetCastButton.textContent = 'Meet the Cast';
+      meetCastButton.classList.add('visible');
+    } else {
+      meetCastButton.classList.remove('visible');
+    }
   }
 
   // Reset flip state on portrait (ensure character image is shown)
@@ -794,6 +798,13 @@ function injectStyles() {
                   0 0 25px rgba(160, 100, 220, 0.45),
                   0 0 50px rgba(160, 100, 220, 0.25);
     }
+    /* Grandpa (amber/gold) */
+    .liftoff-character[data-char-index="3"] {
+      border-color: rgba(230, 180, 80, 0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
+                  0 0 25px rgba(230, 180, 80, 0.45),
+                  0 0 50px rgba(230, 180, 80, 0.25);
+    }
     /* Gradient stroke on character portrait - white top fading to transparent bottom */
     .liftoff-character::before {
       content: '';
@@ -833,6 +844,10 @@ function injectStyles() {
     .liftoff-character-backdrop[data-char-index="2"] {
       box-shadow: 0 0 30px rgba(160, 100, 220, 0.3),
                   inset 0 0 40px rgba(160, 100, 220, 0.08);
+    }
+    .liftoff-character-backdrop[data-char-index="3"] {
+      box-shadow: 0 0 30px rgba(230, 180, 80, 0.3),
+                  inset 0 0 40px rgba(230, 180, 80, 0.08);
     }
     /* Gradient stroke on backdrop - white top fading to transparent bottom */
     .liftoff-character-backdrop::before {
@@ -878,6 +893,9 @@ function injectStyles() {
     .liftoff-character-backdrop[data-char-index="2"]::after {
       animation-delay: 2s;
     }
+    .liftoff-character-backdrop[data-char-index="3"]::after {
+      animation-delay: 3s;
+    }
     /* Hover glow - intensified */
     .liftoff-character[data-char-index="0"]:hover {
       border-color: rgba(0, 220, 240, 0.7);
@@ -899,6 +917,13 @@ function injectStyles() {
                   0 0 35px rgba(180, 120, 240, 0.7),
                   0 0 70px rgba(180, 120, 240, 0.4),
                   inset 0 0 25px rgba(180, 120, 240, 0.25);
+    }
+    .liftoff-character[data-char-index="3"]:hover {
+      border-color: rgba(250, 200, 100, 0.7);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5),
+                  0 0 35px rgba(250, 200, 100, 0.7),
+                  0 0 70px rgba(250, 200, 100, 0.4),
+                  inset 0 0 25px rgba(250, 200, 100, 0.25);
     }
     .liftoff-character-name {
       position: absolute;
@@ -1508,6 +1533,57 @@ function injectStyles() {
       letter-spacing: 0.05em;
       color: rgba(255,255,255,0.4);
     }
+
+    /* Scroll hint - shown on intro section */
+    .liftoff-scroll-hint {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease-out;
+    }
+    .liftoff-scroll-hint.visible {
+      opacity: 1;
+    }
+    .liftoff-scroll-hint .mouse-icon {
+      width: 26px;
+      height: 42px;
+      border: 2px solid rgba(255,255,255,0.7);
+      border-radius: 14px;
+      position: relative;
+    }
+    .liftoff-scroll-hint .mouse-wheel {
+      position: absolute;
+      top: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 8px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 2px;
+      animation: scroll-hint-wheel 1.8s ease-in-out infinite;
+    }
+    @keyframes scroll-hint-wheel {
+      0%   { transform: translate(-50%, 0); opacity: 1; }
+      40%  { transform: translate(-50%, 12px); opacity: 0; }
+      60%  { transform: translate(-50%, 0); opacity: 0; }
+      100% { transform: translate(-50%, 0); opacity: 1; }
+    }
+    .liftoff-scroll-hint .scroll-label {
+      font-family: 'montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+    }
   `;
   document.head.appendChild(style);
 }
@@ -1757,14 +1833,15 @@ function init() {
         // Character portrait container with flip card structure
         const charEl = document.createElement('div');
         charEl.className = 'liftoff-character';
+        const backCardHtml = charConfig.castImage
+          ? `<div class="character-card-back"><img src="${charConfig.castImage}" alt="${charConfig.castName}"></div>`
+          : '';
         charEl.innerHTML = `
           <div class="character-card-inner">
             <div class="character-card-front">
               <img src="${charConfig.image}" alt="${charConfig.name}">
             </div>
-            <div class="character-card-back">
-              <img src="${charConfig.castImage}" alt="${charConfig.castName}">
-            </div>
+            ${backCardHtml}
           </div>
         `;
 
@@ -1913,6 +1990,15 @@ function init() {
   copyrightEl.className = 'liftoff-copyright';
   copyrightEl.textContent = '\u00A9 2026 Triglass Productions';
   document.body.appendChild(copyrightEl);
+
+  // Scroll hint (shown only on intro section)
+  scrollHintEl = document.createElement('div');
+  scrollHintEl.className = 'liftoff-scroll-hint';
+  scrollHintEl.innerHTML = `
+    <div class="mouse-icon"><div class="mouse-wheel"></div></div>
+    <div class="scroll-label">Scroll</div>
+  `;
+  document.body.appendChild(scrollHintEl);
 
   // Click-outside handler for closing character bios
   document.addEventListener('click', onDocumentClick);
@@ -2141,6 +2227,16 @@ function update() {
       }
     } else {
       textContainer.style.opacity = textOpacity;
+    }
+  }
+
+  // Show scroll hint only on intro section (and when revealed)
+  if (scrollHintEl) {
+    const showHint = currentSection === 0 && !isTransitioning && textContainer.classList.contains('revealed');
+    if (showHint) {
+      scrollHintEl.classList.add('visible');
+    } else {
+      scrollHintEl.classList.remove('visible');
     }
   }
 
@@ -2511,6 +2607,7 @@ function destroy() {
   if (scrollSpacer) scrollSpacer.remove();
   if (contactBtn) contactBtn.remove();
   if (copyrightEl) copyrightEl.remove();
+  if (scrollHintEl) scrollHintEl.remove();
   if (storyVideoContainer) storyVideoContainer.remove();
   viewport = null;
   textContainer = null;
@@ -2523,6 +2620,7 @@ function destroy() {
   subtitleEl = null;
   contactBtn = null;
   copyrightEl = null;
+  scrollHintEl = null;
   bioContainer = null;
   bioTextEl = null;
   meetCastButton = null;

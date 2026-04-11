@@ -17,7 +17,6 @@ export const SECTIONS = [
   { id: 'completion', title: 'COMPLETION' },
   { id: 'budget', title: 'BUDGET' },
   { id: 'schedule', title: 'SCHEDULE' },
-  { id: 'the-film', title: 'THE FILM' },
   { id: 'coming-soon', title: 'COMING SOON' },
 ];
 
