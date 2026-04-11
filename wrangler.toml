@@ -1,0 +1,8 @@
+# Triglass Productions - Cloudflare Configuration
+# Account: 19180fe37a59a7e263aeea5878df2518
+name = "triglass"
+compatibility_date = "2026-04-03"
+
+[[r2_buckets]]
+binding = "R2_ASSETS"
+bucket_name = "triglass-assets"

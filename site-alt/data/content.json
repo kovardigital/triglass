@@ -1,0 +1,96 @@
+{
+  "site": {
+    "name": "Triglass Productions",
+    "tagline": "Writers. Directors. Producers.",
+    "logo": "/assets/images/triglass.webp"
+  },
+  "nav": [
+    { "label": "Work", "href": "#work" },
+    { "label": "Post-Production", "href": "#post-production" },
+    { "label": "Motion Graphics", "href": "#motion-graphics" },
+    { "label": "Case Studies", "href": "#case-studies" },
+    { "label": "Directors", "href": "#directors" }
+  ],
+  "hero": {
+    "type": "showreel",
+    "video": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/triglass-home-v01.mp4",
+    "poster": ""
+  },
+  "heroThumbs": [
+    {
+      "title": "Into the Mines",
+      "client": "San Francisco 49ers",
+      "thumbnail": "/assets/images/thumbs/1.jpg",
+      "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_49ers_2025_open.mp4",
+      "video": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_49ers_2025_open.mp4"
+    },
+    {
+      "title": "Protect Our Fortress",
+      "client": "Charlotte FC",
+      "thumbnail": "/assets/images/thumbs/2.jpg",
+      "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Charlotte_fight_for_the_crown.mp4",
+      "video": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Charlotte_fight_for_the_crown.mp4"
+    },
+    {
+      "title": "Dreams",
+      "client": "New York Jets",
+      "thumbnail": "/assets/images/thumbs/3.jpg",
+      "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Jets_Dreams.mp4",
+      "video": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Jets_Dreams.mp4"
+    },
+    {
+      "title": "Into the Deep",
+      "client": "Seattle Kraken",
+      "thumbnail": "/assets/images/thumbs/4.jpg",
+      "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Kraken_2025_Open.mp4",
+      "video": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Kraken_2025_Open.mp4"
+    },
+    {
+      "title": "Believe in Baseball",
+      "client": "Perfect Game",
+      "thumbnail": "/assets/images/thumbs/5.jpg",
+      "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Perfect_Game_Believe_In_Baseball.mp4",
+      "video": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Perfect_Game_Believe_In_Baseball.mp4"
+    },
+    {
+      "title": "Taylor and Swift",
+      "client": "Dairy Queen",
+      "thumbnail": "/assets/images/thumbs/6.jpg",
+      "preview": "",
+      "video": ""
+    }
+  ],
+  "work": [
+    { "title": "Into the Mines", "client": "San Francisco 49ers", "director": "Director Name", "description": "A cinematic season opener for the San Francisco 49ers, bringing the intensity of game day to life.", "thumbnail": "/assets/images/thumbs/1.jpg", "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_49ers_2025_open.mp4", "video": "", "size": "third", "tags": ["sports", "commercial"] },
+    { "title": "Protect Our Fortress", "client": "Charlotte FC", "director": "Director Name", "description": "An epic brand campaign capturing the spirit and energy of Charlotte FC's home stadium.", "thumbnail": "/assets/images/thumbs/2.jpg", "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Charlotte_fight_for_the_crown.mp4", "video": "", "size": "third", "tags": ["sports", "commercial"] },
+    { "title": "Dreams", "client": "New York Jets", "director": "Director Name", "description": "A narrative-driven piece exploring the dreams and ambitions behind the Jets organization.", "thumbnail": "/assets/images/thumbs/3.jpg", "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Jets_Dreams.mp4", "video": "", "size": "third", "tags": ["sports", "commercial"] },
+    { "title": "Into the Deep", "client": "Seattle Kraken", "director": "Director Name", "description": "A dark, cinematic opener for the Seattle Kraken's season, diving into the depths of competition.", "thumbnail": "/assets/images/thumbs/4.jpg", "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Kraken_2025_Open.mp4", "video": "", "size": "full", "tags": ["sports", "narrative"] },
+    { "title": "Taylor and Swift", "client": "Dairy Queen", "director": "Director Name", "description": "A fun, high-energy commercial spot for Dairy Queen featuring bold visuals and playful storytelling.", "thumbnail": "/assets/images/thumbs/5.jpg", "preview": "", "video": "", "size": "half", "tags": ["commercial", "brand"] },
+    { "title": "Believe in Baseball", "client": "Perfect Game", "director": "Director Name", "description": "An emotional tribute to the game of baseball, produced for Perfect Game's national campaign.", "thumbnail": "/assets/images/thumbs/6.jpg", "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Perfect_Game_Believe_In_Baseball.mp4", "video": "", "size": "half", "tags": ["sports", "commercial"] },
+    { "title": "Into the Deep", "client": "Seattle Kraken", "director": "Director Name", "description": "A dark, cinematic opener for the Seattle Kraken's season.", "thumbnail": "/assets/images/thumbs/4.jpg", "preview": "https://pub-aded304bac634530b24355595a6c406b.r2.dev/Thumb_Kraken_2025_Open.mp4", "video": "", "size": "third", "tags": ["sports", "narrative"] },
+    { "title": "Liftoff", "client": "Triglass", "director": "Director Name", "description": "An original Triglass production — a journey beyond the stars.", "thumbnail": "/assets/images/thumbs/1.jpg", "preview": "", "video": "", "size": "third", "tags": ["narrative", "film"] },
+    { "title": "Game Day", "client": "Chicago Cubs", "director": "Director Name", "description": "Capturing the electric atmosphere of a Cubs game day at Wrigley Field.", "thumbnail": "/assets/images/thumbs/3.jpg", "preview": "", "video": "", "size": "third", "tags": ["sports", "commercial"] }
+  ],
+  "directors": {
+    "id": "directors",
+    "title": "Directors",
+    "description": "Our powerful team of writers, directors, and producers can add a spark to any idea that will make it sing. With Triglass as your partner, your brand voice can be amplified and your message can be unforgettable.",
+    "cta": { "label": "Director Roster", "href": "/directors" },
+    "people": [
+      { "name": "Director 1", "photo": "/assets/images/directors/director-1.jpg", "href": "/directors/1" },
+      { "name": "Director 2", "photo": "/assets/images/directors/director-2.jpg", "href": "/directors/2" },
+      { "name": "Director 3", "photo": "/assets/images/directors/director-3.jpg", "href": "/directors/3" },
+      { "name": "Director 4", "photo": "/assets/images/directors/director-4.jpg", "href": "/directors/4" }
+    ]
+  },
+  "contact": {
+    "id": "contact",
+    "email": "info@triglassproductions.com",
+    "phone": "",
+    "social": {
+      "instagram": "",
+      "vimeo": "",
+      "linkedin": ""
+    }
+  }
+}
