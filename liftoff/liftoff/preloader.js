@@ -20,7 +20,7 @@ const ASSETS = {
     'https://triglass-assets.s3.amazonaws.com/image0.png', // Title image
     'https://triglass-assets.s3.amazonaws.com/selena-2.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/leo-2.jpg', // Character
-    'https://triglass-assets.s3.amazonaws.com/grandpa-2.jpg', // Character
+    'https://triglass-assets.s3.amazonaws.com/grandpa.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/dad-2.jpg', // Character
     // Cast headshots
     'https://triglass-assets.s3.amazonaws.com/genevieve.jpg',

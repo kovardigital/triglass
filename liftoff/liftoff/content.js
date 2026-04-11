@@ -75,7 +75,7 @@ const SECTIONS = [
         name: 'Grandpa',
         x: 172,
         y: -12,
-        image: 'https://triglass-assets.s3.amazonaws.com/grandpa-2.jpg',
+        image: 'https://triglass-assets.s3.amazonaws.com/grandpa.jpg',
         bio: "Coming Soon",
       },
     ]
