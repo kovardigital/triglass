@@ -1418,10 +1418,12 @@ function injectStyles() {
       cursor: pointer;
     }
     .liftoff-image.playable-video.playing .liftoff-progress-bar {
-      opacity: 1;
-      pointer-events: auto;
+      opacity: 0;
+      pointer-events: none;
     }
     .liftoff-image.playable-video.playing:hover .liftoff-progress-bar {
+      opacity: 1;
+      pointer-events: auto;
       height: 6px;
     }
     .liftoff-progress-fill {
@@ -1430,22 +1432,6 @@ function injectStyles() {
       border-radius: 0 0 0 12px;
       width: 0%;
       transition: none;
-    }
-    .liftoff-progress-time {
-      position: absolute;
-      bottom: 12px;
-      left: 10px;
-      font-family: 'montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.7);
-      z-index: 15;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    .liftoff-image.playable-video.playing .liftoff-progress-time {
-      opacity: 1;
     }
 
     /* Password overlay for protected videos */
@@ -1819,22 +1805,10 @@ function init() {
           img.appendChild(progressBar);
           const progressFill = progressBar.querySelector('.liftoff-progress-fill');
 
-          // Add time display
-          const timeDisplay = document.createElement('div');
-          timeDisplay.className = 'liftoff-progress-time';
-          img.appendChild(timeDisplay);
-
-          const formatTime = (s) => {
-            const m = Math.floor(s / 60);
-            const sec = Math.floor(s % 60);
-            return `${m}:${sec.toString().padStart(2, '0')}`;
-          };
-
           video.addEventListener('timeupdate', () => {
             if (video.duration) {
               const pct = (video.currentTime / video.duration) * 100;
               progressFill.style.width = pct + '%';
-              timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
             }
           });
 
