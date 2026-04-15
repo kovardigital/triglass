@@ -1410,11 +1410,20 @@ function injectStyles() {
       height: 4px;
       background: rgba(255, 255, 255, 0.15);
       border-radius: 0 0 12px 12px;
-      overflow: hidden;
+      overflow: visible;
       z-index: 15;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease, height 0.15s ease;
+      cursor: pointer;
+    }
+    .liftoff-progress-bar::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 30px;
       cursor: pointer;
     }
     .liftoff-image.playable-video.playing .liftoff-progress-bar {
