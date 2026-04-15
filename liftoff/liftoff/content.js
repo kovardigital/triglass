@@ -32,7 +32,7 @@ const SECTIONS = [
     subtitle: '',
     trailerLayout: true,
     images: [
-      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-3.mp4', playable: true },
+      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-4.mp4', playable: true },
     ]
   },
   {
