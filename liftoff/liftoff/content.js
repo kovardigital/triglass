@@ -32,7 +32,7 @@ const SECTIONS = [
     subtitle: '',
     trailerLayout: true,
     images: [
-      { x: 0, y: 0, width: 1280, height: 720, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-2.mp4', playable: true },
+      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-3.mp4', playable: true },
     ]
   },
   {
@@ -1401,6 +1401,53 @@ function injectStyles() {
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
     }
 
+    /* Progress bar */
+    .liftoff-progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+      z-index: 15;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, height 0.15s ease;
+      cursor: pointer;
+    }
+    .liftoff-image.playable-video.playing .liftoff-progress-bar {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .liftoff-image.playable-video.playing:hover .liftoff-progress-bar {
+      height: 6px;
+    }
+    .liftoff-progress-fill {
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 0 0 0 12px;
+      width: 0%;
+      transition: none;
+    }
+    .liftoff-progress-time {
+      position: absolute;
+      bottom: 12px;
+      left: 10px;
+      font-family: 'montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      z-index: 15;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .liftoff-image.playable-video.playing .liftoff-progress-time {
+      opacity: 1;
+    }
+
     /* Password overlay for protected videos */
     .liftoff-password-overlay {
       position: absolute;
@@ -1764,6 +1811,40 @@ function init() {
             volumeBtn.classList.toggle('muted', video.muted);
           });
           slider.addEventListener('click', (e) => e.stopPropagation());
+
+          // Add progress bar
+          const progressBar = document.createElement('div');
+          progressBar.className = 'liftoff-progress-bar';
+          progressBar.innerHTML = '<div class="liftoff-progress-fill"></div>';
+          img.appendChild(progressBar);
+          const progressFill = progressBar.querySelector('.liftoff-progress-fill');
+
+          // Add time display
+          const timeDisplay = document.createElement('div');
+          timeDisplay.className = 'liftoff-progress-time';
+          img.appendChild(timeDisplay);
+
+          const formatTime = (s) => {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2, '0')}`;
+          };
+
+          video.addEventListener('timeupdate', () => {
+            if (video.duration) {
+              const pct = (video.currentTime / video.duration) * 100;
+              progressFill.style.width = pct + '%';
+              timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+            }
+          });
+
+          // Click on progress bar to seek
+          progressBar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = progressBar.getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            video.currentTime = pct * video.duration;
+          });
 
           // Click to play/pause (blocked until password verified)
           img.addEventListener('click', () => {
