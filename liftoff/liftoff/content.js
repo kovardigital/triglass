@@ -1561,7 +1561,7 @@ function injectStyles() {
     }
     .liftoff-scroll-hint .mouse-wheel {
       position: absolute;
-      top: 27px;
+      top: 8px;
       left: 50%;
       transform: translateX(-50%);
       width: 3px;
@@ -1572,7 +1572,7 @@ function injectStyles() {
     }
     @keyframes scroll-hint-wheel {
       0%   { transform: translate(-50%, 0); opacity: 1; }
-      40%  { transform: translate(-50%, -12px); opacity: 0; }
+      40%  { transform: translate(-50%, -10px); opacity: 0; }
       60%  { transform: translate(-50%, 0); opacity: 0; }
       100% { transform: translate(-50%, 0); opacity: 1; }
     }
