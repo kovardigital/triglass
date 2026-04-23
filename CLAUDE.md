@@ -4,7 +4,7 @@
 
 - **Live Server** serves from `site/` (configured in `.vscode/settings.json`)
 - Preview at `http://localhost:5503`
-- `triglass.pages.dev` auto-deploys on git push to `main` — only push when ready
+- `triglass.pages.dev` deploys manually via wrangler (see Deployment section)
 
 ## Version Switcher
 
@@ -29,7 +29,7 @@ The site uses an iframe-based version system for testing layout variations.
 
 ## Deployment
 
-- **Main site**: auto-deploys from git push → `triglass.pages.dev`
+- **Main site**: `wrangler pages deploy site --project-name=triglass --commit-dirty=true` → `triglass.pages.dev`
 - **Liftoff site**: manual deploy via `wrangler pages deploy liftoff --project-name=triglass-liftoff --commit-dirty=true`
 
 ## Stack

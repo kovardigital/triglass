@@ -18,7 +18,7 @@
 
   initNav(data);
   initContactModal();
-  initHero(data.hero);
+  initHero(data.hero, data.heroThumbs);
   initHeroControls();
   renderWorkGrid(data.work, data.directors);
   initDirectorModal(data.directors);
@@ -173,10 +173,89 @@ function initContactModal() {
 }
 
 // --- Hero ---
-function initHero(hero) {
+function initHero(hero, thumbs) {
   const video = document.getElementById('heroVideo');
+  const reelSrc = hero.video || '';
   if (hero.poster) video.poster = hero.poster;
-  if (hero.video) video.src = hero.video;
+  if (reelSrc) video.src = reelSrc;
+
+  const heroBottom = document.getElementById('heroBottom');
+  if (heroBottom && thumbs && thumbs.length) {
+    heroBottom.innerHTML = renderThumbStrip(thumbs);
+
+    // Hover thumb → play preview in the thumbnail
+    heroBottom.addEventListener('mouseenter', (e) => {
+      const item = e.target.closest('.thumb-strip__item');
+      if (!item) return;
+      const prev = item.querySelector('.thumb-strip__video');
+      const src = item.dataset.preview;
+      if (prev && src) {
+        prev.src = src;
+        prev.currentTime = 0;
+        prev.play().catch(() => {});
+      }
+    }, true);
+
+    heroBottom.addEventListener('mouseleave', (e) => {
+      const item = e.target.closest('.thumb-strip__item');
+      if (!item) return;
+      const prev = item.querySelector('.thumb-strip__video');
+      if (prev) {
+        prev.pause();
+        prev.removeAttribute('src');
+      }
+    }, true);
+
+    // Click thumb → play its video on the hero
+    heroBottom.addEventListener('click', (e) => {
+      const item = e.target.closest('.thumb-strip__item');
+      if (!item) return;
+      const src = item.dataset.video;
+      if (!src) return;
+
+      // Stop hover preview
+      const prev = item.querySelector('.thumb-strip__video');
+      if (prev) {
+        prev.pause();
+        prev.removeAttribute('src');
+        prev.style.opacity = '0';
+      }
+
+      // Highlight active thumb immediately
+      heroBottom.querySelectorAll('.thumb-strip__item').forEach(t => t.classList.remove('is-active'));
+      item.classList.add('is-active');
+
+      // Swap hero video with fade
+      video.style.opacity = '0';
+      setTimeout(() => {
+        video.src = src;
+        video.loop = true;
+        video.play().catch(() => {});
+        video.style.opacity = '1';
+      }, 300);
+
+      // Scroll to top so user sees the hero
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+}
+
+function renderThumbStrip(projects) {
+  const items = projects.map(p => `
+    <div class="thumb-strip__item" data-video="${p.video || ''}" data-preview="${p.preview || ''}">
+      <img src="${p.thumbnail}" alt="${p.title}${p.client ? ' — ' + p.client : ''}" loading="lazy">
+      ${p.preview ? `<video class="thumb-strip__video" muted loop playsinline preload="none"></video>` : ''}
+      <div class="thumb-strip__play">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+      <div class="thumb-strip__label">
+        <span class="thumb-strip__title">${p.title}</span>
+        ${p.client ? `<span class="thumb-strip__client">${p.client}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  return `<div class="thumb-strip">${items}</div>`;
 }
 
 // --- Work Grid ---

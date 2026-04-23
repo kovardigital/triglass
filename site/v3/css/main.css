@@ -610,26 +610,31 @@ h3 {
   opacity: 1;
 }
 
-/* Hero bottom bar — dark strip with thumbnail strip */
+/* Hero bottom bar — transparent strip floating over hero video */
 .hero__bottom {
-  position: relative;
-  background: #000;
-  padding: 0;
-  flex-shrink: 0;
+  position: absolute;
+  bottom: 35px;
+  left: 0;
+  right: 0;
+  padding: 0 40px;
+  z-index: 3;
 }
 
 .hero__bottom .thumb-strip {
-  background: #000;
-  gap: 5px;
-  padding: 5px;
+  background: none;
+  gap: 8px;
+  padding: 8px 0;
+  justify-content: center;
+  flex-wrap: nowrap;
 }
 
 .hero__bottom .thumb-strip__item {
-  flex: 1 1 0;
-  min-width: 0;
-  aspect-ratio: 16 / 10;
+  flex: 0 0 auto;
+  width: 220px;
+  aspect-ratio: 2 / 1;
+  border-radius: 6px;
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(20px);
   animation: heroThumbIn 0.6s ease-out forwards;
 }
 
@@ -645,6 +650,38 @@ h3 {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Play button on thumb items */
+.thumb-strip__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.thumb-strip__play svg {
+  width: 32px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.85);
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+  transition: transform 0.2s, color 0.2s;
+}
+
+.thumb-strip__item:hover .thumb-strip__play svg {
+  transform: scale(1.15);
+  color: #fff;
+}
+
+.thumb-strip__item.is-active {
+  outline: 2px solid rgba(255,255,255,0.9);
+  outline-offset: 3px;
+}
+
+.thumb-strip__item.is-active .thumb-strip__play svg {
+  display: none;
 }
 
 /* --- Section (shared) --- */
@@ -744,12 +781,13 @@ h3 {
 
 .thumb-strip__item {
   flex: 0 0 20%;
-  min-width: 240px;
-  aspect-ratio: 16 / 10;
+  min-width: 160px;
+  aspect-ratio: 2 / 1;
   position: relative;
   overflow: hidden;
   scroll-snap-align: start;
   cursor: pointer;
+  border-radius: 6px;
 }
 
 .thumb-strip__item img {
