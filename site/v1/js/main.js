@@ -21,8 +21,8 @@
   initHero(data.hero, data.heroThumbs);
   initHeroControls();
   renderWorkGrid(data.work);
-  renderDirectors(data.directors);
   renderCaseStudies(data.caseStudies);
+  renderDirectors(data.directors);
   initFooter(data);
   initScrollEffects();
   initCtaReveal();
