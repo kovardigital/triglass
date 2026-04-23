@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triglass Productions — Writers. Directors. Producers.</title>
+  <meta name="description" content="Triglass Productions is a full-service production company specializing in commercial filmmaking, motion graphics, visual effects, and post-production.">
+  <meta property="og:title" content="Triglass Productions">
+  <meta property="og:description" content="Writers. Directors. Producers.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/v3/css/main.css">
+</head>
+<body>
+
+  <!-- Preloader -->
+  <div class="preloader" id="preloader">
+    <img class="preloader__logo" src="/assets/images/triglass.webp" alt="Triglass Productions">
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <a href="/" class="nav__logo">
+      <img src="/assets/images/triglass.webp" alt="Triglass Productions">
+    </a>
+    <ul class="nav__links" id="navLinks"></ul>
+    <div class="nav__right" id="navRight">
+      <button class="nav__contact-btn" id="contactBtn">Contact Us</button>
+    </div>
+    <button class="nav__menu-btn" id="menuBtn" aria-label="Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="nav__mobile-overlay" id="mobileMenu"></div>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="hero__video-wrap" id="heroVideoWrap">
+      <video
+        class="hero__video"
+        id="heroVideo"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+      >
+        <!-- src set by JS from content.json -->
+      </video>
+      <div class="hero__controls" id="heroControls">
+        <div class="hero__volume-wrap">
+          <button class="hero__control-btn" id="volumeBtn" aria-label="Volume">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 5L6 9H2v6h4l5 4V5z" id="volumeIcon"/>
+              <line x1="23" y1="9" x2="23" y2="9" id="volumeX1" style="display:none"/>
+              <line x1="23" y1="15" x2="23" y2="15" id="volumeX2" style="display:none"/>
+            </svg>
+          </button>
+          <input type="range" class="hero__volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="0">
+        </div>
+        <button class="hero__control-btn" id="fullscreenBtn" aria-label="Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dynamic Sections (rendered by JS) -->
+  <main id="main"></main>
+
+  <!-- CTA Section -->
+  <section class="cta-section" id="cta">
+    <img class="cta-section__bg" src="/assets/images/footer-img.webp" alt="">
+    <div class="cta-section__content">
+      <h2 class="cta-section__heading">Bring Your Legend to Life</h2>
+      <p class="cta-section__copy">Pirate ships. Horses. Star athletes. Award-winning composers. We've seen it all. Is your project so ambitious that the skeptics have said it's impossible? We thrive off of proving them wrong.</p>
+      <button class="cta-section__btn" id="ctaBtn">Let's talk</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer" id="footer">
+    <div class="footer__inner">
+      <div class="footer__col footer__col--nav">
+        <ul class="footer__nav">
+          <li><a href="#work">Work</a></li>
+          <li><a href="#post-production">Post-Production</a></li>
+          <li><a href="#motion-graphics">Motion Graphics</a></li>
+          <li><a href="#case-studies">Case Studies</a></li>
+          <li><a href="#directors">Directors</a></li>
+          <li><a href="#" id="footerJobsLink">Jobs</a></li>
+        </ul>
+      </div>
+      <div class="footer__col footer__col--center">
+        <img src="/assets/images/triglass.webp" alt="Triglass" class="footer__logo">
+      </div>
+      <div class="footer__col footer__col--contact">
+        <ul class="footer__contact-list">
+          <li><a href="#" id="footerContactLink">Contact</a></li>
+          <li class="footer__address">4018 Central Ave NE<br>Columbia Heights, MN</li>
+          <li class="footer__phone">(763) 498-1585</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__copy">&copy; <span id="year"></span> Triglass Productions. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Work With Us Modal -->
+  <div class="contact-modal" id="jobsModal">
+    <div class="contact-modal__inner">
+      <button class="contact-modal__close">&times;</button>
+      <h3 class="contact-modal__title">Work With Us</h3>
+      <p class="contact-modal__subtitle">Interested in joining the team or collaborating? Tell us about yourself.</p>
+      <form id="jobsForm">
+        <div class="contact-modal__field">
+          <label>Name</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="contact-modal__field">
+          <label>Email</label>
+          <input type="email" name="email" required>
+        </div>
+        <div class="contact-modal__field">
+          <label>What are you interested in?</label>
+          <textarea name="message" required placeholder="Tell us about your experience, what role you're looking for, or how you'd like to collaborate."></textarea>
+        </div>
+        <button type="submit" class="contact-modal__submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Director Modal -->
+  <div class="director-modal" id="directorModal">
+    <div class="director-modal__inner">
+      <button class="director-modal__close">&times;</button>
+      <div class="director-modal__photo" id="directorPhoto"></div>
+      <div class="director-modal__info">
+        <h3 class="director-modal__name" id="directorName"></h3>
+        <p class="director-modal__role" id="directorRole"></p>
+        <p class="director-modal__bio" id="directorBio"></p>
+        <button class="director-modal__cta" id="directorContactBtn">Work with this director</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Modal -->
+  <div class="contact-modal" id="contactModal">
+    <div class="contact-modal__inner">
+      <button class="contact-modal__close">&times;</button>
+      <h3 class="contact-modal__title">Get in Touch</h3>
+      <p class="contact-modal__subtitle">Tell us about your project and we'll get back to you.</p>
+      <form id="contactForm">
+        <div class="contact-modal__field">
+          <label>Name</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="contact-modal__field">
+          <label>Email</label>
+          <input type="email" name="email" required>
+        </div>
+        <div class="contact-modal__field">
+          <label>Message</label>
+          <textarea name="message" required></textarea>
+        </div>
+        <button type="submit" class="contact-modal__submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/v3/js/main.js"></script>
+  <script src="/v3/js/font-toggle.js"></script>
+  <script>
+    if (window.parent !== window) {
+      const nav = document.getElementById('nav');
+      const check = () => {
+        const isLight = nav.classList.contains('nav--light');
+        window.parent.postMessage({ triglassTheme: isLight ? 'light' : 'dark' }, '*');
+      };
+      new MutationObserver(check).observe(nav, { attributes: true, attributeFilter: ['class'] });
+      check();
+    }
+  </script>
+</body>
+</html>

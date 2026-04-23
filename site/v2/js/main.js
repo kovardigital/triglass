@@ -13,7 +13,7 @@
     document.documentElement.style.setProperty('--scrollbar-width', w + 'px');
   });
 
-  const res = await fetch('/data/content.json');
+  const res = await fetch('/v2/data/content.json');
   const data = await res.json();
 
   initNav(data);
@@ -182,6 +182,7 @@ function initHero(hero, thumbs) {
   if (heroBottom && thumbs && thumbs.length) {
     heroBottom.innerHTML = renderThumbStrip(thumbs);
   }
+
 }
 
 function renderThumbStrip(projects) {

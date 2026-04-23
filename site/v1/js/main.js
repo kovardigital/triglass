@@ -13,7 +13,7 @@
     document.documentElement.style.setProperty('--scrollbar-width', w + 'px');
   });
 
-  const res = await fetch('/data/content.json');
+  const res = await fetch('/v1/data/content.json');
   const data = await res.json();
 
   initNav(data);

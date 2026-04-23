@@ -13,15 +13,15 @@
     document.documentElement.style.setProperty('--scrollbar-width', w + 'px');
   });
 
-  const res = await fetch('/data/content.json');
+  const res = await fetch('/v4/data/content.json');
   const data = await res.json();
 
   initNav(data);
   initContactModal();
-  initHero(data.hero, data.heroThumbs);
+  initHero(data.hero);
   initHeroControls();
-  renderWorkGrid(data.work);
-  renderDirectors(data.directors);
+  renderWorkGrid(data.work, data.directors);
+  initDirectorModal(data.directors);
   renderCaseStudies(data.caseStudies);
   initFooter(data);
   initScrollEffects();
@@ -173,40 +173,24 @@ function initContactModal() {
 }
 
 // --- Hero ---
-function initHero(hero, thumbs) {
+function initHero(hero) {
   const video = document.getElementById('heroVideo');
   if (hero.poster) video.poster = hero.poster;
   if (hero.video) video.src = hero.video;
-
-  const heroBottom = document.getElementById('heroBottom');
-  if (heroBottom && thumbs && thumbs.length) {
-    heroBottom.innerHTML = renderThumbStrip(thumbs);
-  }
-}
-
-function renderThumbStrip(projects) {
-  const items = projects.map(p => `
-    <div class="thumb-strip__item" data-video="${p.video || ''}" data-preview="${p.preview || ''}">
-      <img src="${p.thumbnail}" alt="${p.title}${p.client ? ' — ' + p.client : ''}" loading="lazy">
-      ${p.preview ? `<video class="thumb-strip__video" muted loop playsinline preload="none"></video>` : ''}
-      <div class="thumb-strip__label">
-        <span class="thumb-strip__title">${p.title}</span>
-        ${p.client ? `<span class="thumb-strip__client">${p.client}</span>` : ''}
-      </div>
-    </div>
-  `).join('');
-
-  return `<div class="thumb-strip">${items}</div>`;
 }
 
 // --- Work Grid ---
-function renderWorkGrid(work) {
+let _allWork = [];
+let _allDirectors = [];
+
+function renderWorkGrid(work, directors) {
+  _allWork = work;
+  _allDirectors = directors;
   const main = document.getElementById('main');
 
   const section = document.createElement('section');
   section.className = 'work-section';
   section.id = 'work';
-
 
   // Filters
   const filters = document.createElement('div');
@@ -249,6 +233,7 @@ function renderWorkGrid(work) {
   overlay.className = 'filter-overlay';
   document.body.appendChild(overlay);
 
+  const directorNames = directors.map(d => d.name);
   const panel = document.createElement('div');
   panel.className = 'filter-panel';
   panel.innerHTML = `
@@ -292,10 +277,7 @@ function renderWorkGrid(work) {
       <div class="filter-panel__group">
         <div class="filter-panel__group-title">Director</div>
         <div class="filter-panel__options">
-          <button class="filter-panel__option">Director 1</button>
-          <button class="filter-panel__option">Director 2</button>
-          <button class="filter-panel__option">Director 3</button>
-          <button class="filter-panel__option">Director 4</button>
+          ${directorNames.map(n => `<button class="filter-panel__option">${n}</button>`).join('')}
         </div>
       </div>
     </div>
@@ -328,40 +310,86 @@ function renderWorkGrid(work) {
     opt.addEventListener('click', () => opt.classList.toggle('is-active'));
   });
 
+  const INITIAL_COUNT = 11;
+
   const grid = document.createElement('div');
   grid.className = 'work-grid';
+  grid.id = 'workGrid';
 
-  work.forEach((project, i) => {
-    const item = document.createElement('div');
-    item.className = 'work-grid__item';
-    const ratio = project.ratio || 2.0;
-    item.style.flexGrow = ratio;
-    item.style.flexBasis = (ratio * 280) + 'px';
-    item.dataset.index = i;
-    item.dataset.video = project.video || '';
-    item.dataset.preview = project.preview || '';
-
-    item.innerHTML = `
-      <div class="work-grid__media">
-        <img src="${project.thumbnail}" alt="${project.title}" loading="lazy">
-        <video class="work-grid__preview" muted loop playsinline preload="none"></video>
-      </div>
-      <div class="work-grid__overlay">
-        <span class="work-grid__title">${project.title}</span>
-        <span class="work-grid__client">${project.client}</span>
-      </div>
-    `;
-
+  work.slice(0, INITIAL_COUNT).forEach((project, i) => {
+    const item = createWorkItem(project, i);
     grid.appendChild(item);
   });
 
   section.appendChild(grid);
 
-  // View More button
+  // Directors heading
+  const directorsHeader = document.createElement('div');
+  directorsHeader.className = 'work-directors-header';
+  directorsHeader.innerHTML = '<h2 class="work-directors-header__title">Directors</h2>';
+  section.appendChild(directorsHeader);
+
+  // Director cards row (after initial grid)
+  const directorsRow = document.createElement('div');
+  directorsRow.className = 'work-directors';
+  directorsRow.id = 'directors';
+
+  directors.forEach((d, i) => {
+    const card = document.createElement('a');
+    card.className = 'work-director-card';
+    card.href = '#';
+    card.addEventListener('click', (e) => e.preventDefault());
+    card.innerHTML = `
+      <img class="work-director-card__photo" src="${d.photo}" alt="${d.name}" loading="lazy">
+      <div class="work-director-card__overlay"></div>
+      <div class="work-director-card__info">
+        <span class="work-director-card__name">${d.name}</span>
+        <span class="work-director-card__role">${d.role}</span>
+      </div>
+    `;
+    directorsRow.appendChild(card);
+  });
+
+  section.appendChild(directorsRow);
+
+  // Hidden overflow grid (revealed on View More click)
+  const moreGrid = document.createElement('div');
+  moreGrid.className = 'work-grid work-grid--more';
+  moreGrid.id = 'workGridMore';
+  moreGrid.style.display = 'none';
+
+  const overflowItems = work.slice(INITIAL_COUNT);
+  overflowItems.forEach((project, i) => {
+    const item = createWorkItem(project, INITIAL_COUNT + i);
+    moreGrid.appendChild(item);
+  });
+
+  // View More button (below directors, only if there are overflow items)
   const viewMore = document.createElement('div');
   viewMore.className = 'work-view-more';
   viewMore.innerHTML = `<button class="work-view-more__btn">View More</button>`;
+  if (overflowItems.length === 0) viewMore.style.display = 'none';
   section.appendChild(viewMore);
+
+  section.appendChild(moreGrid);
+
+  // View More click handler
+  viewMore.querySelector('.work-view-more__btn').addEventListener('click', () => {
+    moreGrid.style.display = '';
+    viewMore.style.display = 'none';
+
+    // Stagger reveal
+    const moreItems = moreGrid.querySelectorAll('.work-grid__item');
+    moreItems.forEach((item, i) => {
+      item.style.opacity = '0';
+      item.style.transform = 'translateY(30px)';
+      setTimeout(() => {
+        item.style.opacity = '1';
+        item.style.transform = 'translateY(0)';
+        item.classList.add('is-visible');
+      }, i * 80);
+    });
+  });
 
   // Expanded player (hidden by default)
   const player = document.createElement('div');
@@ -405,6 +433,59 @@ function renderWorkGrid(work) {
   initWorkInteractions(work);
   initWorkFilters();
   initWorkScrollReveal();
+  initDirectorScrollReveal();
+}
+
+function createWorkItem(project, i) {
+  const item = document.createElement('div');
+  item.className = 'work-grid__item';
+  const ratio = project.ratio || 2.0;
+  item.style.flexGrow = ratio;
+  item.style.flexBasis = (ratio * 280) + 'px';
+  item.dataset.index = i;
+  item.dataset.video = project.video || '';
+  item.dataset.preview = project.preview || '';
+  item.dataset.director = project.director || '';
+
+  item.innerHTML = `
+    <div class="work-grid__media">
+      <img src="${project.thumbnail}" alt="${project.title}" loading="lazy">
+      <video class="work-grid__preview" muted loop playsinline preload="none"></video>
+    </div>
+    <div class="work-grid__overlay">
+      <span class="work-grid__title">${project.title}</span>
+      <span class="work-grid__client">${project.client}</span>
+    </div>
+  `;
+
+  return item;
+}
+
+// --- Director scroll reveal + nav link ---
+function initDirectorScrollReveal() {
+  const directorsRow = document.getElementById('directors');
+  if (!directorsRow) return;
+
+  // Nav "Directors" link scrolls to director cards
+  document.querySelectorAll('.nav__links a').forEach(a => {
+    if (a.textContent === 'Directors') {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        directorsRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  });
+
+  // Scroll reveal for director cards
+  const dirObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        dirObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  dirObserver.observe(directorsRow);
 }
 
 function initWorkInteractions(work) {
@@ -482,6 +563,13 @@ function initWorkInteractions(work) {
     player.classList.add('is-active');
     grid.classList.add('is-dimmed');
     document.body.classList.add('modal-open');
+
+    // Build glass tiles on first open
+    if (!player._tilesBuilt && typeof triglassTiles === 'function') {
+      player._tilesBuilt = true;
+      const info = player.querySelector('.work-player__info');
+      if (info) requestAnimationFrame(() => triglassTiles(info, { size: 40 }));
+    }
   });
 
   // Close player
@@ -608,10 +696,23 @@ function initWorkFilters() {
   const tabsWrap = document.querySelector('.work-filters__tabs');
   const line = tabsWrap.querySelector('.work-filters__line');
   const tabs = tabsWrap.querySelectorAll('.work-filters__tab');
+  let _scrollActive = 'featured'; // track which tab scroll has set
+  let _userClicked = false; // suppress scroll tracking briefly after click
 
   function moveLine(tab) {
     line.style.left = tab.offsetLeft + 'px';
     line.style.width = tab.offsetWidth + 'px';
+  }
+
+  function setActiveTab(slug) {
+    tabs.forEach(t => t.classList.remove('is-active'));
+    tabs.forEach(t => {
+      if (t.dataset.filter === slug) {
+        t.classList.add('is-active');
+        moveLine(t);
+      }
+    });
+    _scrollActive = slug;
   }
 
   // Hover: animate line to hovered tab
@@ -625,12 +726,59 @@ function initWorkFilters() {
     if (active) moveLine(active);
   });
 
-  // Click: set active and simulate filter
+  // Click: set active, scroll, and simulate filter
+  const stickyOffset = 50; // nav + sticky filters height
+
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
+      if (tab.dataset.filter === 'directors') {
+        const directorsRow = document.getElementById('directors');
+        if (directorsRow) {
+          const top = directorsRow.getBoundingClientRect().top + window.scrollY - 120;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      } else {
+        const workSection = document.getElementById('work');
+        if (workSection) {
+          const top = workSection.getBoundingClientRect().top + window.scrollY - stickyOffset + 40;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      }
       activateFilter(tab.dataset.filter);
+      _userClicked = true;
+      setTimeout(() => { _userClicked = false; }, 1000);
     });
   });
+
+  // Scroll-based tab tracking
+  const directorsRow = document.getElementById('directors');
+  const moreGrid = document.getElementById('workGridMore');
+
+  if (directorsRow) {
+    const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-height')) || 50;
+    const filtersH = tabsWrap.closest('.work-filters').offsetHeight;
+    const offset = navH + filtersH + 40;
+
+    window.addEventListener('scroll', () => {
+      if (_userClicked) return;
+
+      const directorsTop = directorsRow.getBoundingClientRect().top;
+      const moreVisible = moreGrid && moreGrid.style.display !== 'none';
+      const moreTop = moreGrid ? moreGrid.getBoundingClientRect().top : Infinity;
+
+      // If more grid is visible and in view, stay on featured
+      if (moreVisible && moreTop < window.innerHeight) {
+        if (_scrollActive !== 'featured') setActiveTab('featured');
+        return;
+      }
+
+      if (directorsTop <= offset + 100) {
+        if (_scrollActive !== 'directors') setActiveTab('directors');
+      } else {
+        if (_scrollActive !== 'featured') setActiveTab('featured');
+      }
+    }, { passive: true });
+  }
 }
 
 // --- Case Studies ---
@@ -676,6 +824,13 @@ function renderCaseStudies(caseStudies) {
   section.appendChild(moreWrap);
 
   main.appendChild(section);
+
+  // Add glass tile overlay (after DOM insertion so dimensions are available)
+  if (typeof triglassTiles === 'function') {
+    section.querySelectorAll('.case-study').forEach(row => {
+      triglassTiles(row, { size: 50 });
+    });
+  }
 
   // Scroll reveal: stagger each row in
   const rows = section.querySelectorAll('.case-study');
@@ -742,57 +897,8 @@ function renderCaseStudies(caseStudies) {
   });
 }
 
-// --- Directors Section ---
-function renderDirectors(directors) {
-  if (!directors || !directors.length) return;
-  const main = document.getElementById('main');
-
-  const section = document.createElement('section');
-  section.className = 'directors-section';
-  section.id = 'directors';
-
-  const header = document.createElement('div');
-  header.className = 'section-header';
-  header.innerHTML = '<div class="section-header__inner"><h2 class="section-header__title">Directors</h2></div>';
-  section.appendChild(header);
-
-  const content = document.createElement('div');
-  content.className = 'directors-section__content';
-
-  const cards = document.createElement('div');
-  cards.className = 'directors-cards';
-
-  directors.forEach((d, i) => {
-    const card = document.createElement('div');
-    card.className = 'director-card';
-    card.dataset.index = i;
-    card.innerHTML = `
-      <img class="director-card__bg" src="${d.bg}" alt="${d.name}">
-      <div class="director-card__overlay"></div>
-      <div class="director-card__info">
-        <span class="director-card__name">${d.name}</span>
-        <span class="director-card__role">${d.role}</span>
-      </div>
-    `;
-    cards.appendChild(card);
-  });
-
-  content.appendChild(cards);
-  section.appendChild(content);
-  main.appendChild(section);
-
-  // Scroll reveal
-  const directorsObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        directorsObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.2 });
-  directorsObserver.observe(section);
-
-  // Modal interactions
+// --- Director Modal (used by director cards in work section) ---
+function initDirectorModal(directors) {
   const modal = document.getElementById('directorModal');
   if (!modal) return;
 
@@ -803,26 +909,19 @@ function renderDirectors(directors) {
   const modalClose = modal.querySelector('.director-modal__close');
   const modalContactBtn = document.getElementById('directorContactBtn');
 
-  function openModal(director) {
+  window._openDirectorModal = function(director) {
     modalPhoto.style.backgroundImage = `url('${director.photo}')`;
     modalName.textContent = director.name;
     modalRole.textContent = director.role;
     modalBio.textContent = director.bio || '';
     modal.classList.add('is-open');
     document.body.classList.add('modal-open');
-  }
+  };
 
   function closeModal() {
     modal.classList.remove('is-open');
     document.body.classList.remove('modal-open');
   }
-
-  cards.addEventListener('click', (e) => {
-    const card = e.target.closest('.director-card');
-    if (!card) return;
-    const idx = parseInt(card.dataset.index);
-    openModal(directors[idx]);
-  });
 
   modalClose.addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => {
@@ -920,54 +1019,4 @@ function initScrollEffects() {
     const overLight = workTop <= navH && ctaTop > navH;
     nav.classList.toggle('nav--light', overLight);
   }, { passive: true });
-
-  // Hero thumb hover: play preview
-  document.addEventListener('mouseenter', (e) => {
-    const item = e.target.closest('.thumb-strip__item');
-    if (!item) return;
-    const video = item.querySelector('.thumb-strip__video');
-    const src = item.dataset.preview;
-    if (video && src) {
-      video.src = src;
-      video.currentTime = 0;
-      video.play().catch(() => {});
-    }
-  }, true);
-
-  document.addEventListener('mouseleave', (e) => {
-    const item = e.target.closest('.thumb-strip__item');
-    if (!item) return;
-    const video = item.querySelector('.thumb-strip__video');
-    if (video) {
-      video.pause();
-      video.removeAttribute('src');
-    }
-  }, true);
-
-  // Thumbnail click to swap hero video
-  document.addEventListener('click', (e) => {
-    const item = e.target.closest('.thumb-strip__item[data-video]');
-    if (!item) return;
-    const videoSrc = item.dataset.video;
-    if (!videoSrc) return;
-
-    // Stop the hover preview
-    const preview = item.querySelector('.thumb-strip__video');
-    if (preview) {
-      preview.pause();
-      preview.removeAttribute('src');
-      preview.style.opacity = '0';
-    }
-
-    const heroVideo = document.getElementById('heroVideo');
-    if (heroVideo && heroVideo.src !== videoSrc) {
-      heroVideo.style.opacity = '0';
-      setTimeout(() => {
-        heroVideo.src = videoSrc;
-        heroVideo.play().catch(() => {});
-        heroVideo.style.opacity = '1';
-      }, 300);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
 }

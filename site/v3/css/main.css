@@ -1075,7 +1075,7 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 0 120px;
+  padding: 0 100px;
   width: 100%;
   transition: opacity 0.4s;
 }
@@ -1577,107 +1577,179 @@ h3 {
 }
 
 
-/* --- Directors --- */
-.directors-section {
-  background: #fff;
-  padding: 0 0 60px;
+/* --- Director Cards (in work section) --- */
+.work-directors-header {
+  padding: 0 100px;
+  margin-top: 120px;
+  margin-bottom: 24px;
 }
 
-.directors-section .section-header__title {
-  opacity: 0;
-  transform: translateY(25px);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+.work-directors-header__title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
-.directors-section.is-visible .section-header__title {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.directors-section__content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-
-.directors-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+.work-directors {
+  display: flex;
   gap: 16px;
+  padding: 0 100px;
 }
 
-.director-card {
-  display: block;
-  aspect-ratio: 3 / 4;
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-  cursor: pointer;
+.work-directors .work-director-card {
   opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(30px);
 }
 
-.directors-section.is-visible .director-card {
+.work-directors.is-visible .work-director-card {
   opacity: 1;
   transform: translateY(0);
+  transition: flex 0.7s cubic-bezier(0.25, 1, 0.5, 1),
+              opacity 0.8s ease;
 }
 
-.directors-section.is-visible .director-card:hover {
-  transform: translateY(-4px);
+.work-directors.is-visible .work-director-card:nth-child(1) { transition-delay: 0.1s; }
+.work-directors.is-visible .work-director-card:nth-child(2) { transition-delay: 0.2s; }
+.work-directors.is-visible .work-director-card:nth-child(3) { transition-delay: 0.3s; }
+.work-directors.is-visible .work-director-card:nth-child(4) { transition-delay: 0.4s; }
+
+.work-director-card {
+  position: relative;
+  flex: 1;
+  height: clamp(400px, 30vw, 550px);
+  border-radius: 40px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: flex 0.7s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.directors-section .director-card:nth-child(1) { transition-delay: 0.1s; }
-.directors-section .director-card:nth-child(2) { transition-delay: 0.25s; }
-.directors-section .director-card:nth-child(3) { transition-delay: 0.4s; }
-.directors-section .director-card:nth-child(4) { transition-delay: 0.55s; }
-
-.directors-section.is-visible .director-card:hover {
-  transition-delay: 0s;
-  transition-duration: 0.3s;
+.work-director-card:hover {
+  flex: 1.4;
 }
 
-.director-card__bg {
+.work-director-card.is-active {
+  outline: 2px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+.work-director-card__photo {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+              filter 0.6s ease;
 }
 
-.director-card__overlay {
+.work-director-card:hover .work-director-card__photo {
+  transform: scale(1.04);
+  filter: brightness(1.08);
+}
+
+.work-director-card__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.05) 50%, transparent 100%);
+  transition: opacity 0.6s ease;
+  opacity: 1;
 }
 
-.director-card__info {
+.work-director-card:hover .work-director-card__overlay {
+  opacity: 0.8;
+}
+
+.work-director-card__info {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 20px;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255,255,255,0.15);
+  padding: 24px 24px;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  transform: translateY(0);
 }
 
-.director-card__name {
+.work-director-card:hover .work-director-card__info {
+  transform: translateY(-4px);
+}
+
+.work-director-card__name {
   display: block;
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
   margin-bottom: 2px;
+  white-space: nowrap;
 }
 
-.director-card__role {
+.work-director-card__role {
   display: block;
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+}
+
+/* Director Banner (shows when filtering by director) */
+.work-director-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 100px;
+  margin-bottom: 24px;
+}
+
+.work-director-banner.is-active {
+  display: flex;
+  border-bottom: none;
+  background: none;
+}
+
+.work-director-banner__info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.work-director-banner__photo {
+  width: 150px;
+  height: 150px;
+  border-radius: 40px;
+  object-fit: cover;
+}
+
+.work-director-banner__text {
+  display: flex;
+  flex-direction: column;
+  margin-top: 36px;
+}
+
+.work-director-banner__name {
+  font-size: 3rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.work-director-banner__role {
+  font-size: 1.4rem;
+  color: var(--color-text-muted);
+}
+
+.work-director-banner__close {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  padding: 8px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.work-director-banner__close:hover {
+  color: var(--color-text);
+  border-color: var(--color-text);
 }
 
 /* --- CTA Section --- */

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triglass — Fluted Glass Concept</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .demo {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .demo__bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .demo__label {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      z-index: 10;
+    }
+
+    /* ============================================
+       Triglass Faceted Glass
+
+       Downward-pointing triangle matching the logo.
+       4 sub-triangles formed by connecting midpoints:
+
+       Top-left:   (0%, 0%)  —  (50%, 0%)  —  (25%, 50%)
+       Top-right:  (50%, 0%) —  (100%, 0%) —  (75%, 50%)
+       Center (up): (25%, 50%) — (50%, 0%) — (75%, 50%)
+       Bottom:     (25%, 50%) — (75%, 50%) — (50%, 100%)
+
+       Each facet is full-size, clipped to its triangle.
+       ============================================ */
+    .triglass {
+      position: relative;
+      width: 420px;
+      height: 364px;
+      z-index: 5;
+    }
+
+    .triglass__facet {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transition: background 0.6s ease;
+    }
+
+    /* Top-left triangle */
+    .triglass__facet--tl {
+      clip-path: polygon(0% 0%, 50% 0%, 25% 50%);
+      background: rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    /* Top-right triangle */
+    .triglass__facet--tr {
+      clip-path: polygon(50% 0%, 100% 0%, 75% 50%);
+      background: rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    /* Center triangle (pointing up — the light one in the logo) */
+    .triglass__facet--center {
+      clip-path: polygon(25% 50%, 50% 0%, 75% 50%);
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* Bottom triangle */
+    .triglass__facet--bottom {
+      clip-path: polygon(25% 50%, 75% 50%, 50% 100%);
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    /* SVG edge lines */
+    .triglass__outline {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .triglass__outline svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Hover: shift refraction */
+    .triglass:hover .triglass__facet--tl {
+      background: rgba(255, 255, 255, 0.14);
+    }
+    .triglass:hover .triglass__facet--tr {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .triglass:hover .triglass__facet--center {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .triglass:hover .triglass__facet--bottom {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* ============================================
+       Variation 2: Color refraction
+       ============================================ */
+    .demo--v2 .triglass__facet--tl {
+      background: rgba(180, 140, 255, 0.08);
+    }
+    .demo--v2 .triglass__facet--tr {
+      background: rgba(100, 200, 255, 0.10);
+    }
+    .demo--v2 .triglass__facet--center {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .demo--v2 .triglass__facet--bottom {
+      background: rgba(255, 180, 100, 0.08);
+    }
+
+    /* ============================================
+       Variation 3: Glass on dark gradient
+       ============================================ */
+    .demo--v3 {
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+    }
+
+    .demo--v3 .triglass {
+      filter: drop-shadow(0 20px 80px rgba(120, 100, 255, 0.12));
+    }
+
+    .demo--v3 .triglass__facet--tl {
+      background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%);
+    }
+    .demo--v3 .triglass__facet--tr {
+      background: linear-gradient(225deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%);
+    }
+    .demo--v3 .triglass__facet--center {
+      background: rgba(255,255,255,0.02);
+    }
+    .demo--v3 .triglass__facet--bottom {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.14) 100%);
+    }
+
+    /* ============================================
+       Variation 4: Repeating tile pattern
+       Pure SVG — no backdrop-filter, fully lightweight
+       ============================================ */
+    .demo--v4 {
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+    }
+
+    /* Base blur across the whole area */
+    .triglass-tile-base-blur {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    /* Stronger blur clipped to down-pointing triangles only */
+    .triglass-tile-blur {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 4;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      /* clip-path set by JS */
+    }
+
+    .triglass-tile-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- V1: Over video -->
+  <div class="demo">
+    <video class="demo__bg" autoplay muted loop playsinline>
+      <source src="https://pub-aded304bac634530b24355595a6c406b.r2.dev/triglass-home-v01.mp4" type="video/mp4">
+    </video>
+
+    <div class="triglass">
+      <div class="triglass__facet triglass__facet--tl"></div>
+      <div class="triglass__facet triglass__facet--tr"></div>
+      <div class="triglass__facet triglass__facet--center"></div>
+      <div class="triglass__facet triglass__facet--bottom"></div>
+      <div class="triglass__outline">
+        <svg viewBox="0 0 420 364" fill="none">
+          <!-- Outer triangle -->
+          <path d="M210 0 L420 364 L0 364 Z" stroke="rgba(255,255,255,0.15)" stroke-width="1" fill="none"/>
+          <!-- Inner edges -->
+          <line x1="210" y1="0" x2="105" y2="182" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+          <line x1="210" y1="0" x2="315" y2="182" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+          <line x1="105" y1="182" x2="315" y2="182" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+        </svg>
+      </div>
+    </div>
+    <span class="demo__label">V1 — Over video</span>
+  </div>
+
+  <!-- V2: Color refraction over image -->
+  <div class="demo demo--v2">
+    <img class="demo__bg" src="/assets/images/thumbs/1.jpg" alt="">
+
+    <div class="triglass">
+      <div class="triglass__facet triglass__facet--tl"></div>
+      <div class="triglass__facet triglass__facet--tr"></div>
+      <div class="triglass__facet triglass__facet--center"></div>
+      <div class="triglass__facet triglass__facet--bottom"></div>
+      <div class="triglass__outline">
+        <svg viewBox="0 0 420 364" fill="none">
+          <path d="M210 0 L420 364 L0 364 Z" stroke="rgba(255,255,255,0.12)" stroke-width="1" fill="none"/>
+          <line x1="210" y1="0" x2="105" y2="182" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="210" y1="0" x2="315" y2="182" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="105" y1="182" x2="315" y2="182" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="105" y1="182" x2="210" y2="364" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="315" y1="182" x2="210" y2="364" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+        </svg>
+      </div>
+    </div>
+    <span class="demo__label">V2 — Color refraction</span>
+  </div>
+
+  <!-- V3: Glass on dark gradient -->
+  <div class="demo demo--v3">
+    <div class="triglass">
+      <div class="triglass__facet triglass__facet--tl"></div>
+      <div class="triglass__facet triglass__facet--tr"></div>
+      <div class="triglass__facet triglass__facet--center"></div>
+      <div class="triglass__facet triglass__facet--bottom"></div>
+      <div class="triglass__outline">
+        <svg viewBox="0 0 420 364" fill="none">
+          <path d="M210 0 L420 364 L0 364 Z" stroke="rgba(255,255,255,0.12)" stroke-width="1" fill="none"/>
+          <line x1="210" y1="0" x2="105" y2="182" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="210" y1="0" x2="315" y2="182" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="105" y1="182" x2="315" y2="182" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="105" y1="182" x2="210" y2="364" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+          <line x1="315" y1="182" x2="210" y2="364" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+        </svg>
+      </div>
+    </div>
+    <span class="demo__label">V3 — Dark gradient</span>
+  </div>
+
+  <!-- V4: Repeating tile over video -->
+  <div class="demo demo--v4">
+    <video class="demo__bg" autoplay muted loop playsinline>
+      <source src="https://pub-aded304bac634530b24355595a6c406b.r2.dev/triglass-home-v01.mp4" type="video/mp4">
+    </video>
+    <div class="triglass-tile-base-blur"></div>
+    <div class="triglass-tile-blur" id="tileBlur1"></div>
+    <svg class="triglass-tile-svg" id="tileSvg1"></svg>
+    <span class="demo__label">V4 — Repeating tile over video</span>
+  </div>
+
+  <!-- V5: Repeating tile on gradient -->
+  <div class="demo demo--v4">
+    <div class="triglass-tile-base-blur"></div>
+    <div class="triglass-tile-blur" id="tileBlur2"></div>
+    <svg class="triglass-tile-svg" id="tileSvg2"></svg>
+    <span class="demo__label">V5 — Tile on gradient</span>
+  </div>
+
+  <script>
+    function buildTileGrid(svg, blurDiv) {
+      const W = 50;
+      const H = Math.round(W * 0.866);
+      const halfW = W / 2;
+
+      // Use the container's actual pixel dimensions
+      const rect = svg.parentElement.getBoundingClientRect();
+      const vw = rect.width;
+      const vh = rect.height;
+
+      // No viewBox — draw in raw pixel coordinates so SVG and blur div match exactly
+      svg.removeAttribute('viewBox');
+      svg.removeAttribute('preserveAspectRatio');
+      svg.setAttribute('width', vw);
+      svg.setAttribute('height', vh);
+
+      const cols = Math.ceil(vw / halfW) + 2;
+      const rows = Math.ceil(vh / H) + 2;
+
+      const downFills = [
+        'rgba(255,255,255,0.025)',
+        'rgba(255,255,255,0.04)',
+        'rgba(255,255,255,0.005)',    // center — nearly transparent
+        'rgba(255,255,255,0.02)',
+      ];
+
+      const downBuckets = ['','','',''];
+      let downEdges = '';
+      let downInner = '';
+      let upEdges = '';
+      let upFill = '';
+      let clipTriangles = '';
+
+      for (let r = -1; r < rows; r++) {
+        for (let c = -1; c < cols; c++) {
+          const isDown = ((c + r) & 1) === 0;
+          const x = c * halfW;
+          const y = r * H;
+
+          if (isDown) {
+            const ax = x, ay = y;
+            const bx = x+W, by = y;
+            const cx = x+halfW, cy = y+H;
+            const mx = x+W/4, my = y+H/2;
+            const nx = x+3*W/4, ny = y+H/2;
+
+            downBuckets[0] += `M${ax},${ay}L${ax+halfW},${ay}L${mx},${my}Z `;
+            downBuckets[1] += `M${ax+halfW},${ay}L${bx},${by}L${nx},${ny}Z `;
+            downBuckets[2] += `M${mx},${my}L${ax+halfW},${ay}L${nx},${ny}Z `;
+            downBuckets[3] += `M${mx},${my}L${nx},${ny}L${cx},${cy}Z `;
+
+            downEdges += `M${ax},${ay}L${bx},${by}L${cx},${cy}Z `;
+            downInner += `M${ax+halfW},${ay}L${mx},${my} M${ax+halfW},${ay}L${nx},${ny} M${mx},${my}L${nx},${ny} `;
+            downInner += `M${mx},${my}L${cx},${cy} M${nx},${ny}L${cx},${cy} `;
+
+            clipTriangles += `M${ax},${ay}L${bx},${by}L${cx},${cy}Z `;
+          } else {
+            const ax = x+halfW, ay = y;
+            const bx = x, by = y+H;
+            const cx2 = x+W, cy2 = y+H;
+            upEdges += `M${ax},${ay}L${bx},${by}L${cx2},${cy2}Z `;
+            upFill += `M${ax},${ay}L${bx},${by}L${cx2},${cy2}Z `;
+          }
+        }
+      }
+
+      // clipPath lives in a hidden inline SVG so it shares the blur div's pixel space
+      const clipId = 'clip-' + Math.random().toString(36).slice(2, 8);
+      let clipSvg = blurDiv.parentElement.querySelector('.triglass-clip-svg');
+      if (!clipSvg) {
+        clipSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        clipSvg.setAttribute('class', 'triglass-clip-svg');
+        clipSvg.setAttribute('width', '0');
+        clipSvg.setAttribute('height', '0');
+        clipSvg.style.position = 'absolute';
+        blurDiv.parentElement.appendChild(clipSvg);
+      }
+      clipSvg.innerHTML = `<defs><clipPath id="${clipId}" clipPathUnits="userSpaceOnUse"><path d="${clipTriangles}"/></clipPath></defs>`;
+
+      // Visual SVG
+      let html = '';
+      for (let i = 0; i < 4; i++) {
+        html += `<path d="${downBuckets[i]}" fill="${downFills[i]}"/>`;
+      }
+      html += `<path d="${downEdges}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>`;
+      html += `<path d="${downInner}" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.3"/>`;
+      html += `<path d="${upEdges}" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="0.3"/>`;
+      svg.innerHTML = html;
+
+      // Clip the blur to only the down-pointing triangles
+      blurDiv.style.clipPath = `url(#${clipId})`;
+      blurDiv.style.webkitClipPath = `url(#${clipId})`;
+    }
+
+    buildTileGrid(document.getElementById('tileSvg1'), document.getElementById('tileBlur1'));
+    buildTileGrid(document.getElementById('tileSvg2'), document.getElementById('tileBlur2'));
+  </script>
+
+</body>
+</html>
