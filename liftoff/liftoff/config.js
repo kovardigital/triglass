@@ -19,7 +19,7 @@ export const SECTIONS = [
   { id: 'investment', title: 'INVESTMENT' },
   { id: 'waterfall', title: 'WATERFALL' },
   { id: 'schedule', title: 'SCHEDULE' },
-  { id: 'twenty-minutes', title: '20 MINUTES' },
+  { id: 'twenty-minutes', title: 'FIRST 20 MINUTES' },
   { id: 'coming-soon', title: 'COMING SOON' },
 ];
 

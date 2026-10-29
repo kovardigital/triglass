@@ -141,11 +141,11 @@ const SECTIONS = [
     images: []
   },
   {
-    title: '20 MINUTES',
+    title: 'FIRST 20 MINUTES',
     subtitle: '',
     trailerLayout: true,
     images: [
-      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Watch 20 minutes on Frame.io', delay: 0, rotateY: 0, image: 'https://triglass-assets.s3.amazonaws.com/twenty-minutes-still.jpg', link: 'https://f.io/p8Ycd0_w', caption: 'Password required  ·  Opens in Frame.io' },
+      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Watch the first 20 minutes on Frame.io', delay: 0, rotateY: 0, image: 'https://triglass-assets.s3.amazonaws.com/twenty-minutes-still.jpg', link: 'https://f.io/p8Ycd0_w', caption: 'Password required  ·  Opens in Frame.io' },
     ]
   },
   {
