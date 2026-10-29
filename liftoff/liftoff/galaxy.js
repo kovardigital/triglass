@@ -62,7 +62,7 @@ function init(worldGroup) {
       const material = new THREE.ShaderMaterial({
         uniforms: {
           galaxyTexture: { value: texture },
-          opacity: { value: 0.5 }  // Overall opacity
+          opacity: { value: 0.25 }  // Overall opacity (additive, so this scales brightness)
         },
         vertexShader: galaxyVertexShader,
         fragmentShader: galaxyFragmentShader,
