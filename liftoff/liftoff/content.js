@@ -11,12 +11,18 @@ import * as CrewChapter from './chapters/crew.js';
 import * as CompletionChapter from './chapters/completion.js';
 import * as BudgetChapter from './chapters/budget.js';
 import * as ScheduleChapter from './chapters/schedule.js';
+import * as InvestmentChapter from './chapters/investment.js';
 
 // Section content data (simplified - no zRange needed)
 const SECTIONS = [
   {
     title: 'LIFTOFF',
-    titleImage: 'https://triglass-assets.s3.amazonaws.com/image0.png',
+    // Logo lockup: the animation plays once on load, then crossfades to this still
+    titleImage: 'https://triglass-assets.s3.amazonaws.com/liftoff-logo.webp',
+    titleVideo: {
+      webm: 'https://triglass-assets.s3.amazonaws.com/liftoff-logo.webm',     // VP9 + alpha (Chrome, Firefox, Edge)
+      hevc: 'https://triglass-assets.s3.amazonaws.com/liftoff-logo-hevc.mp4', // HEVC + alpha (Safari, iOS)
+    },
     subtitle: 'A journey beyond the stars',
     images: []
   },
@@ -32,7 +38,7 @@ const SECTIONS = [
     subtitle: '',
     trailerLayout: true,
     images: [
-      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-4.mp4', playable: true },
+      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-5.mp4', playable: true },
     ]
   },
   {
@@ -117,10 +123,30 @@ const SECTIONS = [
     images: []
   },
   {
+    title: 'INVESTMENT',
+    subtitle: '',
+    investmentLayout: true,
+    images: []
+  },
+  {
+    title: 'WATERFALL',
+    subtitle: '',
+    waterfallLayout: true,
+    images: []
+  },
+  {
     title: 'SCHEDULE',
     subtitle: 'Timeline',
     scheduleLayout: true,
     images: []
+  },
+  {
+    title: '20 MINUTES',
+    subtitle: '',
+    trailerLayout: true,
+    images: [
+      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Watch 20 minutes on Frame.io', delay: 0, rotateY: 0, image: 'https://triglass-assets.s3.amazonaws.com/twenty-minutes-still.jpg', link: 'https://f.io/p8Ycd0_w', caption: 'Password required  ·  Opens in Frame.io' },
+    ]
   },
   {
     title: 'COMING SOON',
@@ -155,6 +181,9 @@ const characterBackdrops = []; // Blur backdrops appended directly to imgWorld f
 
 // Track which section's text is currently displayed
 let lastSectionIndex = -1;
+
+// Title logo animation plays once; after that the intro shows the still
+let titleLogoPlayed = false;
 
 // Preview element for backward scroll anticipation
 let previewContainer = null;
@@ -535,12 +564,38 @@ function injectStyles() {
       display: block;
       margin: 0 auto;
     }
+    /* Title logo animation - video plays over the hidden still, then crossfades to it */
+    .liftoff-text.intro h1 .title-logo {
+      position: relative;
+      display: block;
+      width: clamp(300px, 60vw, 800px);
+      aspect-ratio: 1608 / 654;
+      margin: 0 auto;
+    }
+    .liftoff-text.intro h1 .title-logo img.title-image,
+    .liftoff-text.intro h1 .title-logo video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      transition: opacity 1.2s ease-out;
+    }
+    .liftoff-text.intro h1 .title-logo img.title-image {
+      opacity: 0;
+    }
+    .liftoff-text.intro h1 .title-logo.settled img.title-image {
+      opacity: 1;
+    }
+    .liftoff-text.intro h1 .title-logo.settled video {
+      opacity: 0;
+    }
     /* Intro subtitle - anchored to fixed position in container */
     .liftoff-text.intro p {
       position: absolute;
       left: 0;
       right: 0;
-      top: calc(50% + 40px);
+      top: calc(50% + 64px); /* clears the logo's crescent */
     }
     .liftoff-text p {
       font-family: 'montserrat', sans-serif;
@@ -674,7 +729,7 @@ function injectStyles() {
       position: absolute;
       left: 0;
       right: 0;
-      top: calc(50% + 40px);
+      top: calc(50% + 64px);
       font-size: clamp(14px, 2vw, 20px);
     }
     .liftoff-preview.preview-trailer {
@@ -1273,6 +1328,35 @@ function injectStyles() {
     .liftoff-play-button svg.pause-icon {
       margin-left: 0;
     }
+    /* Link card (20 minutes) - still image that opens Frame.io in a new tab */
+    .liftoff-image.link-card img {
+      border-radius: 12px;
+    }
+    .liftoff-image.link-card:hover .liftoff-play-button {
+      background: rgba(0, 0, 0, 0.8);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    .liftoff-link-cover {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      z-index: 11;
+    }
+    .liftoff-link-caption {
+      position: absolute;
+      top: calc(100% + 36px);
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: 'montserrat', sans-serif;
+      font-size: 30px; /* card is scaled ~0.5x, so this reads at ~15px */
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+      pointer-events: none;
+    }
     .liftoff-fullscreen-button {
       position: absolute;
       bottom: -70px;
@@ -1857,6 +1941,36 @@ function init() {
 
         img.appendChild(video);
         img.dataset.hasVideo = 'true';
+      } else if (imgConfig.link) {
+        // Still image that opens an external player (e.g., Frame.io) in a new tab
+        img.classList.add('has-image', 'playable-video', 'link-card');
+        const imgEl = document.createElement('img');
+        imgEl.src = imgConfig.image;
+        imgEl.alt = '';
+        img.appendChild(imgEl);
+
+        const playBtn = document.createElement('div');
+        playBtn.className = 'liftoff-play-button';
+        playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+        img.appendChild(playBtn);
+
+        // Real link covering the card so middle-click and popup blockers behave
+        const linkEl = document.createElement('a');
+        linkEl.className = 'liftoff-link-cover';
+        linkEl.href = imgConfig.link;
+        linkEl.target = '_blank';
+        linkEl.rel = 'noopener';
+        linkEl.setAttribute('aria-label', imgConfig.label);
+        img.appendChild(linkEl);
+
+        if (imgConfig.caption) {
+          const captionEl = document.createElement('div');
+          captionEl.className = 'liftoff-link-caption';
+          captionEl.textContent = imgConfig.caption;
+          img.appendChild(captionEl);
+        }
+
+        img.dataset.playable = 'true';
       } else if (imgConfig.image) {
         // Static image
         img.classList.add('has-image');
@@ -2077,6 +2191,7 @@ function init() {
   CompletionChapter.init(imageWorld, SECTIONS);
   BudgetChapter.init(imageWorld, SECTIONS);
   ScheduleChapter.init(imageWorld, SECTIONS);
+  InvestmentChapter.init(imageWorld, SECTIONS);
 
   // Set initial text for intro
   setTextContent(0);
@@ -2089,7 +2204,12 @@ function setTextContent(sectionIndex) {
   if (!section) return;
 
   // Update text content
-  if (section.titleImage && sectionIndex === 0) {
+  if (section.titleVideo && sectionIndex === 0 && !titleLogoPlayed) {
+    titleEl.innerHTML = `<span class="title-logo"><img src="${section.titleImage}" alt="${section.title}" class="title-image"><video class="title-video" muted playsinline preload="auto"></video></span>`;
+    const video = titleEl.querySelector('video');
+    video.muted = true; // Property too, so autoplay policies see a muted video
+    video.src = useHevcAlpha() ? section.titleVideo.hevc : section.titleVideo.webm;
+  } else if (section.titleImage && sectionIndex === 0) {
     titleEl.innerHTML = `<img src="${section.titleImage}" alt="${section.title}" class="title-image">`;
   } else {
     titleEl.textContent = section.title;
@@ -2097,7 +2217,7 @@ function setTextContent(sectionIndex) {
   subtitleEl.textContent = section.subtitle;
 
   // Update CSS classes for styling
-  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'story', 'comps-layout', 'target-market-layout', 'crew-layout', 'completion-layout', 'budget-layout', 'schedule-layout', 'outro');
+  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'story', 'comps-layout', 'target-market-layout', 'crew-layout', 'completion-layout', 'budget-layout', 'investment-layout', 'waterfall-layout', 'schedule-layout', 'outro');
   if (sectionIndex === 0) {
     textContainer.classList.add('intro');
   } else if (sectionIndex === 1) {
@@ -2118,6 +2238,10 @@ function setTextContent(sectionIndex) {
     textContainer.classList.add('completion-layout');
   } else if (section.budgetLayout) {
     textContainer.classList.add('budget-layout');
+  } else if (section.investmentLayout) {
+    textContainer.classList.add('investment-layout');
+  } else if (section.waterfallLayout) {
+    textContainer.classList.add('waterfall-layout');
   } else if (section.scheduleLayout) {
     textContainer.classList.add('schedule-layout');
   } else if (sectionIndex === SECTIONS.length - 1) {
@@ -2180,7 +2304,7 @@ function update() {
       }
       previewSubtitleEl.textContent = targetData.subtitle;
 
-      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-schedule', 'preview-outro');
+      previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-investment', 'preview-waterfall', 'preview-schedule', 'preview-outro');
       if (targetSection === 0) {
         previewContainer.classList.add('preview-intro');
         // Ensure main container will be revealed when we land on intro
@@ -2195,6 +2319,8 @@ function update() {
       else if (SECTIONS[targetSection]?.crewLayout) previewContainer.classList.add('preview-crew');
       else if (SECTIONS[targetSection]?.completionLayout) previewContainer.classList.add('preview-completion');
       else if (SECTIONS[targetSection]?.budgetLayout) previewContainer.classList.add('preview-budget');
+      else if (SECTIONS[targetSection]?.investmentLayout) previewContainer.classList.add('preview-investment');
+      else if (SECTIONS[targetSection]?.waterfallLayout) previewContainer.classList.add('preview-waterfall');
       else if (SECTIONS[targetSection]?.scheduleLayout) previewContainer.classList.add('preview-schedule');
       else if (targetSection === SECTIONS.length - 1) previewContainer.classList.add('preview-outro');
     }
@@ -2253,7 +2379,7 @@ function update() {
           }
           previewSubtitleEl.textContent = prevSection.subtitle;
 
-          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-schedule', 'preview-outro');
+          previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-comps', 'preview-target-market', 'preview-crew', 'preview-completion', 'preview-budget', 'preview-investment', 'preview-waterfall', 'preview-schedule', 'preview-outro');
           if (currentSection - 1 === 0) {
             previewContainer.classList.add('preview-intro');
             // Ensure main container will be revealed when we land on intro
@@ -2268,6 +2394,8 @@ function update() {
           else if (SECTIONS[currentSection - 1]?.crewLayout) previewContainer.classList.add('preview-crew');
           else if (SECTIONS[currentSection - 1]?.completionLayout) previewContainer.classList.add('preview-completion');
           else if (SECTIONS[currentSection - 1]?.budgetLayout) previewContainer.classList.add('preview-budget');
+          else if (SECTIONS[currentSection - 1]?.investmentLayout) previewContainer.classList.add('preview-investment');
+          else if (SECTIONS[currentSection - 1]?.waterfallLayout) previewContainer.classList.add('preview-waterfall');
           else if (SECTIONS[currentSection - 1]?.scheduleLayout) previewContainer.classList.add('preview-schedule');
           else if (currentSection - 1 === SECTIONS.length - 1) previewContainer.classList.add('preview-outro');
 
@@ -2640,6 +2768,34 @@ function update() {
   CompletionChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
   BudgetChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
   ScheduleChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
+  InvestmentChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
+}
+
+// Safari and every iOS browser need HEVC for video transparency; others use VP9 WebM
+function useHevcAlpha() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const isSafari = /^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(ua);
+  return isIOS || isSafari;
+}
+
+// Play the title logo animation once, then crossfade to the still (its last frame, with glow)
+function playTitleLogo() {
+  const logo = titleEl && titleEl.querySelector('.title-logo');
+  const video = logo && logo.querySelector('video');
+  if (!video) return;
+  titleLogoPlayed = true;
+
+  let settled = false;
+  const settle = () => {
+    if (settled) return;
+    settled = true;
+    logo.classList.add('settled');
+  };
+  video.addEventListener('ended', settle, { once: true });
+  video.addEventListener('error', settle, { once: true });
+  setTimeout(settle, 9000); // Stalled network: don't leave the title half-drawn
+  video.play().catch(settle); // Autoplay blocked (e.g., iOS Low Power Mode): show the still
 }
 
 // Reveal intro animation (called after preloader hides)
@@ -2648,6 +2804,7 @@ function reveal() {
   textContainer.offsetHeight; // Force reflow
   requestAnimationFrame(() => {
     textContainer.classList.add('revealed');
+    playTitleLogo();
   });
 }
 
@@ -2667,6 +2824,7 @@ function destroy() {
   CompletionChapter.destroy();
   BudgetChapter.destroy();
   ScheduleChapter.destroy();
+  InvestmentChapter.destroy();
   if (viewport) viewport.remove();
   if (scrollSpacer) scrollSpacer.remove();
   if (contactBtn) contactBtn.remove();

@@ -14,144 +14,65 @@ export const config = {
   images: []
 };
 
-// Timeline dimensions - spans 16 months (Jan 2026 - Apr 2027)
+// Timeline dimensions - spans 26 months (Nov 2025 - Dec 2027)
 const TIMELINE_WIDTH = 800;
 const BAR_HEIGHT = 36;
 const BAR_GAP = 12;
+const ROW_COUNT = 2; // Row 0: filming, row 1: post-production
+const MIN_BAR_WIDTH = 10; // Filming blocks are only days long; keep them visible
 
-// Unified production schedule - all phases on one timeline
-// Month indices: 0 = Jan '26, 11 = Dec '26, 12 = Jan '27, 15 = Apr '27
-// labelPos: 'internal' (inside bar), 'below' (external below), 'above' (external above)
+// Timeline starts Nov 1, 2025 (month 0) and ends Dec 31, 2027 (month 26)
+const TIMELINE_START = { year: 2025, month: 11 };
+const MONTH_COUNT = 26;
+
+// Fractional month position of a date on the timeline (y, m, d are calendar values; m is 1-12)
+function monthPos(y, m, d = 1) {
+  const daysInMonth = new Date(y, m, 0).getDate();
+  return (y - TIMELINE_START.year) * 12 + (m - TIMELINE_START.month) + (d - 1) / daysInMonth;
+}
+
+const FILMING_COLOR = 'rgba(255, 107, 107, 0.8)';
+const POST_COLOR = 'rgba(60, 200, 200, 0.8)';
+
+// Schedule from "Schedule_10.29.26" - dates are Ryan's, verbatim in `dates`
+// estimated: phases marked "EST." in the schedule (drawn as outlines)
+// start/end: bar extents in timeline months (end is exclusive)
+// Post bars are clipped around the March 2026 shoot so the two March post phases don't overlap
 const SCHEDULE_PHASES = [
-  {
-    id: 'post1',
-    name: 'Post-Production',
-    description: 'Editorial work on existing footage, assembly cuts, and early post work.',
-    color: 'rgba(60, 200, 200, 0.8)',
-    glowColor: 'rgba(60, 200, 200, 0.4)',
-    startMonth: 0,    // January 2026
-    endMonth: 4,      // April 2026
-    row: 0,
-    labelPos: 'internal',
-    weeks: [
-      { label: 'Footage Review & Logging', startWeek: 0, endWeek: 2, color: 'rgba(80, 210, 210, 0.8)' },
-      { label: 'Assembly Cut', startWeek: 2, endWeek: 6, color: 'rgba(60, 200, 200, 0.8)' },
-      { label: 'Rough Cut V1', startWeek: 6, endWeek: 10, color: 'rgba(50, 185, 185, 0.8)' },
-      { label: 'Sound Design (Temp)', startWeek: 8, endWeek: 12, color: 'rgba(40, 170, 170, 0.8)' },
-      { label: 'VFX Prep & Bidding', startWeek: 10, endWeek: 14, color: 'rgba(70, 195, 195, 0.8)' },
-      { label: 'Rough Cut V2', startWeek: 12, endWeek: 16, color: 'rgba(55, 190, 190, 0.8)' },
-    ]
-  },
-  {
-    id: 'prep',
-    name: 'Prep / Construction',
-    description: 'Set construction, prop building, location prep, and production planning.',
-    color: 'rgba(155, 89, 182, 0.8)',
-    glowColor: 'rgba(155, 89, 182, 0.4)',
-    startMonth: 3,    // April 2026
-    endMonth: 6,      // June 2026
-    row: 1,
-    labelPos: 'internal',
-    weeks: [
-      { label: 'Location Scouting', startWeek: 0, endWeek: 3, color: 'rgba(170, 100, 195, 0.8)' },
-      { label: 'Set Design & Planning', startWeek: 1, endWeek: 4, color: 'rgba(155, 89, 182, 0.8)' },
-      { label: 'Construction Phase 1', startWeek: 3, endWeek: 7, color: 'rgba(140, 78, 168, 0.8)' },
-      { label: 'Prop & Wardrobe Prep', startWeek: 4, endWeek: 8, color: 'rgba(165, 95, 188, 0.8)' },
-      { label: 'Construction Phase 2', startWeek: 7, endWeek: 10, color: 'rgba(135, 72, 162, 0.8)' },
-      { label: 'Tech Scouts & Rehearsals', startWeek: 9, endWeek: 12, color: 'rgba(148, 84, 175, 0.8)' },
-    ]
-  },
-  {
-    id: 'filming',
-    name: 'Principal Photography',
-    description: 'Main production filming with cast and crew on location and stage.',
-    color: 'rgba(255, 107, 107, 0.8)',
-    glowColor: 'rgba(255, 107, 107, 0.4)',
-    startMonth: 6.5,  // Mid-July 2026
-    endMonth: 7.5,    // Mid-August 2026
-    row: 2,
-    labelPos: 'above',
-    weeks: [
-      { label: 'Week 1 — Interior Scenes', startWeek: 0, endWeek: 1, color: 'rgba(255, 120, 120, 0.8)' },
-      { label: 'Week 2 — Exterior / Location', startWeek: 1, endWeek: 2, color: 'rgba(255, 107, 107, 0.8)' },
-      { label: 'Week 3 — Stage Work', startWeek: 2, endWeek: 3, color: 'rgba(240, 95, 95, 0.8)' },
-      { label: 'Week 4 — Final Scenes & Wrap', startWeek: 3, endWeek: 4, color: 'rgba(225, 85, 85, 0.8)' },
-    ]
-  },
-  {
-    id: 'post2',
-    name: 'Post-Production',
-    description: 'Editorial resumes with new footage, rough cuts, and continued post work.',
-    color: 'rgba(60, 200, 200, 0.8)',
-    glowColor: 'rgba(60, 200, 200, 0.4)',
-    startMonth: 7,    // August 2026
-    endMonth: 16,     // April 2027
-    row: 0,
-    labelPos: 'internal',
-    weeks: [
-      { label: 'Dailies & Selects', startWeek: 0, endWeek: 4, color: 'rgba(80, 210, 210, 0.8)' },
-      { label: 'Fine Cut', startWeek: 4, endWeek: 12, color: 'rgba(60, 200, 200, 0.8)' },
-      { label: 'VFX Production', startWeek: 6, endWeek: 24, color: 'rgba(50, 185, 185, 0.8)' },
-      { label: 'Sound Design & Mix', startWeek: 16, endWeek: 28, color: 'rgba(40, 170, 170, 0.8)' },
-      { label: 'Color Grade', startWeek: 24, endWeek: 32, color: 'rgba(70, 195, 195, 0.8)' },
-      { label: 'Music & Score', startWeek: 20, endWeek: 30, color: 'rgba(55, 190, 190, 0.8)' },
-      { label: 'Final Mix & Deliverables', startWeek: 30, endWeek: 36, color: 'rgba(45, 180, 180, 0.8)' },
-    ]
-  },
-  {
-    id: 'filming2',
-    name: 'Additional Filming',
-    description: 'December filming session for additional scenes and coverage.',
-    color: 'rgba(244, 208, 63, 0.8)',
-    glowColor: 'rgba(244, 208, 63, 0.4)',
-    startMonth: 11,   // December 2026
-    endMonth: 12,     // December 2026
-    row: 2,
-    labelPos: 'above',
-    weeks: [
-      { label: 'Prep & Setup', startWeek: 0, endWeek: 1, color: 'rgba(250, 215, 80, 0.8)' },
-      { label: 'Filming — Additional Scenes', startWeek: 1, endWeek: 3, color: 'rgba(244, 208, 63, 0.8)' },
-      { label: 'Wrap & Data Management', startWeek: 3, endWeek: 4, color: 'rgba(230, 195, 55, 0.8)' },
-    ]
-  },
-  {
-    id: 'pickups',
-    name: 'Pick Up Shoots',
-    description: 'Additional shots and insert photography for remaining coverage.',
-    color: 'rgba(44, 62, 80, 0.8)',
-    glowColor: 'rgba(44, 62, 80, 0.4)',
-    startMonth: 12,   // January 2027
-    endMonth: 14,     // February 2027
-    row: 3,
-    labelPos: 'above',
-    weeks: [
-      { label: 'Shot List & Planning', startWeek: 0, endWeek: 2, color: 'rgba(55, 75, 95, 0.8)' },
-      { label: 'Insert Photography', startWeek: 2, endWeek: 5, color: 'rgba(44, 62, 80, 0.8)' },
-      { label: 'Pick Up Filming', startWeek: 4, endWeek: 7, color: 'rgba(38, 55, 72, 0.8)' },
-      { label: 'Final Wrap', startWeek: 7, endWeek: 8, color: 'rgba(50, 68, 88, 0.8)' },
-    ]
-  }
+  { id: 'film-1', name: 'Filmed', row: 0, color: FILMING_COLOR, estimated: false,
+    dates: 'Nov 29, 2025 – Dec 9, 2025', start: monthPos(2025, 11, 29), end: monthPos(2025, 12, 10) },
+  { id: 'post-1', name: 'Post-Production', row: 1, color: POST_COLOR, estimated: false,
+    dates: 'Jan 2026 – Mar 2026', start: monthPos(2026, 1), end: monthPos(2026, 3, 20) },
+  { id: 'film-2', name: 'Filmed', row: 0, color: FILMING_COLOR, estimated: false,
+    dates: 'Mar 20, 2026 – Mar 24, 2026', start: monthPos(2026, 3, 20), end: monthPos(2026, 3, 25) },
+  { id: 'post-2', name: 'Post-Production', row: 1, color: POST_COLOR, estimated: false,
+    dates: 'Mar 2026 – Jul 2026', start: monthPos(2026, 3, 25), end: monthPos(2026, 8) },
+  { id: 'film-3', name: 'Filmed', row: 0, color: FILMING_COLOR, estimated: false,
+    dates: 'Jul 27, 2026 – Jul 31, 2026', start: monthPos(2026, 7, 27), end: monthPos(2026, 8) },
+  { id: 'post-3', name: 'Post-Production', row: 1, color: POST_COLOR, estimated: false,
+    dates: 'Aug 2026 – Dec 2026', start: monthPos(2026, 8), end: monthPos(2027, 1) },
+  { id: 'film-4', name: 'Est. Filming', row: 0, color: FILMING_COLOR, estimated: true,
+    dates: 'Dec 12, 2026 – Dec 19, 2026', start: monthPos(2026, 12, 12), end: monthPos(2026, 12, 20) },
+  { id: 'post-4', name: 'Est. Post-Production', row: 1, color: POST_COLOR, estimated: true,
+    dates: 'Jan 2027 – Mar 2027', start: monthPos(2027, 1), end: monthPos(2027, 4) },
+  { id: 'film-5', name: 'Est. Filming', row: 0, color: FILMING_COLOR, estimated: true,
+    dates: 'Mar 21, 2027 – Mar 28, 2027', start: monthPos(2027, 3, 21), end: monthPos(2027, 3, 29) },
+  { id: 'post-5', name: 'Est. Post-Production', row: 1, color: POST_COLOR, estimated: true,
+    dates: 'Apr 2027 – Jun 2027', start: monthPos(2027, 4), end: monthPos(2027, 7) },
+  { id: 'film-6', name: 'Est. Filming', row: 0, color: FILMING_COLOR, estimated: true,
+    dates: 'Jul 18, 2027 – Jul 25, 2027', start: monthPos(2027, 7, 18), end: monthPos(2027, 7, 26) },
+  { id: 'post-6', name: 'Est. Post-Production', row: 1, color: POST_COLOR, estimated: true,
+    dates: 'Aug 2027 – Dec 2027', start: monthPos(2027, 8), end: monthPos(2028, 1) },
 ];
 
-// Month labels for the 16-month timeline
-const MONTH_LABELS = [
-  { abbrev: 'J', month: 'Jan', year: "'26" },
-  { abbrev: 'F', month: 'Feb', year: "'26" },
-  { abbrev: 'M', month: 'Mar', year: "'26" },
-  { abbrev: 'A', month: 'Apr', year: "'26" },
-  { abbrev: 'M', month: 'May', year: "'26" },
-  { abbrev: 'J', month: 'Jun', year: "'26" },
-  { abbrev: 'J', month: 'Jul', year: "'26" },
-  { abbrev: 'A', month: 'Aug', year: "'26" },
-  { abbrev: 'S', month: 'Sep', year: "'26" },
-  { abbrev: 'O', month: 'Oct', year: "'26" },
-  { abbrev: 'N', month: 'Nov', year: "'26" },
-  { abbrev: 'D', month: 'Dec', year: "'26" },
-  { abbrev: 'J', month: 'Jan', year: "'27" },
-  { abbrev: 'F', month: 'Feb', year: "'27" },
-  { abbrev: 'M', month: 'Mar', year: "'27" },
-  { abbrev: 'A', month: 'Apr', year: "'27" }
-];
+const ROW_LABELS = ['Filming', 'Post'];
+
+// Month labels for the 26-month timeline (Nov '25 - Dec '27)
+const MONTH_LABELS = Array.from({ length: MONTH_COUNT }, (_, i) => {
+  const date = new Date(TIMELINE_START.year, TIMELINE_START.month - 1 + i, 1);
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  return { abbrev: month[0], month, year: `'${String(date.getFullYear()).slice(2)}`, isJanuary: date.getMonth() === 0 };
+});
 
 // DOM elements
 let scheduleContainer = null;
@@ -253,6 +174,7 @@ function injectStyles() {
     .schedule-timeline {
       position: relative;
       width: ${TIMELINE_WIDTH}px;
+      transform: translateZ(0); /* Own layer: without it Chrome hit-tests bars wrong inside the 3D container, so tooltips never fire */
       transition: opacity 0.4s ease, transform 0.4s ease;
     }
     .schedule-timeline.fade-out {
@@ -275,7 +197,7 @@ function injectStyles() {
       color: rgba(255, 255, 255, 0.6);
       text-transform: uppercase;
       letter-spacing: 0.02em;
-      width: ${TIMELINE_WIDTH / 16}px;
+      width: ${TIMELINE_WIDTH / MONTH_COUNT}px;
       text-align: center;
       opacity: 0;
       transform: translateY(-10px);
@@ -355,7 +277,7 @@ function injectStyles() {
     /* Phase bars container - uses rows for overlapping phases */
     .schedule-bars {
       position: relative;
-      height: ${(BAR_HEIGHT + BAR_GAP) * 4 + 80}px;
+      height: ${(BAR_HEIGHT + BAR_GAP) * ROW_COUNT}px;
     }
 
     /* Individual phase bar wrapper - contains bar + external label */
@@ -395,6 +317,87 @@ function injectStyles() {
       transform: scale(1.03) translateY(-2px);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       z-index: 10;
+    }
+
+    /* Estimated phases: outlined instead of filled */
+    .schedule-bar-wrapper.estimated .schedule-bar {
+      border: 1px dashed;
+    }
+    .schedule-bar-wrapper.estimated .schedule-bar::before {
+      display: none;
+    }
+
+    /* Row labels (left of track) */
+    .schedule-row-label {
+      position: absolute;
+      right: calc(100% + 16px);
+      transform: translateY(-50%);
+      font-family: 'montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    /* Today marker */
+    .schedule-today {
+      position: absolute;
+      top: -6px;
+      bottom: -6px;
+      width: 2px;
+      margin-left: -1px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 1px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .schedule-today-label {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 6px;
+      font-family: 'montserrat', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    /* Legend + completion note */
+    .schedule-footer {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 36px;
+      font-family: 'montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .schedule-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .schedule-legend-swatch {
+      width: 18px;
+      height: 10px;
+      border-radius: 5px;
+    }
+    .schedule-legend-swatch.estimated {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px dashed rgba(255, 255, 255, 0.7);
+    }
+    .schedule-complete-note {
+      margin-left: auto;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.95);
     }
 
     /* Click hint on hover */
@@ -686,25 +689,30 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-// Calculate bar position and width from month values (16-month timeline)
+// Calculate bar position and width from month values
 function getBarStyle(phase) {
-  const startPercent = (phase.startMonth / 16) * 100;
-  const widthPercent = ((phase.endMonth - phase.startMonth) / 16) * 100;
+  const startPercent = (phase.start / MONTH_COUNT) * 100;
+  const widthPercent = ((phase.end - phase.start) / MONTH_COUNT) * 100;
   const topPosition = phase.row * (BAR_HEIGHT + BAR_GAP);
+  // Short (filming) blocks get a minimum width, centered on their real dates
+  const minWidthShift = `max(0px, (${MIN_BAR_WIDTH}px - ${widthPercent}%) / 2)`;
   return {
-    left: `${startPercent}%`,
-    width: `${widthPercent}%`,
+    left: `calc(${startPercent}% - ${minWidthShift})`,
+    width: `max(${MIN_BAR_WIDTH}px, ${widthPercent}%)`,
     top: `${topPosition}px`
   };
 }
 
 // Get date range string
 function getDateRange(phase) {
-  const startIdx = Math.floor(phase.startMonth);
-  const endIdx = Math.min(15, Math.floor(phase.endMonth) - 1);
-  const startLabel = MONTH_LABELS[startIdx];
-  const endLabel = MONTH_LABELS[endIdx];
-  return `${startLabel.month} ${startLabel.year} – ${endLabel.month} ${endLabel.year}`;
+  return phase.dates;
+}
+
+// Today's position on the timeline, or null when outside it
+function getTodayPos() {
+  const now = new Date();
+  const pos = monthPos(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  return pos >= 0 && pos <= MONTH_COUNT ? pos : null;
 }
 
 // Build unified timeline (main view)
@@ -713,13 +721,13 @@ function buildTimeline() {
 
   timelineContainer.innerHTML = '';
 
-  // Month markers
+  // Month markers (year shown on the first month and on each January)
   const monthsRow = document.createElement('div');
   monthsRow.className = 'schedule-months';
   MONTH_LABELS.forEach((monthData, i) => {
     const marker = document.createElement('div');
     marker.className = 'schedule-month-marker';
-    marker.innerHTML = `${monthData.abbrev}<span class="year-label">${i === 0 || i === 12 ? monthData.year : ''}</span>`;
+    marker.innerHTML = `${monthData.abbrev}<span class="year-label">${i === 0 || monthData.isJanuary ? monthData.year : ''}</span>`;
     monthsRow.appendChild(marker);
   });
   timelineContainer.appendChild(monthsRow);
@@ -736,24 +744,36 @@ function buildTimeline() {
   // Month guide lines (separators between months)
   const guidesContainer = document.createElement('div');
   guidesContainer.className = 'schedule-month-guides';
-  for (let i = 1; i < 16; i++) {
+  for (let i = 1; i < MONTH_COUNT; i++) {
     const guide = document.createElement('div');
     guide.className = 'schedule-month-guide';
-    guide.style.left = `${(i / 16) * 100}%`;
+    guide.style.left = `${(i / MONTH_COUNT) * 100}%`;
     guidesContainer.appendChild(guide);
   }
   barsContainer.appendChild(guidesContainer);
 
-  // Year divider between Dec '26 and Jan '27
-  const yearDivider = document.createElement('div');
-  yearDivider.className = 'schedule-year-divider';
-  yearDivider.style.left = `${(12 / 16) * 100}%`;
-  barsContainer.appendChild(yearDivider);
+  // Year dividers at each January
+  MONTH_LABELS.forEach((monthData, i) => {
+    if (!monthData.isJanuary) return;
+    const yearDivider = document.createElement('div');
+    yearDivider.className = 'schedule-year-divider';
+    yearDivider.style.left = `${(i / MONTH_COUNT) * 100}%`;
+    barsContainer.appendChild(yearDivider);
+  });
 
-  // Phase bars with wrappers for labels
+  // Row labels (left of the track)
+  ROW_LABELS.forEach((text, row) => {
+    const label = document.createElement('span');
+    label.className = 'schedule-row-label';
+    label.textContent = text;
+    label.style.top = `${row * (BAR_HEIGHT + BAR_GAP) + BAR_HEIGHT / 2}px`;
+    barsContainer.appendChild(label);
+  });
+
+  // Phase bars with wrappers for tooltips
   SCHEDULE_PHASES.forEach(phase => {
     const wrapper = document.createElement('div');
-    wrapper.className = 'schedule-bar-wrapper';
+    wrapper.className = 'schedule-bar-wrapper' + (phase.estimated ? ' estimated' : '');
 
     const style = getBarStyle(phase);
     wrapper.style.left = style.left;
@@ -761,61 +781,48 @@ function buildTimeline() {
     wrapper.style.top = style.top;
     wrapper.style.height = `${BAR_HEIGHT}px`;
 
-    // The bar itself
+    // The bar itself (estimated phases are outlined, not filled)
     const bar = document.createElement('div');
     bar.className = 'schedule-bar';
     bar.style.width = '100%';
-    bar.style.background = phase.color;
-    wrapper.appendChild(bar);
-
-    // Add label based on position type
-    if (phase.labelPos === 'internal') {
-      // Label inside the bar
-      const label = document.createElement('span');
-      label.className = 'schedule-bar-label-internal';
-      label.textContent = phase.name;
-      bar.appendChild(label);
-    } else if (phase.labelPos === 'above') {
-      // External label above - left aligned with pill
-      const label = document.createElement('span');
-      label.className = 'schedule-bar-label-external';
-      label.textContent = phase.name;
-      label.style.bottom = '32px';
-      label.style.left = '0';
-      wrapper.appendChild(label);
+    if (phase.estimated) {
+      bar.style.background = phase.color.replace('0.8', '0.18');
+      bar.style.borderColor = phase.color;
     } else {
-      // External label below (5px below bottom of pill)
-      const label = document.createElement('span');
-      label.className = 'schedule-bar-label-external';
-      label.textContent = phase.name;
-      label.style.top = `${BAR_HEIGHT + 5}px`;
-      label.style.left = '50%';
-      label.style.transform = 'translateX(-50%)';
-      wrapper.appendChild(label);
+      bar.style.background = phase.color;
     }
-
-    // Click hint (only for phases with weeks data)
-    if (phase.weeks && phase.weeks.length > 0) {
-      const hint = document.createElement('span');
-      hint.className = 'schedule-bar-click-hint';
-      hint.textContent = 'Click for weekly breakdown';
-      bar.appendChild(hint);
-    }
+    wrapper.appendChild(bar);
 
     // Hover events
     wrapper.addEventListener('mouseenter', (e) => showTooltip(e, phase));
     wrapper.addEventListener('mouseleave', hideTooltip);
     wrapper.addEventListener('mousemove', moveTooltip);
 
-    // Click to drill down
-    if (phase.weeks && phase.weeks.length > 0) {
-      wrapper.addEventListener('click', () => drillDown(phase));
-    }
-
     barsContainer.appendChild(wrapper);
   });
 
+  // Today marker
+  const todayPos = getTodayPos();
+  if (todayPos !== null) {
+    const today = document.createElement('div');
+    today.className = 'schedule-today';
+    today.style.left = `${(todayPos / MONTH_COUNT) * 100}%`;
+    today.innerHTML = '<span class="schedule-today-label">Today</span>';
+    barsContainer.appendChild(today);
+  }
+
   timelineContainer.appendChild(barsContainer);
+
+  // Legend + completion note
+  const footer = document.createElement('div');
+  footer.className = 'schedule-footer';
+  footer.innerHTML = `
+    <span class="schedule-legend-item"><span class="schedule-legend-swatch" style="background: ${FILMING_COLOR}"></span>Filming</span>
+    <span class="schedule-legend-item"><span class="schedule-legend-swatch" style="background: ${POST_COLOR}"></span>Post-production</span>
+    <span class="schedule-legend-item"><span class="schedule-legend-swatch estimated"></span>Estimated</span>
+    <span class="schedule-complete-note">Est. project complete at the end of 2027</span>
+  `;
+  timelineContainer.appendChild(footer);
 }
 
 // === Drill-down detail view ===
@@ -880,7 +887,7 @@ function buildDetailView(phase) {
   detailContainer.className = 'schedule-detail';
 
   // Calculate total weeks for this phase
-  const totalMonths = phase.endMonth - phase.startMonth;
+  const totalMonths = phase.end - phase.start;
   const totalWeeks = Math.ceil(totalMonths * 4.33); // ~4.33 weeks per month
   const maxWeek = Math.max(...phase.weeks.map(w => w.endWeek));
 
@@ -1052,7 +1059,7 @@ function showTooltip(e, phase) {
   tooltipEl.innerHTML = `
     <div class="schedule-tooltip-title" style="color: ${phase.color.replace('0.8', '1')}">${phase.name}</div>
     <div class="schedule-tooltip-dates">${getDateRange(phase)}</div>
-    <div class="schedule-tooltip-desc">${phase.description}</div>
+    ${phase.description ? `<div class="schedule-tooltip-desc">${phase.description}</div>` : ''}
     ${hasWeeks ? '<div class="schedule-tooltip-hint">Click to see weekly breakdown</div>' : ''}
   `;
 
@@ -1189,7 +1196,7 @@ export function init(imgWorld, sections) {
   titleRow = document.createElement('div');
   titleRow.className = 'schedule-title-row';
   titleRow.innerHTML = `
-    <span class="schedule-years">2026 – 2027</span>
+    <span class="schedule-years">2025 – 2027</span>
   `;
   scheduleContainer.appendChild(titleRow);
 
@@ -1278,7 +1285,7 @@ export function update(currentSection, targetSection, transitionProgress, isTran
   const offsetX = mouse.x * 8;
   const offsetY = -mouse.y * 2;
 
-  scheduleContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY + 60}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
+  scheduleContainer.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) translateZ(${containerZ}px) rotate(${leanAngle}deg) scale(${containerScale})`;
   scheduleContainer.style.opacity = Math.max(0, Math.min(1, containerOpacity));
   // Only allow interactions when this is the active section and not transitioning
   scheduleContainer.style.pointerEvents = (sectionIndex === currentSection && !isTransitioning && containerOpacity > 0.5) ? 'auto' : 'none';

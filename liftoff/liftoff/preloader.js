@@ -17,7 +17,7 @@ const LOGO_URL = 'https://triglass-assets.s3.amazonaws.com/triglass.png';
 // Assets to preload
 const ASSETS = {
   images: [
-    'https://triglass-assets.s3.amazonaws.com/image0.png', // Title image
+    'https://triglass-assets.s3.amazonaws.com/liftoff-logo.webp', // Title logo still
     'https://triglass-assets.s3.amazonaws.com/selena-2.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/leo-2.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/grandpa.jpg', // Character
@@ -36,7 +36,7 @@ const ASSETS = {
     ...Array.from({ length: 14 }, (_, i) => `https://triglass-assets.s3.amazonaws.com/movie-${i + 5}.jpg`),
   ],
   videos: [
-    'https://triglass-assets.s3.us-east-1.amazonaws.com/FakeTrailer_01-hd.mp4', // Trailer (metadata only)
+    'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-5.mp4', // Trailer (metadata only)
   ],
   // Videos that need full preload (not just metadata)
   videosFullPreload: [

@@ -14,10 +14,13 @@ export const config = {
 };
 
 // Progress bar configuration
-const COMPLETION_PERCENT = 23; // Current completion percentage
-const BUDGET_RAISED = 250000; // Amount raised
-const BUDGET_NEEDED = 1750000; // Total budget needed
-const BUDGET_PERCENT = (BUDGET_RAISED / BUDGET_NEEDED) * 100;
+const PAGES_FILMED = 23.5;
+const PAGES_TOTAL = 89;
+const COMPLETION_PERCENT = 26.4; // PAGES_FILMED / PAGES_TOTAL, rounded to one decimal
+const BUDGET_SPENT = 508356; // Amount spent to date
+const BUDGET_TOTAL = 1940180; // Total budget
+const BUDGET_REMAINING = BUDGET_TOTAL - BUDGET_SPENT; // $1,431,824 still needed
+const BUDGET_PERCENT = (BUDGET_SPENT / BUDGET_TOTAL) * 100;
 const BAR_WIDTH = 660;
 const BAR_HEIGHT = 52;
 const BAR_OFFSET_Y = -45; // Offset from center (shared by bar track and blur backdrop)
@@ -279,6 +282,16 @@ function injectStyles() {
       -moz-osx-font-smoothing: grayscale;
       backface-visibility: hidden;
     }
+
+    /* Remaining-budget line below the budget bar (absolute so the wrapper stays bar-sized) */
+    .budget-status {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 20px 0 0;
+      white-space: nowrap;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -288,17 +301,9 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-// Format currency (e.g., 1500000 -> "1.5M", 1750000 -> "1.75M", 250000 -> "250K")
+// Format currency as exact dollars (e.g., 1940180 -> "$1,940,180")
 function formatCurrency(amount) {
-  if (amount >= 1000000) {
-    const millions = amount / 1000000;
-    // Use 2 decimal places if needed (e.g., 1.75M), otherwise 1 (e.g., 1.5M)
-    const formatted = millions % 0.1 !== 0 ? millions.toFixed(2) : millions.toFixed(1);
-    return '$' + formatted + 'M';
-  } else if (amount >= 1000) {
-    return '$' + Math.round(amount / 1000) + 'K';
-  }
-  return '$' + amount;
+  return '$' + Math.round(amount).toLocaleString('en-US');
 }
 
 // Initialize chapter DOM elements
@@ -364,7 +369,7 @@ export function init(imgWorld, sections) {
   // Status text
   statusText = document.createElement('p');
   statusText.className = 'completion-status';
-  statusText.innerHTML = `Liftoff is currently <strong>${COMPLETION_PERCENT}% complete</strong> in production & post.`;
+  statusText.innerHTML = `Liftoff is currently <strong>${COMPLETION_PERCENT}% complete</strong>, with ${PAGES_FILMED} of ${PAGES_TOTAL} pages filmed.`;
   statusWrapper.appendChild(statusText);
   progressContainer.appendChild(statusWrapper);
 
@@ -392,20 +397,27 @@ export function init(imgWorld, sections) {
   const budgetLabelsContainer = document.createElement('div');
   budgetLabelsContainer.className = 'budget-labels';
 
-  // Raised label
+  // Spent label
   budgetRaisedLabel = document.createElement('span');
   budgetRaisedLabel.className = 'budget-raised';
   budgetRaisedLabel.textContent = '$0';
   budgetLabelsContainer.appendChild(budgetRaisedLabel);
 
-  // Needed label
+  // Total label
   budgetNeededLabel = document.createElement('span');
   budgetNeededLabel.className = 'budget-needed';
-  budgetNeededLabel.textContent = formatCurrency(BUDGET_NEEDED) + ' Needed';
+  budgetNeededLabel.textContent = formatCurrency(BUDGET_TOTAL) + ' Total';
   budgetLabelsContainer.appendChild(budgetNeededLabel);
 
   budgetTrack.appendChild(budgetLabelsContainer);
   budgetWrapper.appendChild(budgetTrack);
+
+  // Remaining-budget line (fades in with the budget bar)
+  const budgetStatus = document.createElement('p');
+  budgetStatus.className = 'completion-status budget-status';
+  budgetStatus.innerHTML = `<strong>${formatCurrency(BUDGET_REMAINING)}</strong> needed to complete the film.`;
+  budgetWrapper.appendChild(budgetStatus);
+
   progressContainer.appendChild(budgetWrapper);
 
   progressContainer.style.opacity = 0;
@@ -429,7 +441,7 @@ function animateProgress(timestamp) {
 
   const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
   const easedProgress = easeOutCubic(progress);
-  currentPercent = Math.round(easedProgress * COMPLETION_PERCENT);
+  currentPercent = easedProgress * COMPLETION_PERCENT;
 
   // Calculate fill width in pixels (fillable area is BAR_WIDTH - 8 for padding)
   const fillableWidth = BAR_WIDTH - 8;
@@ -439,7 +451,7 @@ function animateProgress(timestamp) {
   progressBar.style.width = `${fillWidth}px`;
 
   // Update percent label
-  percentLabel.textContent = `${currentPercent}%`;
+  percentLabel.textContent = `${currentPercent.toFixed(1)}%`;
 
   if (progress < 1) {
     requestAnimationFrame(animateProgress);
@@ -471,7 +483,7 @@ function animateBudget(timestamp) {
 
   const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
   const easedProgress = easeOutCubic(progress);
-  const currentRaised = Math.round(easedProgress * BUDGET_RAISED);
+  const currentRaised = Math.round(easedProgress * BUDGET_SPENT);
   currentBudgetPercent = easedProgress * BUDGET_PERCENT;
 
   // Calculate fill width

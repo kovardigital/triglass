@@ -12,14 +12,20 @@ const DEPART_Z = 800;
 // Portrait sizing
 const PORTRAIT_SIZE = 120;
 
+// Long bios (over ~700 characters) get a wider panel so they fit without scrolling
+const LONG_BIO_WIDTH = 620;
+const LONG_BIO_SHIFT = 20;
+
 // Crew member data - positions are relative offsets from center (in pixels)
-// Layout: Top row of 3, bottom row of 4 - Top row: Ryan, Triglass, Noelle | Bottom row: Rita, Kaleb, David, James
+// Layout: two rows of 4 - Top row (creative): Ryan, Rita, Noelle, Kaleb | Bottom row (production): Triglass, David, Kevin, Kyle
+// glow: RGB of the member's ring glow
 const CREW_DATA = [
   {
     name: 'Ryan Thielen',
     role: 'Director',
-    x: -200,
+    x: -300,
     y: -100,
+    glow: '255, 150, 50',
     image: 'https://triglass-assets.s3.amazonaws.com/ryan.jpg',
     bio: `The world through Ryan Thielen's eyes is big, bold and filled with endless possibility. His work intersects emotional storytelling with imaginative, fantastical worlds.
 
@@ -30,48 +36,71 @@ Ryan is an award-winning filmmaker, earning <strong>35 Regional Emmy Awards</str
   {
     name: 'Noelle Anderson',
     role: 'Assistant Director',
-    x: 200,
+    x: 100,
     y: -100,
+    glow: '80, 220, 120',
     image: 'https://triglass-assets.s3.amazonaws.com/noelle.jpg',
     bio: 'Noelle Anderson serves as Assistant Director, coordinating the production with precision and creative insight. She is known for developing and delivering compelling visual and narrative-driven projects across film, television and digital media. With a strong eye for storytelling and production strategy, she specializes in guiding projects from concept through completion, balancing creative vision with executional excellence.',
   },
   {
     name: 'Kaleb Lechowski',
     role: 'Art Director',
-    x: -100,
-    y: 120,
+    x: 300,
+    y: -100,
+    glow: '255, 80, 150',
     image: 'https://triglass-assets.s3.amazonaws.com/kaleb.jpg',
     bio: 'As Art Director, Kaleb Lechowski brings the visual world of Liftoff to life, crafting the film\'s magical aesthetic. Kaleb is best known for his visually striking, cinematic animations that blend science fiction with emotional storytelling. He gained international recognition with his short film R\'ha, which showcased Hollywood-level visual effects created independently and led to opportunities in major film and game productions. His work is characterized by technical precision, atmospheric design, and a focus on immersive, character-driven narratives.',
   },
   {
     name: 'David Vanderwarn',
     role: 'Producer',
-    x: 100,
+    x: -100,
     y: 120,
+    glow: '50, 200, 200',
     image: 'https://triglass-assets.s3.amazonaws.com/david.jpg',
     bio: 'David Vanderwarn has a natural ability to build trust and communicate value. He excels at identifying needs and delivering outcomes that exceed expectations. Known for his reliability, competitive edge, and relationship-focused approach, David is someone clients and teams rely on to move the needle and close the gap between potential and performance.',
   },
   {
     name: 'Rita Thielen',
     role: 'Writer',
-    x: -300,
-    y: 120,
+    x: -100,
+    y: -100,
+    glow: '255, 180, 80',
     image: 'https://triglass-assets.s3.amazonaws.com/rita-1.png',
     bio: 'Rita Thielen is the writer of Liftoff, crafting the emotional story at the heart of the film. With a talent for developing authentic characters and layered narratives, she brings nuance, heart, and clarity to each scene, shaping a story that resonates beyond the screen. Her writing reflects a thoughtful balance of structure and emotion, drawing viewers into a compelling journey that explores human experience with honesty and depth.',
   },
   {
-    name: 'James Evenson',
-    role: 'Executive Producer',
+    name: 'Kevin Cooper',
+    role: 'Producer',
+    x: 100,
+    y: 120,
+    glow: '80, 150, 255', // Blue
+    image: 'https://triglass-assets.s3.amazonaws.com/kevin-cooper.jpg',
+    bio: `Kevin Cooper is an award-winning filmmaker, producer, and studio executive whose career includes work on major Hollywood films such as <strong>Armageddon</strong>, <strong>Fight Club</strong>, <strong>The Thin Red Line</strong>, and <strong>Men of Honor</strong>. He began his career at Creative Artists Agency before joining Michael Bay's Bay Films as a creative executive, followed by executive positions at Fox 2000 under legendary producer Laura Ziskin and James Cameron's Academy Award-winning visual effects company Digital Domain.
+
+His producing credits include New Line Cinema's $31 million feature <strong>Secondhand Lions</strong>, starring Michael Caine, Robert Duvall, and Haley Joel Osment, as well as the independent films Miss Arizona, Chasing the Blues with Jon Lovitz, Precious Mettle with Paul Sorvino, and Good Guy with a Gun. Through Amarok Productions, he continues to develop and produce films, including the thriller American Remains and a feature adaptation of the award-winning Ukrainian short Plus.
+
+A recipient of the <strong>Student Academy Award</strong>, Cooper holds a BFA from NYU's Tisch School of the Arts and an MFA in Creative Producing from UCLA.`,
+  },
+  {
+    name: 'Kyle Bullington',
+    role: 'Producer',
     x: 300,
     y: 120,
-    image: 'https://triglass-assets.s3.amazonaws.com/james-1.jpg',
-    bio: 'James Evenson is a seasoned entrepreneur, investor, and business strategist who has been building, acquiring and restructuring companies for nearly four decades. Known for solving complex challenges and bringing order to chaos, he combines deep intuition with rigorous analysis to drive success across startups and billion-dollar enterprises worldwide.',
+    glow: '255, 95, 95', // Red
+    image: 'https://triglass-assets.s3.amazonaws.com/kyle-bullington.jpg',
+    bio: `Kyle Bullington is a Los Angeles-based executive producer, filmmaker, and entrepreneur with extensive experience developing and producing high-end commercial, branded, and narrative content. As the co-founder of Aether Films and Lightcraft, Kyle has built his career at the intersection of creative storytelling, innovative production techniques, and emerging technology.
+
+Through Aether Films, Kyle oversees the development and production of projects that bring together ambitious creative concepts, exceptional talent, and thoughtful execution. His producing experience spans commercial campaigns, branded entertainment, and original content, with a particular focus on building collaborative teams capable of delivering complex productions at the highest level.
+
+Kyle also co-founded Lightcraft, a specialized production services company recognized for its expertise in aerial cinematography, camera robotics, and advanced unmanned systems. Through Lightcraft, he has helped develop production capabilities that expand what's possible on set, supporting filmmakers, studios, and production companies across a wide range of projects.`,
   },
   {
     name: 'Triglass Productions',
     role: 'Production & Post House',
-    x: 0,
-    y: -100,
+    x: -300,
+    y: 120,
+    glow: '160, 80, 200',
     image: 'https://triglass-assets.s3.amazonaws.com/triglass.png',
     isLogo: true,
     bio: `Triglass Productions is an award-winning production and post-production house specializing in bringing imaginative stories to life.
@@ -95,6 +124,33 @@ let crewBioMode = false;
 // Animation state
 const crewAnimState = [];
 const LERP_SPEED = 0.15;
+
+// Per-member glow rules, generated from CREW_DATA so colors follow the person, not the array slot
+function crewGlowStyles() {
+  const backdrops = [];
+  const portraits = [];
+  CREW_DATA.forEach((member, i) => {
+    const c = member.glow;
+    // Stagger the glint timing per crew member
+    backdrops.push(`.crew-blur-backdrop[data-crew-index="${i}"]::after { animation-delay: ${0.5 * (i + 1)}s; }`);
+    backdrops.push(`.crew-blur-backdrop[data-crew-index="${i}"] {
+      box-shadow: 0 0 30px rgba(${c}, 0.3),
+                  inset 0 0 40px rgba(${c}, 0.08);
+    }`);
+    portraits.push(`.crew-portrait[data-crew-index="${i}"] .crew-portrait-inner {
+      border-color: rgba(${c}, 0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
+                  0 0 25px rgba(${c}, 0.45),
+                  0 0 50px rgba(${c}, 0.25);
+    }
+    .crew-portrait[data-crew-index="${i}"]:hover .crew-portrait-inner {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
+                  0 0 35px rgba(${c}, 0.6),
+                  0 0 70px rgba(${c}, 0.35);
+    }`);
+  });
+  return { backdrops: backdrops.join('\n    '), portraits: portraits.join('\n    ') };
+}
 
 // Inject chapter-specific styles
 function injectStyles() {
@@ -194,57 +250,7 @@ function injectStyles() {
       animation: crew-glint 6s ease-in-out infinite;
       pointer-events: none;
     }
-    /* Stagger the glint timing per crew member */
-    .crew-blur-backdrop[data-crew-index="7"]::after { animation-delay: 4s; }
-    .crew-blur-backdrop[data-crew-index="0"]::after { animation-delay: 0.5s; }
-    .crew-blur-backdrop[data-crew-index="1"]::after { animation-delay: 1s; }
-    .crew-blur-backdrop[data-crew-index="2"]::after { animation-delay: 1.5s; }
-    .crew-blur-backdrop[data-crew-index="3"]::after { animation-delay: 2s; }
-    .crew-blur-backdrop[data-crew-index="4"]::after { animation-delay: 2.5s; }
-    .crew-blur-backdrop[data-crew-index="5"]::after { animation-delay: 3s; }
-    .crew-blur-backdrop[data-crew-index="6"]::after { animation-delay: 3.5s; }
-
-    /* Colored ring glow per crew member on backdrop */
-    /* Ryan - Orange */
-    .crew-blur-backdrop[data-crew-index="0"] {
-      box-shadow: 0 0 30px rgba(255, 150, 50, 0.3),
-                  inset 0 0 40px rgba(255, 150, 50, 0.08);
-    }
-    /* Charles - Pink/Magenta */
-    .crew-blur-backdrop[data-crew-index="1"] {
-      box-shadow: 0 0 30px rgba(255, 80, 150, 0.3),
-                  inset 0 0 40px rgba(255, 80, 150, 0.08);
-    }
-    /* Noelle - Green */
-    .crew-blur-backdrop[data-crew-index="2"] {
-      box-shadow: 0 0 30px rgba(80, 220, 120, 0.3),
-                  inset 0 0 40px rgba(80, 220, 120, 0.08);
-    }
-    /* Kaleb - Pink/Magenta */
-    .crew-blur-backdrop[data-crew-index="3"] {
-      box-shadow: 0 0 30px rgba(255, 80, 150, 0.3),
-                  inset 0 0 40px rgba(255, 80, 150, 0.08);
-    }
-    /* David - Cyan/Teal */
-    .crew-blur-backdrop[data-crew-index="4"] {
-      box-shadow: 0 0 30px rgba(50, 200, 200, 0.3),
-                  inset 0 0 40px rgba(50, 200, 200, 0.08);
-    }
-    /* Triglass - Purple */
-    .crew-blur-backdrop[data-crew-index="7"] {
-      box-shadow: 0 0 30px rgba(160, 80, 200, 0.3),
-                  inset 0 0 40px rgba(160, 80, 200, 0.08);
-    }
-    /* Rita - Warm Orange/Gold */
-    .crew-blur-backdrop[data-crew-index="5"] {
-      box-shadow: 0 0 30px rgba(255, 180, 80, 0.3),
-                  inset 0 0 40px rgba(255, 180, 80, 0.08);
-    }
-    /* James - Blue */
-    .crew-blur-backdrop[data-crew-index="6"] {
-      box-shadow: 0 0 30px rgba(80, 150, 255, 0.3),
-                  inset 0 0 40px rgba(80, 150, 255, 0.08);
-    }
+    ${crewGlowStyles().backdrops}
 
     .crew-portrait-inner {
       position: relative;
@@ -282,91 +288,7 @@ function injectStyles() {
       z-index: 1;
     }
 
-    /* Unique glow colors for each crew member - layered glows matching character styling */
-    /* Ryan Thielen - Orange */
-    .crew-portrait[data-crew-index="0"] .crew-portrait-inner {
-      border-color: rgba(255, 150, 50, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(255, 150, 50, 0.45),
-                  0 0 50px rgba(255, 150, 50, 0.25);
-    }
-    .crew-portrait[data-crew-index="0"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(255, 150, 50, 0.6),
-                  0 0 70px rgba(255, 150, 50, 0.35);
-    }
-    /* Noelle Anderson - Green */
-    .crew-portrait[data-crew-index="1"] .crew-portrait-inner {
-      border-color: rgba(80, 220, 120, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(80, 220, 120, 0.45),
-                  0 0 50px rgba(80, 220, 120, 0.25);
-    }
-    .crew-portrait[data-crew-index="1"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(80, 220, 120, 0.6),
-                  0 0 70px rgba(80, 220, 120, 0.35);
-    }
-    /* Kaleb Lechowski - Pink/Magenta */
-    .crew-portrait[data-crew-index="2"] .crew-portrait-inner {
-      border-color: rgba(255, 80, 150, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(255, 80, 150, 0.45),
-                  0 0 50px rgba(255, 80, 150, 0.25);
-    }
-    .crew-portrait[data-crew-index="2"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(255, 80, 150, 0.6),
-                  0 0 70px rgba(255, 80, 150, 0.35);
-    }
-    /* David Vanderwarn - Cyan/Teal */
-    .crew-portrait[data-crew-index="3"] .crew-portrait-inner {
-      border-color: rgba(50, 200, 200, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(50, 200, 200, 0.45),
-                  0 0 50px rgba(50, 200, 200, 0.25);
-    }
-    .crew-portrait[data-crew-index="3"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(50, 200, 200, 0.6),
-                  0 0 70px rgba(50, 200, 200, 0.35);
-    }
-    /* Rita Thielen - Warm Orange/Gold */
-    .crew-portrait[data-crew-index="4"] .crew-portrait-inner {
-      border-color: rgba(255, 180, 80, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(255, 180, 80, 0.45),
-                  0 0 50px rgba(255, 180, 80, 0.25);
-    }
-    .crew-portrait[data-crew-index="4"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(255, 180, 80, 0.6),
-                  0 0 70px rgba(255, 180, 80, 0.35);
-    }
-    /* James Evenson - Blue */
-    .crew-portrait[data-crew-index="5"] .crew-portrait-inner {
-      border-color: rgba(80, 150, 255, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(80, 150, 255, 0.45),
-                  0 0 50px rgba(80, 150, 255, 0.25);
-    }
-    .crew-portrait[data-crew-index="5"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(80, 150, 255, 0.6),
-                  0 0 70px rgba(80, 150, 255, 0.35);
-    }
-    /* Triglass - Purple */
-    .crew-portrait[data-crew-index="6"] .crew-portrait-inner {
-      border-color: rgba(160, 80, 200, 0.5);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                  0 0 25px rgba(160, 80, 200, 0.45),
-                  0 0 50px rgba(160, 80, 200, 0.25);
-    }
-    .crew-portrait[data-crew-index="6"]:hover .crew-portrait-inner {
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5),
-                  0 0 35px rgba(160, 80, 200, 0.6),
-                  0 0 70px rgba(160, 80, 200, 0.35);
-    }
+    ${crewGlowStyles().portraits}
 
     /* Crew name and role labels */
     .crew-label {
@@ -459,6 +381,14 @@ function injectStyles() {
       font-weight: 600;
       color: #fff;
     }
+    /* Long bios: wider and slightly smaller so they fit without scrolling (the wheel drives the deck) */
+    .crew-bio.long {
+      width: ${LONG_BIO_WIDTH}px;
+    }
+    .crew-bio.long .crew-bio-text {
+      font-size: clamp(12px, 0.95vw, 13px);
+      line-height: 1.6;
+    }
 
     /* Reel image in bio */
     .crew-bio-reel {
@@ -529,6 +459,7 @@ function openCrewBio(crewIndex) {
   // Update bio text (use innerHTML for rich text support)
   if (bioTextEl && bioContainer) {
     bioTextEl.innerHTML = crewData.bio;
+    bioContainer.classList.toggle('long', crewData.bio.length > 700);
 
     // Update reel image
     const reelContainer = document.getElementById('crew-bio-reel');
@@ -857,7 +788,8 @@ export function update(currentSection, targetSection, transitionProgress, isTran
 
   // Update bio position - top-aligned, to the right of portrait
   if (bioContainer) {
-    const bioX = bioTargetX + 400; // To the right of the larger portrait (180px + gap)
+    // To the right of the larger portrait (180px + gap); long bios are wider, so shift right to keep clear of the portrait
+    const bioX = bioTargetX + 400 + (bioContainer.classList.contains('long') ? LONG_BIO_SHIFT : 0);
     const bioY = bioTargetY - 70; // Align with top of portrait area
     bioContainer.style.transform = `translate(calc(-50% + ${bioX}px), ${bioY}px)`;
   }

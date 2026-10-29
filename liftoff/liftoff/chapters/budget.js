@@ -22,81 +22,104 @@ const SEGMENT_GAP = 2; // Gap in degrees between segments
 const LEADER_LINE_LENGTH = 30; // Length of leader line for small segments
 const LABEL_OFFSET = 8; // Distance from leader line end to label
 
-// Main budget categories based on Liftoff Budget Draft V1 (03-03-26)
-// Grand Total: $1,800,000
+// Budget categories from "Liftoff Budget 102726" (budget dated 10/20/2026)
+// Grand Total: $1,940,180 = $508,356 already spent + $1,431,824 still to come
+// Amounts are exact dollars; percentages are computed from them.
+// Order alternates large and small slices so leader-line labels don't collide.
 const BUDGET_DATA = {
-  total: 1800000,
+  total: 1940180,
   categories: [
     {
-      id: 'production',
-      label: 'Production',
-      percent: 44,
-      color: '#4ECDC4', // Teal
-      description: 'Below-the-line production: crew, equipment, locations, and operations',
+      id: 'spent',
+      label: 'Spent to Date',
+      amount: 508356,
+      spent: true,
+      color: '#9B59B6', // Purple - matches the spent bar on the Completion slide
+      description: 'Already spent on the shoots completed so far',
+      subcategories: []
+    },
+    {
+      id: 'other',
+      label: 'Other',
+      amount: 64790,
+      color: '#7F8C9D', // Slate
+      description: 'Union fringes, insurance, publicity and legal',
       subcategories: [
-        { label: 'Locations', percent: 14, color: '#5ED4CB' },
-        { label: 'Camera', percent: 14, color: '#4ECDC4' },
-        { label: 'Crew', percent: 13, color: '#3DBDB5' },
-        { label: 'Travel & Living', percent: 11, color: '#2CADA5' },
-        { label: 'Electrical', percent: 9, color: '#1C9D95' },
-        { label: 'Set Operations', percent: 8, color: '#0C8D85' },
-        { label: 'Other', percent: 31, color: '#3DBDB5' }
+        { label: 'SAG Fringes', amount: 21790, color: '#8F9CAD' },
+        { label: 'Insurance', amount: 18000, color: '#7F8C9D' },
+        { label: 'Publicity', amount: 15000, color: '#6F7C8D' },
+        { label: 'Legal', amount: 10000, color: '#5F6C7D' }
       ]
     },
     {
       id: 'atl',
       label: 'Above-The-Line',
-      percent: 29,
+      amount: 352820,
       color: '#FF6B6B', // Coral/Red
-      description: 'Story rights, cast, direction, producers, and ATL travel',
+      description: 'Stars, writers, producers and development',
       subcategories: [
-        { label: 'Story & Rights', percent: 42, color: '#FF7B7B' },
-        { label: 'Cast', percent: 35, color: '#FF6B6B' },
-        { label: 'ATL Travel', percent: 16, color: '#FF5B5B' },
-        { label: 'Direction', percent: 4, color: '#FF4B4B' },
-        { label: 'Producers', percent: 3, color: '#FF3B3B' }
-      ]
-    },
-    {
-      id: 'post',
-      label: 'Post Production',
-      percent: 11,
-      color: '#9B59B6', // Purple
-      description: 'Editing, VFX, sound, color, music, and deliverables',
-      subcategories: [
-        { label: 'Visual Effects', percent: 42, color: '#A569C6' },
-        { label: 'Editing', percent: 19, color: '#9B59B6' },
-        { label: 'DI & Color', percent: 12, color: '#8B49A6' },
-        { label: 'Deliverables', percent: 11, color: '#7B3996' },
-        { label: 'Sound', percent: 8, color: '#6B2986' },
-        { label: 'Music', percent: 6, color: '#5B1976' },
-        { label: 'Titles', percent: 2, color: '#4B0966' }
+        { label: 'Stars', amount: 277820, color: '#FF7B7B' },
+        { label: 'Writers & Storyboards', amount: 32000, color: '#FF5B5B' },
+        { label: 'Producers', amount: 25000, color: '#FF4B4B' },
+        { label: 'Development', amount: 18000, color: '#FF3B3B' }
       ]
     },
     {
       id: 'contingency',
       label: 'Contingency',
-      percent: 9,
+      amount: 75000,
       color: '#F4D03F', // Golden yellow
-      description: '10% reserve for unexpected costs and production overages',
+      description: 'Reserve for unexpected costs and production overages',
       subcategories: []
     },
     {
-      id: 'general',
-      label: 'General & Fees',
-      percent: 7,
-      color: '#2C3E50', // Dark navy/slate
-      description: 'Insurance, legal, finance fees, and residual reserves',
+      id: 'production',
+      label: 'Production',
+      amount: 619214,
+      color: '#4ECDC4', // Teal
+      description: 'Remaining shoots: sets, cast, crew, equipment and locations',
       subcategories: [
-        { label: 'General Expense', percent: 32, color: '#3C4E60' },
-        { label: 'Insurance', percent: 25, color: '#2C3E50' },
-        { label: 'Residuals', percent: 20, color: '#1C2E40' },
-        { label: 'Finance Fees', percent: 14, color: '#1C2E40' },
-        { label: 'Legal', percent: 9, color: '#0C1E30' }
+        { label: 'Sets, Props & Construction', amount: 212000, color: '#5ED4CB' },
+        { label: 'Cast & Extras', amount: 132574, color: '#4ECDC4' },
+        { label: 'Crew', amount: 127950, color: '#3DBDB5' },
+        { label: 'Equipment & Film Stock', amount: 71550, color: '#2CADA5' },
+        { label: 'Catering, Hotels & Transport', amount: 67140, color: '#1C9D95' },
+        { label: 'Office & Wardrobe', amount: 8000, color: '#0C8D85' }
+      ]
+    },
+    {
+      id: 'post',
+      label: 'Post Production',
+      amount: 320000,
+      color: '#5DADE2', // Sky blue
+      description: 'Visual effects, editing, sound, music, color and deliverables',
+      subcategories: [
+        { label: 'Visual Effects', amount: 200000, color: '#6DBDF2' },
+        { label: 'Editing', amount: 50000, color: '#5DADE2' },
+        { label: 'Sound', amount: 30000, color: '#4D9DD2' },
+        { label: 'Deliverables', amount: 20000, color: '#3D8DC2' },
+        { label: 'Music', amount: 10000, color: '#2D7DB2' },
+        { label: 'Color', amount: 10000, color: '#1D6DA2' }
       ]
     }
   ]
 };
+
+// Sanity check: slices must add up to the budget total
+(function checkBudgetSums() {
+  const sum = list => list.reduce((acc, item) => acc + item.amount, 0);
+  if (sum(BUDGET_DATA.categories) !== BUDGET_DATA.total) {
+    console.warn('[BUDGET] Categories do not add up to the total');
+  }
+  BUDGET_DATA.categories.forEach(c => {
+    if (c.subcategories.length && sum(c.subcategories) !== c.amount) {
+      console.warn(`[BUDGET] ${c.label} subcategories do not add up`);
+    }
+  });
+})();
+
+const BUDGET_SPENT = BUDGET_DATA.categories.filter(c => c.spent).reduce((acc, c) => acc + c.amount, 0);
+const BUDGET_UPCOMING = BUDGET_DATA.total - BUDGET_SPENT;
 
 // DOM elements
 let budgetContainer = null;
@@ -196,6 +219,41 @@ function injectStyles() {
       font-weight: 500;
       color: rgba(255,255,255,0.5);
       font-style: italic;
+    }
+
+    /* Spent vs. still-to-come summary (default info panel) */
+    .budget-split {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .budget-split-row {
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      font-family: 'montserrat', sans-serif;
+      font-size: 14px;
+    }
+    .budget-split-label {
+      font-weight: 500;
+      color: rgba(255,255,255,0.75);
+    }
+    .budget-split-amount {
+      font-weight: 700;
+      color: rgba(255,255,255,0.95);
+      font-variant-numeric: tabular-nums;
+    }
+    .budget-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .budget-swatch.spent {
+      background: rgba(155, 89, 182, 0.9);
+    }
+    .budget-swatch.upcoming {
+      background: conic-gradient(#FF6B6B 0 25%, #4ECDC4 0 60%, #5DADE2 0 85%, #F4D03F 0);
     }
 
     /* Blur backdrop circle - matching crew/character styling */
@@ -373,14 +431,24 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-// Format currency
+// Format currency compactly for the donut center (e.g., 1940180 -> "$1.94M")
 function formatCurrency(amount) {
   if (amount >= 1000000) {
-    return '$' + (amount / 1000000).toFixed(1) + 'M';
+    return '$' + (amount / 1000000).toFixed(2) + 'M';
   } else if (amount >= 1000) {
     return '$' + (amount / 1000).toFixed(0) + 'K';
   }
   return '$' + amount.toFixed(0);
+}
+
+// Format currency as exact dollars (e.g., 508356 -> "$508,356")
+function formatExact(amount) {
+  return '$' + Math.round(amount).toLocaleString('en-US');
+}
+
+// Percent label: whole numbers, with "<1%" for slivers
+function formatPercent(percent) {
+  return percent < 1 ? '<1%' : Math.round(percent) + '%';
 }
 
 // Calculate donut segment path (arc between inner and outer radius)
@@ -441,7 +509,7 @@ function buildPieChart() {
       return;
     }
     data = category.subcategories;
-    totalForView = BUDGET_DATA.total * (category.percent / 100);
+    totalForView = category.amount;
   }
 
   // Create segments first (so leader lines draw on top)
@@ -449,7 +517,8 @@ function buildPieChart() {
   const segmentData = []; // Store segment info for labels
 
   data.forEach((segment, index) => {
-    const segmentAngle = (segment.percent / 100) * 360;
+    const percent = (segment.amount / totalForView) * 100;
+    const segmentAngle = (percent / 100) * 360;
     const endAngle = currentAngle + segmentAngle;
 
     // Apply gap: add half gap to start, subtract half gap from end
@@ -479,6 +548,7 @@ function buildPieChart() {
     // Store segment data for label rendering
     segmentData.push({
       segment,
+      percent,
       segmentAngle,
       startAngle: currentAngle,
       endAngle
@@ -488,7 +558,7 @@ function buildPieChart() {
   });
 
   // Now add labels (internal or external with leader lines)
-  segmentData.forEach(({ segment, segmentAngle, startAngle, endAngle }) => {
+  segmentData.forEach(({ segment, percent, segmentAngle, startAngle, endAngle }) => {
     const midAngle = (startAngle + endAngle) / 2;
 
     if (segmentAngle > 25) {
@@ -506,7 +576,7 @@ function buildPieChart() {
       percentText.setAttribute('x', labelPos.x);
       percentText.setAttribute('y', labelPos.y + 10);
       percentText.setAttribute('class', 'pie-label-percent');
-      percentText.textContent = segment.percent + '%';
+      percentText.textContent = formatPercent(percent);
       svgElement.appendChild(percentText);
     } else {
       // Small segment: leader line with external label
@@ -546,7 +616,7 @@ function buildPieChart() {
       percentText.setAttribute('y', outerPos.y + 10);
       percentText.setAttribute('class', 'pie-label-external-percent');
       percentText.setAttribute('text-anchor', isRightSide ? 'start' : 'end');
-      percentText.textContent = segment.percent + '%';
+      percentText.textContent = formatPercent(percent);
       svgElement.appendChild(percentText);
     }
   });
@@ -616,11 +686,11 @@ function handleSegmentLeave() {
 function updateInfoPanel(segment, totalForView) {
   if (!infoPanelElement) return;
 
-  const amount = totalForView * (segment.percent / 100);
+  const percent = (segment.amount / totalForView) * 100;
 
   let infoHTML = `
     <div class="budget-info-title">${segment.label}</div>
-    <div class="budget-info-amount">${formatCurrency(amount)} (${segment.percent}%)</div>
+    <div class="budget-info-amount">${formatExact(segment.amount)} (${formatPercent(percent)})</div>
   `;
 
   if (segment.description) {
@@ -634,10 +704,24 @@ function updateInfoPanel(segment, totalForView) {
   infoPanelElement.innerHTML = infoHTML;
 }
 
-// Show default info when nothing is hovered
+// Show default info when nothing is hovered: what's been spent vs. what's still to come
 function showDefaultInfo() {
   if (!infoPanelElement) return;
-  infoPanelElement.innerHTML = `<div class="budget-info-default">Hover over a segment for details</div>`;
+  infoPanelElement.innerHTML = `
+    <div class="budget-split">
+      <div class="budget-split-row">
+        <span class="budget-swatch spent"></span>
+        <span class="budget-split-label">Spent to date</span>
+        <span class="budget-split-amount">${formatExact(BUDGET_SPENT)}</span>
+      </div>
+      <div class="budget-split-row">
+        <span class="budget-swatch upcoming"></span>
+        <span class="budget-split-label">Still to come</span>
+        <span class="budget-split-amount">${formatExact(BUDGET_UPCOMING)}</span>
+      </div>
+    </div>
+    <div class="budget-info-default">Hover over a segment for details</div>
+  `;
 }
 
 // Handle segment click

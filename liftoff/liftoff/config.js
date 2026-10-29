@@ -16,7 +16,10 @@ export const SECTIONS = [
   { id: 'the-crew', title: 'THE CREW' },
   { id: 'completion', title: 'COMPLETION' },
   { id: 'budget', title: 'BUDGET' },
+  { id: 'investment', title: 'INVESTMENT' },
+  { id: 'waterfall', title: 'WATERFALL' },
   { id: 'schedule', title: 'SCHEDULE' },
+  { id: 'twenty-minutes', title: '20 MINUTES' },
   { id: 'coming-soon', title: 'COMING SOON' },
 ];
 
