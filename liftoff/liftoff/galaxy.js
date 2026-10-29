@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import { camera } from './core.js';
 import * as Scroll from './scroll.js';
 
-// Galaxy URL - hosted on GitHub Pages (same pattern as logo in preloader.js)
-const GALAXY_URL = 'https://kovardigital.github.io/triglass/assets/images/galaxy.jpg';
+// Galaxy URL - served with the deck from liftoff/assets
+const GALAXY_URL = '/assets/images/galaxy.jpg';
 
 let galaxyMesh = null;
 let worldGroupRef = null;
