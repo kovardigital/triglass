@@ -43,7 +43,7 @@ const SECTIONS = [
   },
   {
     title: 'CHARACTERS',
-    subtitle: 'Three characters. One life-changing event.',
+    subtitle: 'Four characters. One life-changing event.',
     images: [],
     charactersLayout: true, // Special layout: title above, subtitle below
     characters: [
@@ -111,7 +111,7 @@ const SECTIONS = [
     images: []
   },
   {
-    title: 'COMPLETION',
+    title: 'PRODUCTION STATUS',
     subtitle: 'Production Status',
     completionLayout: true,
     images: []
@@ -129,7 +129,7 @@ const SECTIONS = [
     images: []
   },
   {
-    title: 'WATERFALL',
+    title: 'RECOUPMENT WATERFALL',
     subtitle: '',
     waterfallLayout: true,
     images: []

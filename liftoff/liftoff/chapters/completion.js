@@ -17,9 +17,9 @@ export const config = {
 const PAGES_FILMED = 23.5;
 const PAGES_TOTAL = 89;
 const COMPLETION_PERCENT = 26.4; // PAGES_FILMED / PAGES_TOTAL, rounded to one decimal
-const BUDGET_SPENT = 508356; // Amount spent to date
+const BUDGET_SPENT = 508356; // Amount raised to date
 const BUDGET_TOTAL = 1940180; // Total budget
-const BUDGET_REMAINING = BUDGET_TOTAL - BUDGET_SPENT; // $1,431,824 still needed
+const BUDGET_REMAINING = BUDGET_TOTAL - BUDGET_SPENT; // $1,431,824 to be funded
 const BUDGET_PERCENT = (BUDGET_SPENT / BUDGET_TOTAL) * 100;
 const BAR_WIDTH = 660;
 const BAR_HEIGHT = 52;
@@ -397,7 +397,7 @@ export function init(imgWorld, sections) {
   const budgetLabelsContainer = document.createElement('div');
   budgetLabelsContainer.className = 'budget-labels';
 
-  // Spent label
+  // Raised label
   budgetRaisedLabel = document.createElement('span');
   budgetRaisedLabel.className = 'budget-raised';
   budgetRaisedLabel.textContent = '$0';
@@ -415,7 +415,7 @@ export function init(imgWorld, sections) {
   // Remaining-budget line (fades in with the budget bar)
   const budgetStatus = document.createElement('p');
   budgetStatus.className = 'completion-status budget-status';
-  budgetStatus.innerHTML = `<strong>${formatCurrency(BUDGET_REMAINING)}</strong> needed to complete the film.`;
+  budgetStatus.innerHTML = `<strong>${formatCurrency(BUDGET_REMAINING)}</strong> to be funded.`;
   budgetWrapper.appendChild(budgetStatus);
 
   progressContainer.appendChild(budgetWrapper);
@@ -497,7 +497,7 @@ function animateBudget(timestamp) {
 
   // Update raised label
   if (budgetRaisedLabel) {
-    budgetRaisedLabel.textContent = formatCurrency(currentRaised) + ' Spent';
+    budgetRaisedLabel.textContent = formatCurrency(currentRaised) + ' Raised';
   }
 
   if (progress < 1) {

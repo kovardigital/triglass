@@ -84,7 +84,7 @@ const COMP_FILMS = [
     title: 'Liftoff',
     year: '2027',
     poster: 'https://triglass-assets.s3.amazonaws.com/comp-liftoff.jpg',
-    budget: '$1.8M',
+    budget: '$1.9M',
     boxOffice: '',
     roi: '',
     childLed: true,

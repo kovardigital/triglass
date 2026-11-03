@@ -10,9 +10,10 @@
 // Capital stack - amounts as stated in the Investment Brief
 const TOTAL_BUDGET = 1940000;
 const MIN_INVESTMENT = 50000;
+const EXAMPLE_INVESTMENT = 100000;   // the Waterfall slide's worked example
 const ROUNDS = [
-  { id: 'a', label: 'Series A', status: 'Raised', amount: 508000 },
-  { id: 'b', label: 'Series B', status: 'Now raising', amount: 775000 },
+  { id: 'a', label: 'Series A', status: 'Complete', amount: 508000 },
+  { id: 'b', label: 'Series B', status: 'In progress', amount: 775000 },
   { id: 'c', label: 'Series C', status: 'Future', amount: 657000 },
 ];
 
@@ -22,22 +23,39 @@ const EARMARKED = [
   { amount: 291300, label: 'Minnesota tax incentive', note: 'pending equal production spend' },
 ];
 
-// Waterfall tiers, in payment order
+// Waterfall tiers, in payment order (reorder here; the layout follows)
+const TIER_WIDTH = 560;
+const TIER_STEP = 50;   // each tier steps right by this much (5 tiers fill the 760px slide)
 const TIERS = [
   {
     tag: 'First dollar',
     title: 'Series B Recoupment — 120%',
-    body: "Available proceeds are first distributed to investors pro rata and pari passu until each investor has received 120% of the investor's original contribution.",
+    accent: 'rgba(254, 208, 3, 0.85)',
+    body: "Available proceeds are first distributed to Series B investors pro rata and pari passu until each has received 120% of the investor's original contribution.",
+  },
+  {
+    tag: 'Then',
+    title: 'Series A Recoupment',
+    accent: 'rgba(155, 89, 182, 0.9)',
+    body: 'Then to Series A investors, pro rata and pari passu, per the Series A terms.',
+  },
+  {
+    tag: 'Then',
+    title: 'Series C Recoupment',
+    accent: 'rgba(200, 205, 220, 0.6)',
+    body: 'Then to Series C investors, pro rata and pari passu, per the Series C terms.',
   },
   {
     tag: 'Then',
     title: 'Permitted Deferrals',
-    body: 'Thereafter, available proceeds are applied pro rata and pari passu to approved deferred fees.',
+    accent: 'rgba(255, 255, 255, 0.35)',
+    body: 'Thereafter, applied pro rata and pari passu to approved deferred fees.',
   },
   {
     tag: 'Net profits',
     title: 'Net Profits — 50% / 50%',
-    body: 'Remaining Net Profits are divided 50% to the Investor Share and 50% to the Producers Pool. Each investor participates in the Investor Share pro rata.',
+    accent: 'rgba(60, 200, 200, 0.8)',
+    body: 'Each investor participates in the Investor Share pro rata.',
     split: true,
   },
 ];
@@ -244,28 +262,24 @@ function injectStyles() {
     }
     .invest-tier {
       position: relative;
-      width: 560px;
-      padding: 14px 22px;
+      width: ${TIER_WIDTH}px;
+      padding: 8px 22px 9px;
       border-radius: 16px;
       background: rgba(10, 14, 24, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.12);
+      border-top-width: 3px;
     }
     .invest-tier + .invest-tier {
-      margin-top: 22px;
+      margin-top: 10px;
     }
-    .invest-tier:nth-child(2) { margin-left: 100px; }
-    .invest-tier:nth-child(3) { margin-left: 200px; }
-    .invest-tier:nth-child(1) { border-top: 3px solid rgba(254, 208, 3, 0.85); }
-    .invest-tier:nth-child(2) { border-top: 3px solid rgba(255, 255, 255, 0.5); }
-    .invest-tier:nth-child(3) { border-top: 3px solid rgba(60, 200, 200, 0.8); }
     /* Flow arrow from each tier down into the next */
     .invest-tier + .invest-tier::before {
       content: '';
       position: absolute;
-      left: -50px;
-      top: -36px;
-      width: 50px;
-      height: 58px;
+      left: -30px;
+      top: -24px;
+      width: 30px;
+      height: 40px;
       border-left: 1px solid rgba(255, 255, 255, 0.3);
       border-bottom: 1px solid rgba(255, 255, 255, 0.3);
       border-bottom-left-radius: 14px;
@@ -274,7 +288,7 @@ function injectStyles() {
       content: '';
       position: absolute;
       left: -8px;
-      top: 17px;
+      top: 11px;
       border: 5px solid transparent;
       border-left: 7px solid rgba(255, 255, 255, 0.5);
     }
@@ -282,7 +296,7 @@ function injectStyles() {
       display: flex;
       align-items: baseline;
       gap: 14px;
-      margin-bottom: 6px;
+      margin-bottom: 2px;
     }
     .invest-tier-num {
       font-family: 'Space Grotesk', sans-serif;
@@ -343,7 +357,10 @@ function injectStyles() {
       color: rgba(255, 255, 255, 0.8);
     }
     .invest-container.waterfall .invest-lede {
-      margin-bottom: 24px;
+      margin-bottom: 16px;
+    }
+    .invest-container.waterfall .invest-example {
+      margin-top: 14px;
     }
     .invest-container.waterfall .invest-footnote {
       margin-top: 14px;
@@ -387,7 +404,7 @@ function buildInvestment(container) {
       ${earmarkedRows}
       <div class="invest-earmarked-row total">
         <span class="amount">${formatCurrency(earmarkedTotal)}</span>
-        <span class="label">Identified so far</span>
+        <span class="label">Revenue earmarked as Series B collateral</span>
       </div>
     </div>
     <p class="invest-footnote">*Earmarked revenue is contingent on final agreements and production spend and is not guaranteed.<br>Definitive rights and obligations are governed exclusively by the executed investment documents.</p>
@@ -397,7 +414,7 @@ function buildInvestment(container) {
 // WATERFALL slide: payment order, first dollar through net profits
 function buildWaterfall(container) {
   const tiers = TIERS.map((t, i) => `
-    <div class="invest-tier invest-reveal" style="transition-delay: ${0.15 + i * 0.3}s">
+    <div class="invest-tier invest-reveal" style="margin-left: ${i * TIER_STEP}px; border-top-color: ${t.accent}; transition-delay: ${0.15 + i * 0.2}s">
       <div class="invest-tier-head">
         <span class="invest-tier-num">0${i + 1}</span>
         <span class="invest-tier-title">${t.title}</span>
@@ -408,15 +425,15 @@ function buildWaterfall(container) {
     </div>`
   ).join('');
 
-  const example = MIN_INVESTMENT;
+  const example = EXAMPLE_INVESTMENT;
   container.innerHTML = `
-    <h1 class="invest-title">Waterfall</h1>
+    <h1 class="invest-title">Recoupment Waterfall</h1>
     <p class="invest-lede">Available revenue is applied in order, from first dollar through net profits.</p>
     <div class="invest-tiers">${tiers}</div>
-    <p class="invest-example invest-reveal" style="transition-delay: 1.1s">
-      <strong>Example:</strong> a ${formatCurrency(example)} Series B investment has a 120% recoupment target of
-      <strong>${formatCurrency(example * 1.2)}</strong> before deferred fees are paid, then shares pro rata in the 50% Investor Share of net profits.
-      This is a recoupment priority, not a guarantee of return.
+    <p class="invest-example invest-reveal" style="transition-delay: ${0.25 + TIERS.length * 0.2}s">
+      <strong>Example:</strong> a ${formatCurrency(example)} Series B investment recoups up to <strong>${formatCurrency(example * 1.2)}</strong> (120%)
+      before Series A, Series C and deferred fees, then shares pro rata in the 50% Investor Share.
+      A recoupment priority, not a guarantee of return.
     </p>
     <p class="invest-footnote">Definitive rights and obligations are governed exclusively by the executed investment documents.</p>
   `;
