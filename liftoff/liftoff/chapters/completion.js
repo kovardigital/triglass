@@ -17,9 +17,11 @@ export const config = {
 const PAGES_FILMED = 23.5;
 const PAGES_TOTAL = 89;
 const COMPLETION_PERCENT = 26.4; // PAGES_FILMED / PAGES_TOTAL, rounded to one decimal
-const BUDGET_SPENT = 508356; // Amount raised to date
-const BUDGET_TOTAL = 1940180; // Total budget
-const BUDGET_REMAINING = BUDGET_TOTAL - BUDGET_SPENT; // $1,431,824 to be funded
+// Rounded for the deck per Ryan (11/2026), matching the Investment slide; actuals are
+// $508,356 raised (Series A) of $1,940,180, with $1,431,824 to be funded.
+const BUDGET_SPENT = 500000; // Amount raised to date (Series A)
+const BUDGET_TOTAL = 1940000; // Total budget
+const BUDGET_REMAINING = BUDGET_TOTAL - BUDGET_SPENT; // $1.44M to be funded
 const BUDGET_PERCENT = (BUDGET_SPENT / BUDGET_TOTAL) * 100;
 const BAR_WIDTH = 660;
 const BAR_HEIGHT = 52;
@@ -301,9 +303,9 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-// Format currency as exact dollars (e.g., 1940180 -> "$1,940,180")
+// Format currency short (e.g., 500000 -> "$500K", 1940000 -> "$1.94M")
 function formatCurrency(amount) {
-  return '$' + Math.round(amount).toLocaleString('en-US');
+  return amount >= 1000000 ? '$' + (amount / 1000000).toFixed(2) + 'M' : '$' + Math.round(amount / 1000) + 'K';
 }
 
 // Initialize chapter DOM elements

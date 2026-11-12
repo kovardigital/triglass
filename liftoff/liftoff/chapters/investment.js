@@ -7,14 +7,15 @@
 
 // Uses discrete section system from content.js
 
-// Capital stack - amounts as stated in the Investment Brief
+// Capital stack, rounded for the deck per Ryan (11/2026) so the rounds add up to the total.
+// Actuals: Series A $508,356, Series B $775,000, Series C $656,824, total $1,940,180.
 const TOTAL_BUDGET = 1940000;
 const MIN_INVESTMENT = 50000;
 const EXAMPLE_INVESTMENT = 100000;   // the Waterfall slide's worked example
 const ROUNDS = [
-  { id: 'a', label: 'Series A', status: 'Complete', amount: 508000 },
+  { id: 'a', label: 'Series A', status: 'Complete', amount: 500000 },
   { id: 'b', label: 'Series B', status: 'In progress', amount: 775000 },
-  { id: 'c', label: 'Series C', status: 'Future', amount: 657000 },
+  { id: 'c', label: 'Series C', status: 'Future', amount: 665000 },
 ];
 
 // Earmarked revenue (contingent - see footnote)
@@ -35,15 +36,15 @@ const TIERS = [
   },
   {
     tag: 'Then',
-    title: 'Series A Recoupment',
+    title: 'Series A Recoupment — 120%',
     accent: 'rgba(155, 89, 182, 0.9)',
-    body: 'Then to Series A investors, pro rata and pari passu, per the Series A terms.',
+    body: 'Then to Series A investors pro rata and pari passu, until each has received 120%.',
   },
   {
     tag: 'Then',
-    title: 'Series C Recoupment',
+    title: 'Series C Recoupment — 120%',
     accent: 'rgba(200, 205, 220, 0.6)',
-    body: 'Then to Series C investors, pro rata and pari passu, per the Series C terms.',
+    body: 'Then to Series C investors pro rata and pari passu, until each has received 120%.',
   },
   {
     tag: 'Then',
@@ -74,6 +75,11 @@ const slides = [
 // Format currency as exact dollars (e.g., 775000 -> "$775,000")
 function formatCurrency(amount) {
   return '$' + Math.round(amount).toLocaleString('en-US');
+}
+
+// Format currency short, for the rounded round sizes (e.g., 775000 -> "$775K", 1940000 -> "$1.94M")
+function formatShort(amount) {
+  return amount >= 1000000 ? '$' + (amount / 1000000).toFixed(2) + 'M' : '$' + Math.round(amount / 1000) + 'K';
 }
 
 // Inject chapter-specific styles
@@ -381,8 +387,8 @@ function buildInvestment(container) {
   const stackLabels = ROUNDS.map(r => `
     <div class="invest-stack-label ${r.id}" style="flex: ${r.amount} 1 0">
       <span class="round">${r.label}</span>
-      <span class="amount">${formatCurrency(r.amount)}</span>
-      <span class="status">${r.status}${r.id === 'b' ? ` · Min. ${formatCurrency(MIN_INVESTMENT)}` : ''}</span>
+      <span class="amount">${formatShort(r.amount)}</span>
+      <span class="status">${r.status}${r.id === 'b' ? ` · Min. ${formatShort(MIN_INVESTMENT)}` : ''}</span>
     </div>`
   ).join('');
 
@@ -396,7 +402,7 @@ function buildInvestment(container) {
 
   container.innerHTML = `
     <h1 class="invest-title">Investment</h1>
-    <p class="invest-lede">A <strong>${formatCurrency(TOTAL_BUDGET)}</strong> total budget, raised in three rounds</p>
+    <p class="invest-lede">A <strong>${formatShort(TOTAL_BUDGET)}</strong> total budget, raised in three rounds</p>
     <div class="invest-stack">${stackSegs}</div>
     <div class="invest-stack-labels invest-reveal">${stackLabels}</div>
     <div class="invest-earmarked invest-reveal" style="transition-delay: 0.5s">
