@@ -2159,7 +2159,7 @@ function init() {
   contactBtn.className = 'liftoff-contact';
   contactBtn.textContent = 'Contact';
   contactBtn.addEventListener('click', () => {
-    window.location.href = 'mailto:hello@triglass.com';
+    window.location.href = 'mailto:ryan@triglassproductions.com';
   });
   document.body.appendChild(contactBtn);
 
