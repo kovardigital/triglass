@@ -16,8 +16,9 @@ const PARAGRAPHS = [
 ];
 const NAME = 'Ryan Thielen';
 const ROLE = 'Director';   // as on The Crew slide
-// Ryan's signature image (transparent PNG/SVG). Until it's set, his name is set in a script face.
-const SIGNATURE_IMAGE = '';
+// Ryan's signature (white on transparent, the same file as his bio on The Crew slide).
+// Leave empty to fall back to his name in a script face.
+const SIGNATURE_IMAGE = 'https://triglass-assets.s3.amazonaws.com/signature.png';
 
 // Z positions matching content.js fly-through system
 const REST_Z = 200;
@@ -110,7 +111,7 @@ function injectStyles() {
     }
     .director-signature {
       display: block;
-      height: 58px;
+      height: 64px;
       clip-path: inset(0 100% 0 0);
       transition: clip-path 1.6s cubic-bezier(0.45, 0, 0.2, 1) 1.1s;
     }
@@ -127,6 +128,7 @@ function injectStyles() {
     .director-signature img {
       height: 100%;
       width: auto;
+      opacity: 0.92;
     }
     .director-name {
       display: block;
