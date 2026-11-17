@@ -1025,44 +1025,25 @@ function injectStyles() {
       object-fit: cover;
       border-radius: 50%;
     }
-    /* Open role (no photo): an eclipse of warm light, like the O in the Liftoff logo */
+    /* Open role (no photo): the O from the Liftoff title, cropped from the same image as the cover.
+       Title image is 1608x654; the eclipse is centered at (959, 337), radius 106, and the card
+       shows the 296px square around it (811, 189). */
     .character-open-role {
-      position: relative;
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background: radial-gradient(circle at 50% 38%, #1c1710 0%, #0b0a0e 62%, #060609 100%);
-      overflow: hidden;
-    }
-    .character-open-role::before,
-    .character-open-role::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 46%;
-      height: 46%;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-    }
-    /* The light behind the disc: offset up and right, so a crescent shows */
-    .character-open-role::before {
-      margin: -5% 0 0 5%;
-      background: rgba(255, 222, 160, 0.95);
-      box-shadow: 0 0 18px 6px rgba(240, 190, 90, 0.75),
-                  0 0 60px 22px rgba(230, 180, 80, 0.35);
+      background-color: #08080b;
+      background-repeat: no-repeat;
+      background-size: 543.24% auto;
+      background-position: 61.81% 52.79%;
       animation: openRoleGlow 6s ease-in-out infinite;
     }
-    .character-open-role::after {
-      background: #08080b;
-      box-shadow: inset -2px 2px 6px rgba(255, 220, 150, 0.25);
-    }
     @keyframes openRoleGlow {
-      0%, 100% { opacity: 0.85; }
-      50% { opacity: 1; }
+      0%, 100% { filter: brightness(0.9); }
+      50% { filter: brightness(1.08); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .character-open-role::before { animation: none; }
+      .character-open-role { animation: none; }
     }
 
     /* Title and subtitle transitions when showing character bio */
@@ -1996,7 +1977,7 @@ function init() {
           <div class="character-card-inner">
             <div class="character-card-front">
               ${charConfig.openRole
-                ? '<div class="character-open-role" role="img" aria-label="' + charConfig.name + '"></div>'
+                ? `<div class="character-open-role" role="img" aria-label="${charConfig.name}" style="background-image: url('${SECTIONS[0].titleImage}')"></div>`
                 : `<img src="${charConfig.image}" alt="${charConfig.name}">`}
             </div>
             ${backCardHtml}
