@@ -1026,16 +1026,25 @@ function injectStyles() {
       border-radius: 50%;
     }
     /* Open role (no photo): the O from the Liftoff title, cropped from the same image as the cover.
-       Title image is 1608x654; the eclipse is centered at (959, 337), radius 106, and the card
-       shows the 296px square around it (811, 189). */
+       Title image is 1608x654; the eclipse is centered at (959, 337), radius 106. The inner disc
+       shows the 320px square around it (wider would take in the T), at 76% of the card,
+       so the O is about half the card; its edge is feathered into the dark. */
     .character-open-role {
+      position: relative;
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background-color: #08080b;
+      background: #08080b;
+    }
+    .character-open-role span {
+      position: absolute;
+      inset: 12%;
+      border-radius: 50%;
       background-repeat: no-repeat;
-      background-size: 543.24% auto;
-      background-position: 61.81% 52.79%;
+      background-size: 502.50% auto;
+      background-position: 62.03% 52.99%;
+      -webkit-mask-image: radial-gradient(closest-side, #000 74%, transparent 100%);
+      mask-image: radial-gradient(closest-side, #000 74%, transparent 100%);
       animation: openRoleGlow 6s ease-in-out infinite;
     }
     @keyframes openRoleGlow {
@@ -1043,7 +1052,7 @@ function injectStyles() {
       50% { filter: brightness(1.08); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .character-open-role { animation: none; }
+      .character-open-role span { animation: none; }
     }
 
     /* Title and subtitle transitions when showing character bio */
@@ -1977,7 +1986,7 @@ function init() {
           <div class="character-card-inner">
             <div class="character-card-front">
               ${charConfig.openRole
-                ? `<div class="character-open-role" role="img" aria-label="${charConfig.name}" style="background-image: url('${SECTIONS[0].titleImage}')"></div>`
+                ? `<div class="character-open-role" role="img" aria-label="${charConfig.name}"><span style="background-image: url('${SECTIONS[0].titleImage}')"></span></div>`
                 : `<img src="${charConfig.image}" alt="${charConfig.name}">`}
             </div>
             ${backCardHtml}
