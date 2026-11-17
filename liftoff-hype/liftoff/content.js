@@ -76,7 +76,7 @@ const SECTIONS = [
         name: 'Grandpa',
         x: 172,
         y: -12,
-        image: 'https://triglass-assets.s3.amazonaws.com/grandpa.jpg',
+        openRole: true, // no face for the role being cast: an actor shouldn't measure himself against a stand-in
         bio: "Coming Soon",
       },
     ]
@@ -1025,6 +1025,45 @@ function injectStyles() {
       object-fit: cover;
       border-radius: 50%;
     }
+    /* Open role (no photo): an eclipse of warm light, like the O in the Liftoff logo */
+    .character-open-role {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 38%, #1c1710 0%, #0b0a0e 62%, #060609 100%);
+      overflow: hidden;
+    }
+    .character-open-role::before,
+    .character-open-role::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 46%;
+      height: 46%;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    /* The light behind the disc: offset up and right, so a crescent shows */
+    .character-open-role::before {
+      margin: -5% 0 0 5%;
+      background: rgba(255, 222, 160, 0.95);
+      box-shadow: 0 0 18px 6px rgba(240, 190, 90, 0.75),
+                  0 0 60px 22px rgba(230, 180, 80, 0.35);
+      animation: openRoleGlow 6s ease-in-out infinite;
+    }
+    .character-open-role::after {
+      background: #08080b;
+      box-shadow: inset -2px 2px 6px rgba(255, 220, 150, 0.25);
+    }
+    @keyframes openRoleGlow {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .character-open-role::before { animation: none; }
+    }
 
     /* Title and subtitle transitions when showing character bio */
     .liftoff-text.characters h1 {
@@ -1956,7 +1995,9 @@ function init() {
         charEl.innerHTML = `
           <div class="character-card-inner">
             <div class="character-card-front">
-              <img src="${charConfig.image}" alt="${charConfig.name}">
+              ${charConfig.openRole
+                ? '<div class="character-open-role" role="img" aria-label="' + charConfig.name + '"></div>'
+                : `<img src="${charConfig.image}" alt="${charConfig.name}">`}
             </div>
             ${backCardHtml}
           </div>
