@@ -88,7 +88,6 @@ function injectStyles() {
       border-radius: 18px;
       background: rgba(10, 14, 24, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      border-top: 3px solid rgba(254, 208, 3, 0.75);
       column-count: 2;
       column-gap: 46px;
       column-rule: 1px solid rgba(255, 255, 255, 0.07);
