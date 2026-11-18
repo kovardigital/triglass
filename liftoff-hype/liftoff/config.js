@@ -14,6 +14,7 @@ export const SECTIONS = [
   { id: 'characters', title: 'CHARACTERS' },
   { id: 'the-story', title: 'THE STORY' },
   { id: 'the-crew', title: 'THE CREW' },
+  { id: 'look-book', title: 'LOOK BOOK' },
   { id: 'trailer', title: 'TRAILER' },
 ];
 

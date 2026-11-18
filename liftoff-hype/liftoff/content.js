@@ -8,6 +8,7 @@ import * as Parallax from './parallax.js';
 import * as Scroll from './scroll.js';
 import * as DirectorChapter from './chapters/director.js';
 import * as CrewChapter from './chapters/crew.js';
+import * as LookbookChapter from './chapters/lookbook.js';
 
 // Section content data (simplified - no zRange needed)
 // Same order as SECTIONS in config.js
@@ -91,6 +92,12 @@ const SECTIONS = [
     title: 'THE CREW',
     subtitle: 'The Team Behind The Film',
     crewLayout: true,
+    images: []
+  },
+  {
+    title: 'LOOK BOOK',
+    subtitle: '',
+    lookbookLayout: true, // chapters/lookbook.js renders this slide
     images: []
   },
   {
@@ -2157,6 +2164,7 @@ function init() {
   // Initialize chapter modules
   DirectorChapter.init(imageWorld, SECTIONS);
   CrewChapter.init(imageWorld, SECTIONS);
+  LookbookChapter.init(imageWorld, SECTIONS);
 
   // Set initial text for intro
   setTextContent(0);
@@ -2187,6 +2195,7 @@ function layoutClass(sectionIndex) {
   if (section.storyLayout) return 'story';
   if (section.directorLayout) return 'director-layout';
   if (section.crewLayout) return 'crew-layout';
+  if (section.lookbookLayout) return 'lookbook-layout';
   if (sectionIndex === 1) return 'logline';
   if (sectionIndex === SECTIONS.length - 1) return 'outro';
   return '';
@@ -2194,7 +2203,7 @@ function layoutClass(sectionIndex) {
 
 // Style the preview container for the section it's showing
 function setPreviewLayout(sectionIndex) {
-  previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-director', 'preview-crew', 'preview-outro');
+  previewContainer.classList.remove('preview-intro', 'preview-logline', 'preview-trailer', 'preview-characters', 'preview-story', 'preview-director', 'preview-crew', 'preview-lookbook', 'preview-outro');
   const layout = layoutClass(sectionIndex);
   if (layout) previewContainer.classList.add('preview-' + layout.replace('-layout', ''));
   // Ensure main container will be revealed when we land on intro
@@ -2220,7 +2229,7 @@ function setTextContent(sectionIndex) {
   subtitleEl.textContent = section.subtitle;
 
   // Update CSS classes for styling
-  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'story', 'director-layout', 'crew-layout', 'outro');
+  textContainer.classList.remove('intro', 'logline', 'trailer', 'characters', 'story', 'director-layout', 'crew-layout', 'lookbook-layout', 'outro');
   const layout = layoutClass(sectionIndex);
   if (layout) textContainer.classList.add(layout);
 
@@ -2713,6 +2722,7 @@ function update() {
   // Update chapter modules
   DirectorChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
   CrewChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
+  LookbookChapter.update(currentSection, targetSection, transitionProgress, isTransitioning, mouse, leanAngle, elasticOffset, scrollAnticipation);
 }
 
 // Safari and every iOS browser need HEVC for video transparency; others use VP9 WebM
@@ -2764,6 +2774,7 @@ function destroy() {
   window.removeEventListener('wheel', onWheelCloseBio, { capture: true });
   DirectorChapter.destroy();
   CrewChapter.destroy();
+  LookbookChapter.destroy();
   if (viewport) viewport.remove();
   if (scrollSpacer) scrollSpacer.remove();
   if (contactBtn) contactBtn.remove();
