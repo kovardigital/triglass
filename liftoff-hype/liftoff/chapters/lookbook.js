@@ -119,8 +119,7 @@ function injectStyles() {
       width: 0;
       height: ${BAND_H}px;
       transform-style: preserve-3d;
-      transform-origin: 0 ${BAND_H / 2}px ${RADIUS}px;   /* tilt around the front frame */
-      transform: translateZ(-${RADIUS}px) rotateX(4deg);
+      transform: translateZ(-${RADIUS}px);   /* the front frame sits at z = 0 */
     }
     .lookbook-panel {
       position: absolute;

@@ -31,7 +31,7 @@ The site uses an iframe-based version system for testing layout variations.
 
 - **Main site**: `wrangler pages deploy site --project-name=triglass --commit-dirty=true` → `triglass.pages.dev`
 - **Liftoff site**: manual deploy via `wrangler pages deploy liftoff --project-name=triglass-liftoff --commit-dirty=true`
-- **Liftoff creative deck** (`liftoff-hype/`, Ryan's "Hype Deck" for talent and agents): a trimmed copy of `liftoff/` with no business slides (budget, investment, waterfall, schedule, comps, market) and a Director's Statement. Keep that code out of it. Deploy: `wrangler pages deploy liftoff-hype --project-name=liftoff-film --branch=main --commit-dirty=true`
+- **Liftoff creative deck** (`liftoff-hype/`, Ryan's "Hype Deck" for talent and agents): a trimmed copy of `liftoff/` with no business slides (budget, investment, waterfall, schedule, comps, market), plus a Director's Statement and a Look Book (film strip of clips; web versions on S3 under `liftoff-lookbook/`, originals and `encode.sh` in Thomas's `~/Downloads/Liftoff Videos for Kovar`). Keep that code out of it. Deploy: `wrangler pages deploy liftoff-hype --project-name=liftoff-film --branch=main --commit-dirty=true`
 
 ## Stack
 
