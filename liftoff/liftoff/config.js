@@ -8,18 +8,21 @@
 export const SECTIONS = [
   { id: 'liftoff', title: 'LIFTOFF' },
   { id: 'logline', title: 'LOGLINE' },
+  { id: 'directors-statement', title: "DIRECTOR'S STATEMENT" },
   { id: 'trailer', title: 'TRAILER' },
   { id: 'characters', title: 'CHARACTERS' },
   { id: 'the-story', title: 'THE STORY' },
   { id: 'comps', title: 'COMPS' },
   { id: 'target-market', title: 'TARGET MARKET' },
   { id: 'the-crew', title: 'THE CREW' },
+  { id: 'look-book', title: 'LOOK BOOK' },
   { id: 'completion', title: 'PRODUCTION STATUS' },
   { id: 'budget', title: 'BUDGET' },
   { id: 'investment', title: 'INVESTMENT' },
   { id: 'waterfall', title: 'RECOUPMENT WATERFALL' },
   { id: 'schedule', title: 'SCHEDULE' },
   { id: 'twenty-minutes', title: 'FIRST 20 MINUTES' },
+  { id: 'disclosures', title: 'INVESTMENT DISCLOSURES' },
   { id: 'coming-soon', title: 'COMING SOON' },
 ];
 
