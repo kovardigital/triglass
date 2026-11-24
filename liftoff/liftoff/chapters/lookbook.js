@@ -384,7 +384,8 @@ function layoutStrip(active) {
     const d = wrap(i - offset);
     const angle = d * STEP;
     const visible = Math.abs(angle) < VISIBLE;
-    p.el.style.visibility = visible ? 'visible' : 'hidden';
+    // 'inherit', not 'visible': a visible child of the hidden slide would still catch clicks
+    p.el.style.visibility = visible ? 'inherit' : 'hidden';
     if (visible) {
       p.el.style.transform = `rotateY(${angle}rad) translateZ(${RADIUS}px)`;
       p.shade.style.opacity = Math.min(0.75, Math.pow(Math.abs(angle) / VISIBLE, 1.4) * 0.85).toFixed(3);

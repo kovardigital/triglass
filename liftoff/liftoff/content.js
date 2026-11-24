@@ -2709,9 +2709,9 @@ function update() {
     meetCastButton.style.transform = `translate(calc(-50% + ${btnOffsetX}px), calc(-50% + ${btnOffsetY + 165}px)) translateZ(${REST_Z}px)`;
   }
 
-  // Update Story Play Button for Story section (section index 4)
+  // Update Story Play Button for the Story section
   if (storyPlayButton && !isStoryVideoActive) {
-    const storySection = 4; // Story section
+    const storySection = SECTIONS.findIndex(s => s.storyLayout);
     let btnZ = REST_Z;
     let btnOpacity = 0;
     let btnScale = 1;
