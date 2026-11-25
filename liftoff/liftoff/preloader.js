@@ -18,6 +18,7 @@ const LOGO_URL = 'https://triglass-assets.s3.amazonaws.com/triglass.png';
 const ASSETS = {
   images: [
     'https://triglass-assets.s3.amazonaws.com/liftoff-logo.webp', // Title logo still
+    'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-thumb.jpg', // Trailer thumbnail
     'https://triglass-assets.s3.amazonaws.com/selena-2.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/leo-2.jpg', // Character
     'https://triglass-assets.s3.amazonaws.com/grandpa.jpg', // Character
@@ -40,7 +41,7 @@ const ASSETS = {
   ],
   // Videos that need full preload (not just metadata)
   videosFullPreload: [
-    'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', // Logline pingpong - needs full preload
+    'https://triglass-assets.s3.amazonaws.com/liftoff-ladder-v2.mp4', // Logline pingpong - needs full preload
   ],
 };
 

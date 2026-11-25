@@ -28,7 +28,7 @@ const SECTIONS = [
     title: 'LOGLINE',
     subtitle: "As grief fractures a family, two children retreat into a magical attic built from memory and imagination while their father races against time to retrieve them from a fantasy that is slowly turning into reality.",
     images: [
-      { x: -120, y: -20, width: 1000, height: 1000, scale: 0.85, label: 'Logline', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/LadderShot_01.mp4', autoplay: true },
+      { x: -120, y: -20, width: 1000, height: 1000, scale: 0.85, label: 'Logline', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-ladder-v2.mp4', autoplay: true },
     ]
   },
   {
@@ -105,7 +105,7 @@ const SECTIONS = [
     subtitle: '',
     trailerLayout: true,
     images: [
-      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-5.mp4', playable: true },
+      { x: 0, y: 0, width: 1280, height: 640, scale: 0.49, label: 'Trailer', delay: 0, rotateY: 0, video: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-5.mp4', poster: 'https://triglass-assets.s3.amazonaws.com/liftoff-trailer-thumb.jpg', playable: true },
     ]
   }
 ];
@@ -170,10 +170,10 @@ let isStoryVideoExiting = false; // Prevents re-triggering outro
 let isStoryVideoClosing = false; // Prevents duplicate close calls
 
 // Story video URLs - single video with built-in intro/outro
-const STORY_VIDEO_WEBM = 'https://triglass-assets.s3.amazonaws.com/liftoffstoryslide-website-unfinishedv1.webm';
-const STORY_VIDEO_HEVC = 'https://triglass-assets.s3.amazonaws.com/liftoffstoryslide-website-unfinishedv1.mp4';
-// Exit point - jump to this time to play the outro animation (last ~9 seconds)
-const STORY_VIDEO_EXIT_TIME = 105; // seconds from start where outro begins
+const STORY_VIDEO_WEBM = 'https://triglass-assets.s3.amazonaws.com/liftoff-story-v2.webm';
+const STORY_VIDEO_HEVC = 'https://triglass-assets.s3.amazonaws.com/liftoff-story-v2.mp4';
+// Closing early jumps to the outro animation: the last 7.25 seconds (screens go dark, then the console flies off)
+const STORY_VIDEO_OUTRO = 7.25;
 
 // Toggle character bio view
 function toggleCharacterBio(charIndex) {
@@ -189,6 +189,8 @@ function toggleCharacterBio(charIndex) {
 // Open character bio
 function openCharacterBio(charIndex) {
   selectedCharacterIndex = charIndex;
+  bioOpenedAt = performance.now();
+  bioWheel = { sum: 0, at: 0 };
   characterBioMode = true;
   showingCastBio = false; // Always start with character bio
 
@@ -365,8 +367,10 @@ function exitStoryVideo() {
 
   isStoryVideoExiting = true;
 
-  // Jump to the exit point (last ~9 seconds) to play outro animation
-  storyVideo.currentTime = STORY_VIDEO_EXIT_TIME;
+  // Jump to the outro animation (unless it is already playing)
+  if (storyVideo.currentTime < storyVideo.duration - STORY_VIDEO_OUTRO) {
+    storyVideo.currentTime = storyVideo.duration - STORY_VIDEO_OUTRO;
+  }
   storyVideo.play().catch(() => {});
 
 }
@@ -400,11 +404,20 @@ function closeStoryVideo() {
 }
 
 // Wheel handler to close bio on scroll attempt and exit story video on scroll
+// A trackpad click, or momentum left over from scrolling onto the slide, sends small wheel
+// events; those used to close a bio the instant it opened, so the click seemed to do nothing.
+// Only a deliberate scroll closes it.
+let bioOpenedAt = 0;
+let bioWheel = { sum: 0, at: 0 };
 function onWheelCloseBio(e) {
   if (characterBioMode) {
     e.preventDefault();
     e.stopPropagation();
-    closeCharacterBio();
+    const now = performance.now();
+    if (now - bioWheel.at > 250) bioWheel.sum = 0;   // a new gesture
+    bioWheel.at = now;
+    bioWheel.sum += Math.abs(e.deltaY) + Math.abs(e.deltaX);
+    if (now - bioOpenedAt > 700 && bioWheel.sum > 40) closeCharacterBio();
   }
   // Exit story video on scroll (plays outro)
   if (isStoryVideoActive) {
@@ -1739,6 +1752,7 @@ function init() {
         video.src = imgConfig.video;
         video.playsInline = true;
         video.preload = 'auto';
+        if (imgConfig.poster) video.poster = imgConfig.poster;
         video.loop = imgConfig.autoplay || false;
 
         // Check if this is an autoplay looping video (like logline)
@@ -2664,9 +2678,9 @@ function update() {
     meetCastButton.style.transform = `translate(calc(-50% + ${btnOffsetX}px), calc(-50% + ${btnOffsetY + 165}px)) translateZ(${REST_Z}px)`;
   }
 
-  // Update Story Play Button for Story section (section index 4)
+  // Update Story Play Button for the Story section
   if (storyPlayButton && !isStoryVideoActive) {
-    const storySection = 4; // Story section
+    const storySection = SECTIONS.findIndex(s => s.storyLayout);
     let btnZ = REST_Z;
     let btnOpacity = 0;
     let btnScale = 1;

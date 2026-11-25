@@ -67,7 +67,7 @@ function injectStyles() {
       height: ${TRACK_HEIGHT}vh;
       z-index: 100;
       pointer-events: auto;
-      padding-left: 200px;
+      padding-left: 48px;   /* hover strip by the dots (200px covered the Characters row on laptops) */
       transition: opacity 0.3s ease;
     }
 
@@ -94,12 +94,14 @@ function injectStyles() {
       opacity: 0;
       transform: translateX(8px);
       transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+      pointer-events: none;   /* hidden labels mustn't catch clicks meant for the slide */
     }
 
     /* Show ALL labels when hovering anywhere on the indicator */
     .rocket-indicator:hover .rocket-label {
       opacity: 1;
       transform: translateX(0);
+      pointer-events: auto;
     }
 
     .rocket-track {
